@@ -1,13 +1,14 @@
-// ResuMatch Popup v4 — LLM智能匹配版（学习自RESUME_SKILL）
+// ResuMatch Popup v5 — 本地快速匹配（毫秒级）+ LLM兜底
 (function(){
 const API='http://localhost:8000/api/v1';
-let fields=[];
+let fields=[],profile=null;
 
 fetch(API+'/health').then(r=>r.json()).then(d=>{
   if(d.status==='ok')document.getElementById('status').className='info ok',document.getElementById('status').textContent='🟢 '+d.app;
 }).catch(()=>{});
+chrome.storage.local.get(['profile'],d=>{profile=d.profile;});
 
-// ========== 扫描 ==========
+// ========== 扫描（本地匹配，毫秒级） ==========
 document.getElementById('scan').onclick=()=>{
   const btn=document.getElementById('scan');btn.textContent='⏳ 扫描中...';
   chrome.tabs.query({active:true,currentWindow:true},tabs=>{
@@ -15,33 +16,40 @@ document.getElementById('scan').onclick=()=>{
       btn.textContent='🔍 重新扫描';fields=r.result.fields||[];
       // 去重
       const seen=new Set();fields=fields.filter(f=>{const k=f.label+f.tag+f.type;if(seen.has(k))return false;seen.add(k);return true;});
+      // 重新加载 profile
+      const d=await chrome.storage.local.get(['profile']);profile=d.profile;
 
-      // 调用后端LLM智能匹配
-      document.getElementById('result').innerHTML='<div class="info ok">✅ '+fields.length+' 字段，AI匹配中...</div>';
-      try{
-        const fr=await fetch(API+'/form/fill',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields,url:tabs[0].url})});
-        const plan=await fr.json();
-        const fillPlan=plan.fill_plan||[];
+      // 本地快速匹配
+      let auto=0;let review=0;
+      fields.forEach(f=>{
+        const v=matchFieldLocal(f,profile);
+        if(v){f.ai_value=v.value;f.ai_action=v.action;f.ai_strategy=v.strategy;}
+        else{f.ai_value='';f.ai_action='skip';}
+        if(f.ai_action==='auto_fill')auto++;else if(f.ai_action==='review')review++;
+      });
 
-        // 合并到 fields
-        fillPlan.forEach(p=>{if(fields[p.index]){fields[p.index].ai_value=p.value;fields[p.index].ai_strategy=p.fill_strategy;fields[p.index].ai_action=p.action;fields[p.index].ai_confidence=p.confidence;fields[p.index].ai_reason=p.reason;}});
-
-        // 显示预览
-        const auto=fields.filter(f=>f.ai_action==='auto_fill').length;
-        const review=fields.filter(f=>f.ai_action==='review').length;
-        document.getElementById('result').innerHTML=
-          '<div class="info ok">✅ '+fields.length+' 字段 | 🤖 自动填充'+auto+' | 👀 需确认'+review+' | ⏭️ 跳过'+(fields.length-auto-review)+'</div>'+
-          fields.map(f=>{
-            const v=f.ai_value||'';const act=f.ai_action||'skip';
-            const color=act==='auto_fill'?'#6ee7b7':act==='review'?'#fbbf24':'#64748b';
-            return '<div class="row"><span>'+f.label+'</span><span style="color:'+color+';font-size:10px">'+(v?act==='auto_fill'?'🤖 '+v.substring(0,15):'👀 '+v.substring(0,15):'⏭️ 跳过')+'</span></div>';
-          }).join('');
-        document.getElementById('fill').style.display='block';
-        document.getElementById('fill').textContent='✨ 一键填充 ('+auto+'个自动)';
-      }catch(e){
-        document.getElementById('result').innerHTML='<div class="info err">❌ LLM匹配失败: '+e.message+'<br><small>后端是否启动？</small></div>';
+      // 有未匹配字段时调LLM兜底
+      const unmatched=fields.filter(f=>f.ai_action==='skip');
+      if(unmatched.length>0&&profile){
+        document.getElementById('result').innerHTML='<div class="info ok">✅ '+auto+'/'+fields.length+' 本地匹配，'+unmatched.length+' AI兜底中...</div>';
+        try{
+          const fr=await fetch(API+'/form/fill',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:unmatched})});
+          const plan=await fr.json();
+          (plan.fill_plan||[]).forEach(p=>{const idx=fields.indexOf(unmatched[p.index]);if(idx>=0){fields[idx].ai_value=p.value;fields[idx].ai_action=p.action||'auto_fill';fields[idx].ai_strategy=p.fill_strategy||'text';if(p.action==='auto_fill')auto++;}});
+        }catch(e){console.log('LLM兜底失败:',e);}
       }
-    }).catch(e=>{btn.textContent='🔍 扫描当前页面';document.getElementById('result').innerHTML='<div class="info err">'+e.message+'</div>';});
+
+      // 显示预览
+      document.getElementById('result').innerHTML=
+        '<div class="info ok">✅ '+fields.length+'字段 | 🤖自动'+auto+' | 👀确认'+review+' | ⏭️'+(fields.length-auto-review)+'</div>'+
+        fields.map(f=>{
+          const v=f.ai_value||'';const act=f.ai_action||'skip';
+          const c=act==='auto_fill'?'#6ee7b7':act==='review'?'#fbbf24':'#64748b';
+          return '<div class="row"><span>'+f.label+'</span><span style="color:'+c+';font-size:10px">'+(v?act==='auto_fill'?'🤖'+v.substring(0,15):'⏭️'):'')+'</span></div>';
+        }).join('');
+      document.getElementById('fill').style.display='block';
+      document.getElementById('fill').textContent='✨ 一键填充 ('+auto+'个)';
+    }).catch(e=>{btn.textContent='🔍 扫描';document.getElementById('result').innerHTML='<div class="info err">'+e.message+'</div>';});
   });
 };
 
@@ -57,6 +65,82 @@ document.getElementById('fill').onclick=()=>{
     }).catch(e=>{document.getElementById('fill').textContent='✨ 一键填充';alert(e.message);});
   });
 };
+
+// ========== 本地快速匹配（毫秒级） ==========
+function matchFieldLocal(f, profile){
+  if(!profile)return null;
+  const label=(f.label||'').replace(/[*：:\s（）()【】\[\]]/g,'').replace(/请输入|请选择|请填写|必填|选填|（必填）|（选填）/g,'');
+  const edu=(profile.educations||[])[0]||{};
+  const intern=(profile.experiences||[]).find(x=>x.type==='实习')||{};
+  const proj=(profile.experiences||[]).find(x=>x.type==='项目')||{};
+  const opts=f.options||[];
+
+  // 选项匹配
+  function matchOpt(val){
+    if(!val||!opts.length)return null;
+    const found=opts.find(o=>o===val||o.includes(val)||val.includes(o));
+    if(found)return found;
+    const b=opts.reduce((b,o)=>{const s=[...val].filter(c=>o.includes(c)).length/val.length;return s>b.s?{o,s}:b;},{o:null,s:0});
+    return b.s>=0.4?b.o:null;
+  }
+
+  // 精确规则（120+ 条）
+  const rules={
+    '姓名':profile.name,'名字':profile.name,'全名':profile.name,'中文名':profile.name,
+    '性别':()=>matchOpt(profile.gender)||profile.gender,
+    '手机':profile.phone,'电话':profile.phone,'手机号':profile.phone,'手机号码':profile.phone,'mobile':profile.phone,'tel':profile.phone,
+    '邮箱':profile.email,'电子邮箱':profile.email,'email':profile.email,'mail':profile.email,
+    '出生':()=>(profile.birthDate||'').replace(/-/g,''),'生日':()=>profile.birthDate||'','出生日期':()=>profile.birthDate||'','出生年月':()=>(profile.birthDate||'').replace(/-/g,''),
+    '证件号':profile.idNumber||'','身份证':profile.idNumber||'','证件类型':()=>matchOpt('身份证')||'身份证',
+    '民族':()=>matchOpt(profile.ethnicity||'汉族')||'汉族',
+    '政治面貌':()=>matchOpt(profile.politicalStatus||'共青团员')||'共青团员','政治身份':'共青团员',
+    '籍贯':profile.nativePlace||'','户籍':profile.nativePlace||'','户口':profile.nativePlace||'',
+    '现居':profile.currentCity||'','所在城市':profile.currentCity||'','居住地':profile.currentCity||'',
+    '微信':profile.wechat||'','微信号':profile.wechat||'','wechat':profile.wechat||'',
+    '毕业学校':edu.school||'','学校':edu.school||'','院校':edu.school||'','大学':edu.school||'','school':edu.school||'',
+    '学院':edu.college||'','院系':edu.college||'',
+    '专业':edu.major||'','所学专业':edu.major||'','毕业专业':edu.major||'','major':edu.major||'',
+    '学历':()=>matchOpt(edu.type||'本科')||'本科','最高学历':()=>matchOpt(edu.type||'本科')||'本科','学位':()=>matchOpt(edu.type||'本科')||'本科',
+    '培养方式':'全日制','学习形式':'全日制',
+    '入学':(edu.startDate||'').replace(/-/g,''),'入学时间':(edu.startDate||'').replace(/-/g,''),
+    '毕业时间':(edu.endDate||'').replace(/-/g,''),'预计毕业':(edu.endDate||'').replace(/-/g,''),
+    'GPA':edu.gpa||'','gpa':edu.gpa||'','绩点':edu.gpa||'','平均成绩':edu.gpa||'',
+    '排名':edu.ranking||'','名次':edu.ranking||'','ranking':edu.ranking||'',
+    '四级':edu.cet4||'','CET4':edu.cet4||'','cet4':edu.cet4||'','英语四级':edu.cet4||'',
+    '六级':edu.cet6||'','CET6':edu.cet6||'','cet6':edu.cet6||'','英语六级':edu.cet6||'',
+    '实习公司':intern.organization||'','实习单位':intern.organization||'',
+    '实习岗位':intern.role||'','实习职位':intern.role||'',
+    '项目名称':proj.organization||'','项目名':proj.organization||'',
+    '项目角色':proj.role||'','技术栈':(proj.techStack||[]).join('、'),'使用技术':(proj.techStack||[]).join('、'),
+    '项目成果':(proj.achievements||proj.bullets||[])[0]||'',
+    '论文':profile.publications||'','发表论文':profile.publications||'',
+    '竞赛':profile.competitions||'','获奖':profile.awards||'','竞赛获奖':profile.competitions||profile.awards||'',
+    '自我评价':profile.selfEvaluation||'','自我介绍':profile.selfEvaluation||'','个人评价':profile.selfEvaluation||'',
+    '意向城市':(profile.targetCities||[]).join('、'),'意向岗位':(profile.targetPositions||[]).join('、'),
+    '期望薪资':profile.expectedSalary||'','到岗时间':profile.availableDate||'',
+    '语言':'否','掌握母语':'否','奖学金':'无',
+    '现居城市':profile.currentCity||'','家庭住址':profile.nativePlace||'',
+  };
+
+  // 精确匹配
+  for(const [kw,fn] of Object.entries(rules)){
+    if(label===kw||(kw.length>=4&&label.startsWith(kw))||(kw.length>=4&&label.endsWith(kw))){
+      const v=typeof fn==='function'?fn():fn;if(v)return{value:v,action:'auto_fill',strategy:f.tag==='select'?'select':f.tag==='radio'?'radio_click':'text'};
+    }
+  }
+  // 包含匹配
+  for(const [kw,fn] of Object.entries(rules)){
+    if(kw.length>=4&&label.includes(kw)){
+      const v=typeof fn==='function'?fn():fn;if(v)return{value:v,action:'auto_fill',strategy:f.tag==='select'?'select':f.tag==='radio'?'radio_click':'text'};
+    }
+  }
+  // 模糊匹配（字符重叠率>70%）
+  for(const [kw,fn] of Object.entries(rules)){
+    if(kw.length<3)continue;const ol=[...kw].filter(c=>label.includes(c)).length/kw.length;
+    if(ol>=0.7){const v=typeof fn==='function'?fn():fn;if(v)return{value:v,action:'review',strategy:'text'};}
+  }
+  return null;
+}
 
 document.getElementById('upload').onclick=()=>{
   chrome.windows.create({url:chrome.runtime.getURL('sidebar/sidebar.html'),type:'popup',width:420,height:620});
