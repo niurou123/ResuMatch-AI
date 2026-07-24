@@ -1,0 +1,30 @@
+# Streamlit 前端 Dockerfile
+
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制项目文件
+COPY requirements.txt .
+COPY app.py .
+COPY config.py .
+
+# 安装 Python 依赖
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt streamlit
+
+# Streamlit 配置
+RUN mkdir -p ~/.streamlit && \
+    echo '[server]\nheadless = true\nport = 8501\nenableXsrfProtection = false\nenableCORS = false' > ~/.streamlit/config.toml
+
+# 暴露端口
+EXPOSE 8501
+
+# 启动命令
+CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0"]

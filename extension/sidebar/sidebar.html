@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Microsoft YaHei",sans-serif;font-size:13px;background:#0f172a;color:#e2e8f0;min-height:100vh}
+  .tabs{display:flex;border-bottom:1px solid #1e293b}
+  .tab{flex:1;padding:12px 8px;border:none;background:none;color:#94a3b8;font-size:13px;cursor:pointer;text-align:center}
+  .tab.active{color:#818cf8;border-bottom:2px solid #818cf8}
+  .panel{display:none;padding:16px}
+  .panel.active{display:block}
+  button{display:block;width:100%;padding:10px;margin:8px 0;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500}
+  .btn-primary{background:#6366f1;color:#fff}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn-secondary{background:#1e293b;color:#cbd5e1;border:1px solid #334155}
+  .btn-danger{background:#991b1b;color:#fca5a5}
+  input[type="file"]{margin-bottom:8px;color:#94a3b8;font-size:12px}
+  textarea,input[type="text"]{width:100%;padding:8px;border:1px solid #334155;border-radius:6px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:8px;resize:vertical;font-family:inherit}
+  textarea{min-height:80px}
+  .card{background:#1e293b;border-radius:8px;padding:12px;margin-bottom:8px}
+  .card h4{font-size:13px;color:#94a3b8;margin-bottom:6px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e293b;font-size:12px}
+  .row .label{color:#94a3b8;min-width:60px}
+  .row .value{color:#e2e8f0;text-align:right;word-break:break-all;flex:1;margin-left:8px}
+  .tag{display:inline-block;padding:2px 8px;margin:2px;border-radius:12px;font-size:11px}
+  .tag.green{background:#064e3b;color:#6ee7b7}
+  .tag.red{background:#7f1d1d;color:#fca5a5}
+  .tag.blue{background:#1e3a5f;color:#93c5fd}
+  .section{margin-bottom:12px}
+  .section-title{font-size:13px;color:#818cf8;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #1e293b}
+  .hidden{display:none}
+  .status-bar{padding:8px 16px;font-size:11px;text-align:center}
+  .status-bar.online{background:#064e3b;color:#6ee7b7}
+  .status-bar.offline{background:#7f1d1d;color:#fca5a5}
+</style>
+</head>
+<body>
+  <div id="statusBar" class="status-bar offline">后端未连接 — 请先启动后端</div>
+  <div class="tabs">
+    <button class="tab active" data-tab="resume">📄 简历</button>
+    <button class="tab" data-tab="template">📋 档案</button>
+    <button class="tab" data-tab="apply">✍️ 网申</button>
+  </div>
+
+  <div id="panel-resume" class="panel active">
+    <p style="color:#94a3b8;margin-bottom:8px;font-size:12px">上传简历，AI自动提取信息到本地档案</p>
+    <input type="file" id="fileInput" accept=".docx,.pdf,.md,.txt">
+    <button class="btn-primary" id="btnUpload">📤 上传并解析</button>
+    <div id="parseStatus" class="hidden"></div>
+  </div>
+
+  <div id="panel-template" class="panel">
+    <p style="color:#94a3b8;margin-bottom:8px;font-size:12px">AI提取的网申档案，可直接编辑后保存</p>
+    <div id="templateView"></div>
+    <button class="btn-primary hidden" id="btnSaveTemplate">💾 保存修改</button>
+  </div>
+
+  <div id="panel-apply" class="panel">
+    <button class="btn-primary" id="btnScan">🔍 扫描当前页面表单</button>
+    <div id="scanPreview"></div>
+    <button class="btn-primary hidden" id="btnFill">✨ 一键智能填充</button>
+    <button class="btn-danger hidden" id="btnClear">🗑️ 清空填充</button>
+    <div id="fillResult"></div>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>

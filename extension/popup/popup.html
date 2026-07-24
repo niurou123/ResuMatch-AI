@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{width:280px;font-family:"Microsoft YaHei",sans-serif;font-size:13px;background:#0f172a;color:#e2e8f0;padding:14px}
+  h2{font-size:14px;text-align:center;margin-bottom:10px}
+  button{display:block;width:100%;padding:10px;margin:5px 0;border:none;border-radius:8px;font-size:13px;cursor:pointer}
+  .btn1{background:#6366f1;color:#fff}
+  .btn2{background:#1e293b;color:#cbd5e1;border:1px solid #334155}
+  .info{padding:6px;border-radius:4px;margin:6px 0;font-size:11px;text-align:center}
+  .info.ok{background:#064e3b;color:#6ee7b7}
+  .info.err{background:#7f1d1d;color:#fca5a5}
+  .result{max-height:200px;overflow-y:auto;font-size:11px;margin-top:6px}
+  .result .row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #1e293b}
+</style></head>
+<body>
+  <h2>🤖 ResuMatch AI</h2>
+  <div id="status" class="info err">后端检测中...</div>
+  <button class="btn1" id="scan">🔍 扫描当前页面</button>
+  <button class="btn1" id="fill" style="display:none">✨ 一键填充</button>
+  <button class="btn2" id="upload">📤 上传简历（侧边栏）</button>
+  <div id="result" class="result"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

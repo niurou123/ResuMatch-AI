@@ -1,0 +1,49 @@
+# 环境
+.env
+.env.local
+venv/
+env/
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# ChromaDB 向量数据（大文件）
+data/chroma_db/
+
+# 用户简历（隐私）
+data/resumes/
+
+# 模型
+models/
+*.bin
+*.safetensors
+*.pt
+
+# 日志
+logs/
+*.log
+
+# 缓存
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.cache/
+
+# 临时
+*.tmp
+*.cache
+
+# Playwright
+.playwright-mcp/
+
+# Test data
+data/chroma_db_test/

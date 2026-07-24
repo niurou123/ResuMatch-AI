@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # FastAPI 后端
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: interview-rag-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEVICE=cuda
+      - NUM_GPUS=auto
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    command: python main.py
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - interview-rag
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Streamlit 前端
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: interview-rag-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - interview-rag
+    volumes:
+      - ./frontend:/app/frontend
+
+  # 可选：Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: interview-rag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - interview-rag
+
+volumes:
+  redis_data:
+
+networks:
+  interview-rag:
+    driver: bridge
