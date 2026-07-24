@@ -100,6 +100,25 @@ class SelfIntroResponse(BaseModel):
     intro_3min: str = ""
 
 
+# ===== 智能表单填充 =====
+class FormFillRequest(BaseModel):
+    """智能表单填充请求"""
+    fields: list = []     # 扫描到的表单字段
+    url: str = ""          # 页面URL
+
+    class Config:
+        extra = "allow"
+
+
+class FormFillResponse(BaseModel):
+    """智能表单填充响应"""
+    fill_plan: list = []   # 填充计划
+    total: int = 0
+    auto_count: int = 0
+    review_count: int = 0
+    skip_count: int = 0
+
+
 # ===== JD 匹配相关 =====
 class JDMatchRequest(BaseModel):
     """JD 匹配请求"""

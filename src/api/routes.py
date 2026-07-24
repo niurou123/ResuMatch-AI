@@ -4,7 +4,7 @@ import uuid
 import shutil
 from pathlib import Path
 from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 import json
 
@@ -15,6 +15,7 @@ from src.api.schemas import (
     MockInterviewNextRequest, MockInterviewNextResponse,
     SelfIntroRequest, SelfIntroResponse,
     JDMatchRequest, JDMatchResponse,
+    FormFillRequest, FormFillResponse,
     SystemInfoResponse, HealthResponse,
 )
 from src.config import settings
@@ -342,6 +343,91 @@ async def analyze_jd_match(request: JDMatchRequest):
         strength_analysis=result.get("strength_analysis", ""),
         gap_analysis=result.get("gap_analysis", ""),
     )
+
+
+# ===== 智能表单填充 =====
+@router.post("/form/fill")
+async def smart_form_fill(req: Request):
+    """LLM驱动的智能表单匹配填充"""
+    from src.core.llm_client import get_client, Message
+    import re
+
+    body = await req.json()
+    fields = body.get("fields", [])
+    if not fields:
+        return {"fill_plan": [], "total": 0}
+
+    # 优先使用 chromaDB 中的简历数据
+    profile_data = _session_memory.long_term_profile
+    if not profile_data or len(profile_data) < 20:
+        try:
+            vs = _get_vector_store()
+            info = vs.get_collection_info()
+            if sum(info.values()) > 0:
+                # 从 chromaDB 收集所有数据
+                all_docs = []
+                for coll in ["skills","projects","achievements","education"]:
+                    results = vs.search("", coll, top_k=20)
+                    for r in results:
+                        all_docs.append(f"[{r.get('collection','')}] {r.get('content','')}")
+                profile_data = "\n".join(all_docs) if all_docs else "未上传简历"
+        except:
+            profile_data = "未上传简历"
+
+    if not fields:
+        return {"fill_plan": [], "total": 0}
+
+    # 格式化学段
+    fields_text = json.dumps([
+        {"index": i, "label": f.get("label", ""), "tag": f.get("tag", ""),
+         "type": f.get("type", ""), "options": f.get("options", []),
+         "placeholder": f.get("placeholder", ""), "id": f.get("id", ""),
+         "required": f.get("required", False)}
+        for i, f in enumerate(fields)
+    ], ensure_ascii=False, indent=2)
+
+    prompt = f"""你是专业网申表单智能填充AI。请根据用户档案，为每个表单字段生成最合适的填写值。
+
+## 用户档案
+{profile_data[:4000]}
+
+## 表单字段（共{len(fields)}个）
+{fields_text[:6000]}
+
+## 要求
+对每个字段返回填写计划：
+- value: 要填入的值（优先使用档案中的数据；档案没有的，填入合理默认值如民族→汉族、政治面貌→共青团员；完全无法判断的留空）
+- confidence: 匹配置信度 0-1
+- fill_strategy: text/select/radio_click/datepicker
+- action: auto_fill(confidence>0.7) / review(0.4-0.7) / skip(<0.4)
+- reason: 简短填写理由
+
+返回 JSON: {{"plan": [{{"index": 0, "value": "...", "confidence": 0.95, "fill_strategy": "text", "action": "auto_fill", "reason": "..."}}]}}"""
+
+    try:
+        client = get_client()
+        messages = [
+            Message(role="system", content="你是网申表单填充专家。只返回JSON，不要解释。"),
+            Message(role="user", content=prompt),
+        ]
+        raw = await client.chat_sync(messages, temperature=0.3, max_tokens=4000)
+
+        # 提取 JSON
+        match = re.search(r'\{.*\}', raw, re.DOTALL)
+        result = json.loads(match.group(0)) if match else {"plan": []}
+        fill_plan = result.get("plan", [])
+
+        auto = sum(1 for p in fill_plan if p.get("action") == "auto_fill")
+        review = sum(1 for p in fill_plan if p.get("action") == "review")
+        skip = len(fill_plan) - auto - review
+
+        return {
+            "fill_plan": fill_plan, "total": len(fill_plan),
+            "auto_count": auto, "review_count": review, "skip_count": skip,
+        }
+
+    except Exception as e:
+        raise HTTPException(500, f"LLM匹配失败: {str(e)}")
 
 
 # ===== 系统信息 =====

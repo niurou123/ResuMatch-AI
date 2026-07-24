@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # ===== DeepSeek API =====
     DEEPSEEK_API_KEY: str = ""
-    DEEPSEEK_MODEL: str = "deepseek-chat"
+    DEEPSEEK_MODEL: str = "deepseek-v4-pro"
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
     DEEPSEEK_TIMEOUT: int = 60
 

@@ -73,6 +73,16 @@ export async function mockNext(sessionId, answer) {
   return r.json();
 }
 
+// ==================== 智能表单填充（LLM驱动） ====================
+export async function smartFormFill(fields, url = '') {
+  const r = await fetch(`${API}/form/fill`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields, url }),
+  });
+  return r.json();
+}
+
 // ==================== 系统信息 ====================
 export async function systemInfo() {
   const r = await fetch(`${API}/system/info`);
