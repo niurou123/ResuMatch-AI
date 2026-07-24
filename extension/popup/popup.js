@@ -66,7 +66,7 @@ document.getElementById('fill').onclick=()=>{
   });
 };
 
-// ========== 本地快速匹配（毫秒级） ==========
+// ========== 本地快速匹配（毫秒级，使用ResumeSchema） ==========
 function matchFieldLocal(f, profile){
   if(!profile)return null;
   const label=(f.label||'').replace(/[*：:\s（）()【】\[\]]/g,'').replace(/请输入|请选择|请填写|必填|选填|（必填）|（选填）/g,'');
@@ -75,9 +75,13 @@ function matchFieldLocal(f, profile){
   const proj=(profile.experiences||[]).find(x=>x.type==='项目')||{};
   const opts=f.options||[];
 
-  // 选项匹配
+  // 使用ResumeSchema智能选项匹配
   function matchOpt(val){
     if(!val||!opts.length)return null;
+    if(window.ResumeSchema&&window.ResumeSchema.matchSelectOption){
+      return window.ResumeSchema.matchSelectOption(opts,val)||null;
+    }
+    // fallback
     const found=opts.find(o=>o===val||o.includes(val)||val.includes(o));
     if(found)return found;
     const b=opts.reduce((b,o)=>{const s=[...val].filter(c=>o.includes(c)).length/val.length;return s>b.s?{o,s}:b;},{o:null,s:0});
