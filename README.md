@@ -196,13 +196,3 @@ MEMORY_MAX_TOKENS=4000
 ```
 
 ---
-
-## 🎓 技术传承
-
-本项目架构和技术方案基于 PaperPilot（多Agent科研助手）项目的经验：
-
-- LangGraph 多节点工作流 + 条件修订边
-- 规则化 Router（跳过LLM调用，0s延迟）
-- Prompt 工程强化引用准确性
-- ChromaDB + bge-small-zh 向量存储
-- 三层会话记忆 + LLM 摘要压缩
