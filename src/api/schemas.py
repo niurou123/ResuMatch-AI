@@ -5,12 +5,14 @@ from typing import List, Optional, Dict, Any
 
 # ===== 简历相关 =====
 class ResumeUploadResponse(BaseModel):
-    """简历上传响应"""
+    """简历上传响应 — v2.0 带来源追踪和验证报告"""
     success: bool
     filename: str
     profile: Dict[str, Any] = {}
     collections: Dict[str, int] = {}
     message: str = ""
+    verification: Dict[str, Any] = {}    # 提取验证报告
+    field_sources: list = []             # 字段来源追踪
 
 
 class ProfileResponse(BaseModel):

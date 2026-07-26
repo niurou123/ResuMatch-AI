@@ -1,26 +1,33 @@
-// ResuMatch Popup v5 — 本地快速匹配（毫秒级）+ LLM兜底
+// ResuMatch Popup — 学习 AI-Resume-Form-Filling-Assistant
 (function(){
+'use strict';
 const API='http://localhost:8000/api/v1';
 let fields=[],profile=null;
+const $=s=>document.querySelector(s);
 
+// Status
 fetch(API+'/health').then(r=>r.json()).then(d=>{
-  if(d.status==='ok')document.getElementById('status').className='info ok',document.getElementById('status').textContent='🟢 '+d.app;
+  if(d.status==='ok'){
+    const b=$('#statusBadge');b.className='status-badge on';
+    b.innerHTML='<span class="status-dot"></span><span>已连接</span>';
+  }
 }).catch(()=>{});
+
 chrome.storage.local.get(['profile'],d=>{profile=d.profile;});
 
-// ========== 扫描（本地匹配，毫秒级） ==========
-document.getElementById('scan').onclick=()=>{
-  const btn=document.getElementById('scan');btn.textContent='⏳ 扫描中...';
+// ===== Scan =====
+$('#scan').onclick=()=>{
+  const btn=$('#scan');btn.textContent='扫描中...';btn.disabled=true;
   chrome.tabs.query({active:true,currentWindow:true},tabs=>{
     chrome.scripting.executeScript({target:{tabId:tabs[0].id},func:scanPage}).then(async([r])=>{
-      btn.textContent='🔍 重新扫描';fields=r.result.fields||[];
-      // 去重
+      btn.textContent='重新扫描';btn.disabled=false;
+      fields=r.result.fields||[];
+      // Dedup
       const seen=new Set();fields=fields.filter(f=>{const k=f.label+f.tag+f.type;if(seen.has(k))return false;seen.add(k);return true;});
-      // 重新加载 profile
       const d=await chrome.storage.local.get(['profile']);profile=d.profile;
 
-      // 本地快速匹配
-      let auto=0;let review=0;
+      // Local match
+      let auto=0,review=0;
       fields.forEach(f=>{
         const v=matchFieldLocal(f,profile);
         if(v){f.ai_value=v.value;f.ai_action=v.action;f.ai_strategy=v.strategy;}
@@ -28,46 +35,64 @@ document.getElementById('scan').onclick=()=>{
         if(f.ai_action==='auto_fill')auto++;else if(f.ai_action==='review')review++;
       });
 
-      // 有未匹配字段时调LLM兜底
+      // LLM fallback
       const unmatched=fields.filter(f=>f.ai_action==='skip');
       if(unmatched.length>0&&profile){
-        document.getElementById('result').innerHTML='<div class="info ok">✅ '+auto+'/'+fields.length+' 本地匹配，'+unmatched.length+' AI兜底中...</div>';
         try{
           const fr=await fetch(API+'/form/fill',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:unmatched})});
           const plan=await fr.json();
           (plan.fill_plan||[]).forEach(p=>{const idx=fields.indexOf(unmatched[p.index]);if(idx>=0){fields[idx].ai_value=p.value;fields[idx].ai_action=p.action||'auto_fill';fields[idx].ai_strategy=p.fill_strategy||'text';if(p.action==='auto_fill')auto++;}});
-        }catch(e){console.log('LLM兜底失败:',e);}
+        }catch(e){console.log('LLM fallback:',e);}
       }
 
-      // 显示预览
-      document.getElementById('result').innerHTML=
-        '<div class="info ok">✅ '+fields.length+'字段 | 🤖自动'+auto+' | 👀确认'+review+' | ⏭️'+(fields.length-auto-review)+'</div>'+
+      // Stats
+      $('#statsGrid').classList.remove('hidden');
+      $('#statFields').textContent=fields.length;
+      $('#statAuto').textContent=auto;
+      $('#statManual').textContent=review;
+
+      // Preview
+      const skip=fields.length-auto-review;
+      $('#result').innerHTML=
         fields.map(f=>{
           const v=f.ai_value||'';const act=f.ai_action||'skip';
-          const c=act==='auto_fill'?'#6ee7b7':act==='review'?'#fbbf24':'#64748b';
-          return '<div class="row"><span>'+f.label+'</span><span style="color:'+c+';font-size:10px">'+(v?act==='auto_fill'?'🤖'+v.substring(0,15):'⏭️'):'')+'</span></div>';
+          const badge=act==='auto_fill'?'<span class="badge auto">自动</span>':
+                      act==='review'?'<span class="badge review">确认</span>':'<span class="badge skip">跳过</span>';
+          return '<div class="row"><span>'+f.label+'</span>'+badge+'</div>';
         }).join('');
-      document.getElementById('fill').style.display='block';
-      document.getElementById('fill').textContent='✨ 一键填充 ('+auto+'个)';
-    }).catch(e=>{btn.textContent='🔍 扫描';document.getElementById('result').innerHTML='<div class="info err">'+e.message+'</div>';});
+
+      $('#fill').classList.remove('hidden');
+      $('#fill').textContent='一键填充 ('+auto+'/'+fields.length+')';
+    }).catch(e=>{
+      btn.textContent='扫描页面';btn.disabled=false;
+      $('#result').innerHTML='<div class="row"><span style="color:var(--danger)">'+e.message+'</span></div>';
+    });
   });
 };
 
-// ========== 填充 ==========
-document.getElementById('fill').onclick=()=>{
-  document.getElementById('fill').textContent='⏳ 填充中...';
+// ===== Fill =====
+$('#fill').onclick=()=>{
+  const btn=$('#fill');btn.textContent='填充中...';btn.disabled=true;
   const data=fields.filter(f=>f.ai_value).map(f=>({id:f.id,value:f.ai_value,strategy:f.ai_strategy||'text',tag:f.tag,type:f.type,options:f.options||[]}));
   chrome.tabs.query({active:true,currentWindow:true},tabs=>{
     chrome.scripting.executeScript({target:{tabId:tabs[0].id},func:fillPage,args:[data]}).then(([r])=>{
-      document.getElementById('fill').textContent='✨ 一键填充';
+      btn.textContent='一键填充';btn.disabled=false;
       const ok=(r.result||[]).filter(x=>x.status==='success').length;
-      document.getElementById('result').innerHTML='<div class="info ok">✅ '+ok+'/'+(r.result||[]).length+' 成功</div>'+(r.result||[]).map(x=>'<div class="row"><span>'+x.label+'</span><span style="color:'+(x.status==='success'?'#6ee7b7':'#fca5a5')+'">'+(x.status==='success'?'✓ '+x.value:'✗')+'</span></div>').join('');
-    }).catch(e=>{document.getElementById('fill').textContent='✨ 一键填充';alert(e.message);});
+      const total=(r.result||[]).length;
+      $('#result').innerHTML='<div class="row" style="color:var(--success)">'+ok+'/'+total+' 填充成功</div>'+
+        (r.result||[]).map(x=>'<div class="row"><span>'+x.label+'</span><span style="color:'+(x.status==='success'?'var(--success)':'var(--danger)')+';font-size:10px">'+(x.status==='success'?x.value:'失败')+'</span></div>').join('');
+    }).catch(e=>{btn.textContent='一键填充';btn.disabled=false;});
   });
 };
 
-// ========== 本地快速匹配（毫秒级，使用ResumeSchema） ==========
-function matchFieldLocal(f, profile){
+// ===== Upload sidebar =====
+$('#upload').onclick=()=>{
+  chrome.windows.create({url:chrome.runtime.getURL('sidebar/sidebar.html'),type:'popup',width:440,height:640});
+  window.close();
+};
+
+// ===== Local matching =====
+function matchFieldLocal(f,profile){
   if(!profile)return null;
   const label=(f.label||'').replace(/[*：:\s（）()【】\[\]]/g,'').replace(/请输入|请选择|请填写|必填|选填|（必填）|（选填）/g,'');
   const edu=(profile.educations||[])[0]||{};
@@ -75,32 +100,29 @@ function matchFieldLocal(f, profile){
   const proj=(profile.experiences||[]).find(x=>x.type==='项目')||{};
   const opts=f.options||[];
 
-  // 使用ResumeSchema智能选项匹配
   function matchOpt(val){
     if(!val||!opts.length)return null;
     if(window.ResumeSchema&&window.ResumeSchema.matchSelectOption){
       return window.ResumeSchema.matchSelectOption(opts,val)||null;
     }
-    // fallback
     const found=opts.find(o=>o===val||o.includes(val)||val.includes(o));
     if(found)return found;
     const b=opts.reduce((b,o)=>{const s=[...val].filter(c=>o.includes(c)).length/val.length;return s>b.s?{o,s}:b;},{o:null,s:0});
     return b.s>=0.4?b.o:null;
   }
 
-  // 精确规则（120+ 条）
   const rules={
-    '姓名':profile.name,'名字':profile.name,'全名':profile.name,'中文名':profile.name,
+    '姓名':profile.name,'名字':profile.name,'中文名':profile.name,
     '性别':()=>matchOpt(profile.gender)||profile.gender,
     '手机':profile.phone,'电话':profile.phone,'手机号':profile.phone,'手机号码':profile.phone,'mobile':profile.phone,'tel':profile.phone,
     '邮箱':profile.email,'电子邮箱':profile.email,'email':profile.email,'mail':profile.email,
     '出生':()=>(profile.birthDate||'').replace(/-/g,''),'生日':()=>profile.birthDate||'','出生日期':()=>profile.birthDate||'','出生年月':()=>(profile.birthDate||'').replace(/-/g,''),
     '证件号':profile.idNumber||'','身份证':profile.idNumber||'','证件类型':()=>matchOpt('身份证')||'身份证',
     '民族':()=>matchOpt(profile.ethnicity||'汉族')||'汉族',
-    '政治面貌':()=>matchOpt(profile.politicalStatus||'共青团员')||'共青团员','政治身份':'共青团员',
+    '政治面貌':()=>matchOpt(profile.politicalStatus||'共青团员')||'共青团员',
     '籍贯':profile.nativePlace||'','户籍':profile.nativePlace||'','户口':profile.nativePlace||'',
     '现居':profile.currentCity||'','所在城市':profile.currentCity||'','居住地':profile.currentCity||'',
-    '微信':profile.wechat||'','微信号':profile.wechat||'','wechat':profile.wechat||'',
+    '微信':profile.wechat||'','微信号':profile.wechat||'',
     '毕业学校':edu.school||'','学校':edu.school||'','院校':edu.school||'','大学':edu.school||'','school':edu.school||'',
     '学院':edu.college||'','院系':edu.college||'',
     '专业':edu.major||'','所学专业':edu.major||'','毕业专业':edu.major||'','major':edu.major||'',
@@ -126,19 +148,16 @@ function matchFieldLocal(f, profile){
     '现居城市':profile.currentCity||'','家庭住址':profile.nativePlace||'',
   };
 
-  // 精确匹配
   for(const [kw,fn] of Object.entries(rules)){
     if(label===kw||(kw.length>=4&&label.startsWith(kw))||(kw.length>=4&&label.endsWith(kw))){
-      const v=typeof fn==='function'?fn():fn;if(v)return{value:v,action:'auto_fill',strategy:f.tag==='select'?'select':f.tag==='radio'?'radio_click':'text'};
+      const v=typeof fn==='function'?fn():fn;if(v)return{value:v,action:'auto_fill',strategy:f.tag==='select'?'select':'text'};
     }
   }
-  // 包含匹配
   for(const [kw,fn] of Object.entries(rules)){
     if(kw.length>=4&&label.includes(kw)){
-      const v=typeof fn==='function'?fn():fn;if(v)return{value:v,action:'auto_fill',strategy:f.tag==='select'?'select':f.tag==='radio'?'radio_click':'text'};
+      const v=typeof fn==='function'?fn():fn;if(v)return{value:v,action:'auto_fill',strategy:f.tag==='select'?'select':'text'};
     }
   }
-  // 模糊匹配（字符重叠率>70%）
   for(const [kw,fn] of Object.entries(rules)){
     if(kw.length<3)continue;const ol=[...kw].filter(c=>label.includes(c)).length/kw.length;
     if(ol>=0.7){const v=typeof fn==='function'?fn():fn;if(v)return{value:v,action:'review',strategy:'text'};}
@@ -146,20 +165,15 @@ function matchFieldLocal(f, profile){
   return null;
 }
 
-document.getElementById('upload').onclick=()=>{
-  chrome.windows.create({url:chrome.runtime.getURL('sidebar/sidebar.html'),type:'popup',width:420,height:620});
-  window.close();
-};
-
-// ==================== 页面注入函数 ====================
+// ===== Page functions =====
 function scanPage(){
   function clean(t){return(t||'').replace(/[*：:]/g,'').replace(/\s+/g,' ').replace(/请输入|请选择|请填写|必填|选填|（必填）|（选填）/g,'').trim();}
   function findLabel(el){
-    if(el.id){const lb=document.querySelector('label[for="'+CSS.escape(el.id)+'"]');if(lb?.textContent?.trim())return clean(lb.textContent);}
+    if(el.id){const lb=document.querySelector('label[for="'+CSS.escape(el.id)+'"]');if(lb&&lb.textContent&&lb.textContent.trim())return clean(lb.textContent);}
     for(const s of['.ant-form-item','.el-form-item','.form-item','.form-group','tr','td','[class*=item]']){
-      const c=el.closest(s);if(c){const lb=c.querySelector('.ant-form-item-label label,.el-form-item__label,label,.label,[class*="label"]');if(lb&&lb!==el&&lb.textContent?.trim()?.length<80)return clean(lb.textContent);}
+      const c=el.closest(s);if(c){const lb=c.querySelector('.ant-form-item-label label,.el-form-item__label,label,.label,[class*="label"]');if(lb&&lb!==el&&lb.textContent&&lb.textContent.trim()&&lb.textContent.trim().length<80)return clean(lb.textContent);}
     }
-    const pl=el.closest('label');if(pl?.textContent)return clean(pl.textContent.replace(el.value||'','').trim())||clean(pl.textContent);
+    const pl=el.closest('label');if(pl&&pl.textContent)return clean(pl.textContent.replace(el.value||'','').trim())||clean(pl.textContent);
     const ph=el.getAttribute('placeholder')||'';if(ph&&ph.length<40)return clean(ph);
     const aria=el.getAttribute('aria-label')||'';if(aria)return clean(aria);
     return(el.getAttribute('name')||'').replace(/[_-]/g,'')||'';
@@ -167,12 +181,11 @@ function scanPage(){
   function radioContainer(el){let p=el.parentElement;for(let i=0;i<6&&p;i++){if(p.querySelectorAll('input[type="radio"]').length>=2)return p;p=p.parentElement;}return el.parentElement;}
 
   const fields=[],seen=new Set();
-  // Radio 分组
   document.querySelectorAll('input[type="radio"]').forEach(el=>{
     if(seen.has(el))return;
     const c=radioContainer(el),g=c.querySelectorAll('input[type="radio"]');
     const opts=Array.from(g).map(r=>{
-      if(r.labels?.length)return r.labels[0].textContent.trim();
+      if(r.labels&&r.labels.length)return r.labels[0].textContent.trim();
       const pp=r.closest('label');if(pp)return clean(pp.textContent.replace(r.value,'',''))||r.value;
       return r.value;
     });
@@ -183,7 +196,6 @@ function scanPage(){
     g.forEach(r=>{r.setAttribute('data-rm-id',id);seen.add(r);});
     fields.push({id,label:label||'单选项',tag:'radio',type:'radio',options:opts,required:false});
   });
-  // 其余字段
   document.querySelectorAll('input:not([type="hidden"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]), select, textarea, [contenteditable="true"]').forEach((el,i)=>{
     if(seen.has(el))return;
     const s=getComputedStyle(el);if(s.display==='none'||s.visibility==='hidden')return;
@@ -210,20 +222,17 @@ function fillPage(data){
     const els=document.querySelectorAll('[data-rm-id="'+id+'"]');
     if(!els.length){R.push({label:id,status:'failed',error:'未找到'});return;}
     try{
-      // Radio
       if(tag==='radio'||type==='radio'||strategy==='radio_click'){
         let matched=false;
         for(const el of els){
-          const v=el.value||'';let lb='';if(el.labels?.length)lb=el.labels[0].textContent.trim();
+          const v=el.value||'';let lb='';if(el.labels&&el.labels.length)lb=el.labels[0].textContent.trim();
           if(!lb){const pp=el.closest('label');if(pp)lb=pp.textContent.replace(v,'').trim();}
           if(v===value||lb===value||lb.includes(value)||(value&&value.includes(lb))){el.click();el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));matched=true;break;}
         }
         if(!matched){for(const el of els){if(value[0]&&(el.value||'').includes(value[0])||value.includes(el.value||''[0])){el.click();el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));matched=true;break;}}}
         els[0].setAttribute('data-rm-status',matched?'success':'error');
-        R.push({label:els[0].getAttribute('data-rm-id'),status:matched?'success':'failed',value});
-        return;
+        R.push({label:els[0].getAttribute('data-rm-id'),status:matched?'success':'failed',value});return;
       }
-      // Select / Custom Select
       if(tag==='select'||strategy==='select'||strategy==='custom_select'){
         const el=els[0];
         if(el.tagName==='SELECT'){
@@ -232,27 +241,21 @@ function fillPage(data){
           if(!found)found=opts.find(o=>o.textContent.includes(value)||(value&&value.includes(o.textContent.trim())));
           if(!found&&value){let b=null,bs=0;opts.forEach(o=>{if(!o.value||o.value==='-1')return;const sc=[...value].filter(c=>o.textContent.includes(c)).length/value.length;if(sc>bs&&sc>=0.3){bs=sc;b=o;}});found=b;}
           if(found){el.value=found.value;el.dispatchEvent(new Event('change',{bubbles:true}));el.setAttribute('data-rm-status','success');R.push({label:id,status:'success',value:found.textContent.trim()});}
-          else{el.setAttribute('data-rm-status','error');R.push({label:id,status:'failed',value,error:'选项未匹配'});}
-        } else {
-          // Custom select (Ant Design等): click → type → Enter
+          else{el.setAttribute('data-rm-status','error');R.push({label:id,status:'failed',value,error:'无匹配'});}
+        }else{
           el.click();setTimeout(()=>{},200);
           if(isv)isv.call(el,value);else el.value=value;
-          el.dispatchEvent(new Event('input',{bubbles:true}));
-          el.dispatchEvent(new Event('change',{bubbles:true}));
-          el.setAttribute('data-rm-status','success');
-          R.push({label:id,status:'success',value});
+          el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));
+          el.setAttribute('data-rm-status','success');R.push({label:id,status:'success',value});
         }
         return;
       }
-      // Datepicker
       if(strategy==='datepicker'||type==='date'||type==='month'){
         const el=els[0];el.focus();
         if(isv)isv.call(el,value);else el.value=value;
         el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));
-        el.setAttribute('data-rm-status','success');
-        R.push({label:id,status:'success',value});return;
+        el.setAttribute('data-rm-status','success');R.push({label:id,status:'success',value});return;
       }
-      // Text/textarea（默认）
       const el=els[0];
       if(el.getAttribute('contenteditable')==='true'){el.innerHTML=value;el.dispatchEvent(new Event('input',{bubbles:true}));}
       else{
@@ -263,8 +266,7 @@ function fillPage(data){
         el.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText'}));
         el.dispatchEvent(new Event('blur',{bubbles:true}));
       }
-      el.setAttribute('data-rm-status','success');
-      R.push({label:id,status:'success',value});
+      el.setAttribute('data-rm-status','success');R.push({label:id,status:'success',value});
     }catch(e){R.push({label:id,status:'failed',error:e.message});}
   });
   return R;

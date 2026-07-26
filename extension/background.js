@@ -1,12 +1,62 @@
 // ResuMatch Background Service Worker
 console.log('[ResuMatch BG] Started');
 
+// ===== 简化本地匹配（service worker 中无 window/DOM）=====
+function simpleMatch(label, profile) {
+  if (!label || !profile) return '';
+  const clean = label.replace(/[*：:\s（）()【】\[\]]/g, '').replace(/请输入|请选择|请填写|必填|选填/g, '').toLowerCase();
+  if (!clean) return '';
+  const edu = (profile.educations || [])[0] || {};
+  const intern = (profile.experiences || []).find(e => e.type === '实习') || {};
+  const proj = (profile.experiences || []).find(e => e.type === '项目') || {};
+  const map = {
+    '姓名':profile.name,'名字':profile.name,'中文名':profile.name,
+    '性别':profile.gender,'手机':profile.phone,'电话':profile.phone,'手机号':profile.phone,
+    '邮箱':profile.email,'电子邮箱':profile.email,
+    '学校':edu.school,'院校':edu.school,'大学':edu.school,
+    '专业':edu.major,'学历':edu.type,'学位':edu.type,
+    '公司':intern.organization,'实习公司':intern.organization,
+    '岗位':intern.role,'职位':intern.role,
+    '项目名称':proj.organization,'项目名':proj.organization,
+  };
+  for (const [k, v] of Object.entries(map)) {
+    if (v && (clean.includes(k) || (k.length >= 4 && k.includes(clean)))) return v;
+  }
+  for (const [k, v] of Object.entries(map)) {
+    if (!v || k.length < 3) continue;
+    const overlap = [...k].filter(c => clean.includes(c)).length / k.length;
+    if (overlap >= 0.5) return v;
+  }
+  return '';
+}
+
+// ===== 右键菜单 =====
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({ id: 'rm-fill', title: '📋 ResuMatch — 一键填充整页', contexts: ['page'] });
+  chrome.contextMenus.create({ id: 'rm-fill', title: 'ResuMatch — 一键填充整页', contexts: ['page'] });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (tab?.id) scanAndFill(tab.id);
+  if (tab?.id && info.menuItemId === 'rm-fill') {
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: scanFieldsInPage,
+    }).then(async ([result]) => {
+      const fields = (result?.result?.fields) || [];
+      if (!fields.length) return;
+      const data = await chrome.storage.local.get(['profile']);
+      const profile = data.profile;
+      const fillData = fields.map(f => ({
+        id: f.id, value: simpleMatch(f.label, profile)
+      })).filter(f => f.value);
+      if (fillData.length > 0) {
+        chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: fillFieldsInPage,
+          args: [fillData],
+        });
+      }
+    }).catch(err => console.error('[ResuMatch BG] Context menu error:', err));
+  }
 });
 
 // ==================== 消息中枢 ====================

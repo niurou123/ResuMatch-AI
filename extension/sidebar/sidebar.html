@@ -1,69 +1,199 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResuMatch</title>
 <style>
+  :root {
+    --bg: #09090b; --surface: #18181b; --surface2: #27272a;
+    --border: #3f3f46; --border-light: #52525b;
+    --text: #fafafa; --text2: #a1a1aa; --text3: #71717a;
+    --primary: #6366f1; --primary-hover: #818cf8;
+    --success: #22c55e; --warn: #f59e0b; --danger: #ef4444;
+    --radius-sm: 6px; --radius: 8px; --radius-lg: 12px;
+  }
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:"Microsoft YaHei",sans-serif;font-size:13px;background:#0f172a;color:#e2e8f0;min-height:100vh}
-  .tabs{display:flex;border-bottom:1px solid #1e293b}
-  .tab{flex:1;padding:12px 8px;border:none;background:none;color:#94a3b8;font-size:13px;cursor:pointer;text-align:center}
-  .tab.active{color:#818cf8;border-bottom:2px solid #818cf8}
-  .panel{display:none;padding:16px}
-  .panel.active{display:block}
-  button{display:block;width:100%;padding:10px;margin:8px 0;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500}
-  .btn-primary{background:#6366f1;color:#fff}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","Microsoft YaHei",sans-serif;
+    font-size:13px;background:var(--bg);color:var(--text);min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Header */
+  .header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid var(--border);
+    background:rgba(9,9,11,0.85);backdrop-filter:blur(8px);
+    position:sticky;top:0;z-index:10;
+  }
+  .brand{display:flex;align-items:center;gap:8px}
+  .brand-icon{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+  .brand-name{font-weight:600;font-size:13px;letter-spacing:-0.01em}
+
+  /* Status badge */
+  .status-badge{
+    display:inline-flex;align-items:center;gap:6px;padding:3px 10px;
+    border-radius:100px;font-size:11px;font-weight:500;border:1px solid transparent;
+  }
+  .status-badge.on{background:rgba(34,197,94,0.08);color:#22c55e;border-color:rgba(34,197,94,0.2)}
+  .status-badge.off{background:rgba(239,68,68,0.08);color:#ef4444;border-color:rgba(239,68,68,0.2)}
+  .status-dot{width:5px;height:5px;border-radius:50%}
+  .status-badge.on .status-dot{background:var(--success);box-shadow:0 0 4px rgba(34,197,94,0.4)}
+  .status-badge.off .status-dot{background:var(--danger)}
+
+  /* Tabs */
+  .tabs{
+    display:flex;gap:4px;padding:3px;margin:12px 16px;
+    border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);
+  }
+  .tab{
+    flex:1;border:none;background:transparent;color:var(--text3);
+    font-size:12px;font-weight:500;padding:7px 10px;border-radius:var(--radius-sm);
+    cursor:pointer;transition:all .15s;font-family:inherit;
+  }
+  .tab:hover{color:var(--text2)}
+  .tab.active{background:var(--bg);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+
+  /* Panel */
+  .panel{display:none;padding:0 16px 16px;flex-direction:column;gap:14px}
+  .panel.active{display:flex}
+
+  /* Tip */
+  .tip{
+    padding:10px 12px;border:1px dashed var(--border);background:var(--surface);
+    border-radius:var(--radius);color:var(--text3);font-size:11px;line-height:1.6;
+  }
+
+  /* Buttons */
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    border:1px solid transparent;border-radius:var(--radius-sm);
+    font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;
+    font-family:inherit;padding:9px 14px;
+  }
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 3px rgba(99,102,241,.2)}
+  .btn-primary:hover:not(:disabled){background:var(--primary-hover);transform:translateY(-1px)}
   .btn-primary:disabled{opacity:.5;cursor:not-allowed}
-  .btn-secondary{background:#1e293b;color:#cbd5e1;border:1px solid #334155}
-  .btn-danger{background:#991b1b;color:#fca5a5}
-  input[type="file"]{margin-bottom:8px;color:#94a3b8;font-size:12px}
-  textarea,input[type="text"]{width:100%;padding:8px;border:1px solid #334155;border-radius:6px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:8px;resize:vertical;font-family:inherit}
-  textarea{min-height:80px}
-  .card{background:#1e293b;border-radius:8px;padding:12px;margin-bottom:8px}
-  .card h4{font-size:13px;color:#94a3b8;margin-bottom:6px}
-  .row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e293b;font-size:12px}
-  .row .label{color:#94a3b8;min-width:60px}
-  .row .value{color:#e2e8f0;text-align:right;word-break:break-all;flex:1;margin-left:8px}
-  .tag{display:inline-block;padding:2px 8px;margin:2px;border-radius:12px;font-size:11px}
-  .tag.green{background:#064e3b;color:#6ee7b7}
-  .tag.red{background:#7f1d1d;color:#fca5a5}
-  .tag.blue{background:#1e3a5f;color:#93c5fd}
-  .section{margin-bottom:12px}
-  .section-title{font-size:13px;color:#818cf8;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #1e293b}
-  .hidden{display:none}
-  .status-bar{padding:8px 16px;font-size:11px;text-align:center}
-  .status-bar.online{background:#064e3b;color:#6ee7b7}
-  .status-bar.offline{background:#7f1d1d;color:#fca5a5}
+  .btn-outline{background:transparent;color:var(--text);border-color:var(--border)}
+  .btn-outline:hover{background:var(--surface);border-color:var(--border-light)}
+  .btn-danger{background:rgba(239,68,68,.08);color:var(--danger);border-color:rgba(239,68,68,.15)}
+  .btn-danger:hover{background:rgba(239,68,68,.12)}
+  .btn-sm{padding:6px 10px;font-size:11px}
+  .btn-block{width:100%}
+
+  /* Stats */
+  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .stat-card{
+    padding:12px 8px;border-radius:var(--radius);border:1px solid var(--border);
+    text-align:center;transition:border-color .15s;
+  }
+  .stat-card:hover{border-color:var(--border-light)}
+  .stat-value{font-size:20px;font-weight:600;letter-spacing:-0.02em;line-height:1.2}
+  .stat-label{font-size:10px;color:var(--text3);margin-top:3px}
+
+  /* Section card */
+  .section-card{
+    border:1px solid var(--border);border-radius:var(--radius-lg);
+    background:var(--surface);overflow:hidden;
+  }
+  .section-head{
+    padding:12px 14px;border-bottom:1px solid var(--border);
+    background:var(--surface2);display:flex;align-items:center;justify-content:space-between;
+  }
+  .section-head .title{font-size:12px;font-weight:600;color:var(--text2)}
+  .section-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+
+  /* Resume nav */
+  .resume-nav{display:flex;flex-direction:column;gap:6px}
+  .nav-btn{
+    width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);
+    background:var(--surface);padding:9px 10px;text-align:left;cursor:pointer;
+    font:inherit;color:inherit;transition:all .15s;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .nav-btn:hover{border-color:var(--border-light);background:var(--surface2)}
+  .nav-btn.active{border-color:var(--primary);background:var(--surface2)}
+  .nav-label{font-size:11px;font-weight:500}
+  .nav-dot{width:6px;height:6px;border-radius:50%}
+  .nav-dot.filled{background:var(--success)}
+  .nav-dot.empty{background:var(--border)}
+
+  /* Forms */
+  .form-group{margin-bottom:6px}
+  .form-group label{display:block;font-size:11px;font-weight:500;color:var(--text3);margin-bottom:4px}
+  .input, .select, .textarea{
+    width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);
+    font-size:12px;color:var(--text);background:var(--bg);transition:all .15s;
+    font-family:inherit;
+  }
+  .textarea{min-height:64px;resize:vertical;line-height:1.6}
+  .input:focus, .select:focus, .textarea:focus{
+    outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(99,102,241,.15);
+  }
+
+  /* Tags */
+  .tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:500}
+  .tag.ok{background:rgba(34,197,94,.1);color:var(--success)}
+  .tag.err{background:rgba(239,68,68,.1);color:var(--danger)}
+  .tag.info{background:rgba(99,102,241,.1);color:var(--primary-hover)}
+
+  /* Row */
+  .row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px}
+  .row .label{color:var(--text3)}
+
+  .hidden{display:none!important}
+  .text-secondary{color:var(--text3);font-size:11px}
 </style>
 </head>
 <body>
-  <div id="statusBar" class="status-bar offline">后端未连接 — 请先启动后端</div>
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon"></div>
+      <span class="brand-name">ResuMatch</span>
+    </div>
+    <div id="statusBadge" class="status-badge off">
+      <span class="status-dot"></span>
+      <span>离线</span>
+    </div>
+  </header>
+
   <div class="tabs">
-    <button class="tab active" data-tab="resume">📄 简历</button>
-    <button class="tab" data-tab="template">📋 档案</button>
-    <button class="tab" data-tab="apply">✍️ 网申</button>
+    <button class="tab active" data-tab="resume">简历</button>
+    <button class="tab" data-tab="profile">档案</button>
+    <button class="tab" data-tab="apply">网申</button>
   </div>
 
+  <!-- 简历上传 -->
   <div id="panel-resume" class="panel active">
-    <p style="color:#94a3b8;margin-bottom:8px;font-size:12px">上传简历，AI自动提取信息到本地档案</p>
-    <input type="file" id="fileInput" accept=".docx,.pdf,.md,.txt">
-    <button class="btn-primary" id="btnUpload">📤 上传并解析</button>
+    <div class="tip">上传简历文件，AI 自动提取结构化数据到本地档案。支持 PDF、DOCX、MD、TXT。</div>
+    <input type="file" id="fileInput" accept=".docx,.pdf,.md,.txt" style="color:var(--text2);font-size:11px">
+    <button class="btn btn-primary btn-block" id="btnUpload">上传并解析</button>
     <div id="parseStatus" class="hidden"></div>
   </div>
 
-  <div id="panel-template" class="panel">
-    <p style="color:#94a3b8;margin-bottom:8px;font-size:12px">AI提取的网申档案，可直接编辑后保存</p>
-    <div id="templateView"></div>
-    <button class="btn-primary hidden" id="btnSaveTemplate">💾 保存修改</button>
+  <!-- 档案编辑 -->
+  <div id="panel-profile" class="panel">
+    <div class="tip">已提取的档案数据，可编辑后保存到本地。完整编辑请打开独立编辑器。</div>
+    <div class="stats-grid" id="profileStats"></div>
+    <button class="btn btn-outline btn-block btn-sm" id="btnOpenEditor">在独立页面中编辑完整档案</button>
+    <div id="profileNav" class="resume-nav"></div>
+    <div id="profileForm"></div>
+    <button class="btn btn-primary btn-block hidden" id="btnSaveProfile">保存修改</button>
   </div>
 
+  <!-- 网申填充 -->
   <div id="panel-apply" class="panel">
-    <button class="btn-primary" id="btnScan">🔍 扫描当前页面表单</button>
+    <button class="btn btn-primary btn-block" id="btnScan">扫描当前页面表单</button>
     <div id="scanPreview"></div>
-    <button class="btn-primary hidden" id="btnFill">✨ 一键智能填充</button>
-    <button class="btn-danger hidden" id="btnClear">🗑️ 清空填充</button>
+    <button class="btn btn-primary btn-block hidden" id="btnFill">一键智能填充</button>
+    <button class="btn btn-danger btn-block hidden" id="btnClear">清空填充</button>
     <div id="fillResult"></div>
   </div>
 
+  <script src="../lib/resume-schema.js"></script>
+  <script src="../lib/template.js"></script>
+  <script src="../lib/api.js"></script>
   <script src="sidebar.js"></script>
 </body>
 </html>

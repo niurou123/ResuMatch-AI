@@ -1,4 +1,4 @@
-"""FastAPI 路由定义"""
+"""FastAPI 路由定义 - 多Agent架构 v3.0"""
 import os
 import uuid
 import shutil
@@ -22,23 +22,15 @@ from src.config import settings
 from src.core.memory import SessionMemory
 
 # 延迟导入（部分模块依赖 chromadb，可能未安装）
-def __get_vector_store():
+def _get_vector_store():
     from src.rag.vector_store import get_vector_store
-    return _get_vector_store()
-
-def _get_parser():
-    from src.rag.parser import ResumeParser
-    return _get_parser()
-
-def _get_chunker():
-    from src.rag.chunker import ParentChildChunker
-    return _get_chunker()
+    return get_vector_store()
 
 def _run_interview_workflow(*args, **kwargs):
     from src.agents.graph import run_interview_workflow as f
     return f(*args, **kwargs)
 
-def __run_interview_stream(*args, **kwargs):
+def _run_interview_stream(*args, **kwargs):
     from src.agents.graph import run_interview_stream as f
     return f(*args, **kwargs)
 
@@ -62,7 +54,7 @@ async def health_check():
 # ===== 简历上传 =====
 @router.post("/resume/upload", response_model=ResumeUploadResponse)
 async def upload_resume(file: UploadFile = File(...)):
-    """上传并解析简历文件"""
+    """上传并解析简历文件 — v2.0 带来源追踪和验证报告"""
     ext = file.filename.split(".")[-1].lower() if "." in file.filename else ""
     if ext not in settings.get_supported_formats():
         raise HTTPException(400, f"不支持的格式: .{ext}")
@@ -77,7 +69,6 @@ async def upload_resume(file: UploadFile = File(...)):
         f.write(content)
 
     try:
-        # 用 run_in_executor 在独立线程中执行，避免 asyncio 递归问题
         import concurrent.futures
         import asyncio
         loop = asyncio.get_event_loop()
@@ -102,17 +93,78 @@ async def upload_resume(file: UploadFile = File(...)):
             None, do_parse, str(file_path)
         )
 
+        # 构建带来源追踪的 profile
         profile = {
-            "name": parsed.name, "email": parsed.email, "phone": parsed.phone,
-            "skills": [{"name": s["name"], "category": s["category"]} for s in parsed.skills],
-            "projects": [{"name": p["name"], "tech_stack": p.get("tech_stack", []), "key_result": p.get("key_result", "")} for p in parsed.projects],
-            "achievements": [{"description": a.get("description", "")} for a in parsed.achievements],
-            "education": parsed.education,
+            "name": parsed.name,
+            "email": parsed.email,
+            "phone": parsed.phone,
+            "skills": [
+                {
+                    "name": s["name"],
+                    "category": s.get("category", "other"),
+                    "confidence": s["_source"].confidence if s.get("_source") else 0,
+                    "source_line": s["_source"].source_line_start if s.get("_source") else 0,
+                }
+                for s in parsed.skills
+            ],
+            "projects": [
+                {
+                    "name": p["name"],
+                    "role": p.get("role", ""),
+                    "tech_stack": p.get("tech_stack", []),
+                    "time_period": p.get("time_period", ""),
+                    "key_result": p.get("key_result", ""),
+                    "confidence": p["_source"].confidence if p.get("_source") else 0,
+                }
+                for p in parsed.projects
+            ],
+            "achievements": [
+                {
+                    "description": a.get("description", ""),
+                    "confidence": a["_source"].confidence if a.get("_source") else 0,
+                }
+                for a in parsed.achievements
+            ],
+            "education": [
+                {
+                    "school": e.get("school", ""),
+                    "degree": e.get("degree", ""),
+                    "major": e.get("major", ""),
+                    "time": e.get("time", ""),
+                    "confidence": e["_source"].confidence if e.get("_source") else 0,
+                }
+                for e in parsed.education
+            ],
         }
 
+        # 提取统计（用于用户验证）
+        stats = parsed.extraction_stats
+        verification = {
+            "raw_text_hash": parsed.raw_text_hash,
+            "raw_text_length": stats.raw_text_length if stats else 0,
+            "total_extracted": (
+                (stats.total_skills_found if stats else 0) +
+                (stats.total_projects_found if stats else 0) +
+                (stats.total_achievements_found if stats else 0)
+            ),
+            "high_confidence": stats.high_confidence_count if stats else 0,
+            "medium_confidence": stats.medium_confidence_count if stats else 0,
+            "low_confidence": stats.low_confidence_count if stats else 0,
+            "sections_found": stats.sections_identified if stats else [],
+            "verification_report": parsed.get_verification_summary(),
+        }
+
+        # 字段来源追踪（供前端逐项对比）
+        field_sources = parsed.get_field_sources()[:20]
+
         return ResumeUploadResponse(
-            success=True, filename=file.filename, profile=profile,
-            collections=collections, message=f"简历解析成功，共索引 {total} 条信息",
+            success=True,
+            filename=file.filename,
+            profile=profile,
+            collections=collections,
+            message=f"简历解析成功，共提取 {verification['total_extracted']} 条信息（高置信度: {verification['high_confidence']}, 中: {verification['medium_confidence']}, 低: {verification['low_confidence']}）",
+            verification=verification,
+            field_sources=field_sources,
         )
 
     except Exception as e:

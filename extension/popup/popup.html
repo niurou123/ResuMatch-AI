@@ -1,26 +1,114 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8">
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResuMatch</title>
 <style>
+  :root {
+    --bg: #09090b; --surface: #18181b; --surface2: #27272a;
+    --border: #3f3f46; --border-light: #52525b;
+    --text: #fafafa; --text2: #a1a1aa; --text3: #71717a;
+    --primary: #6366f1; --primary-hover: #818cf8;
+    --success: #22c55e; --warn: #f59e0b; --danger: #ef4444;
+    --radius-sm: 6px; --radius: 8px;
+  }
   *{margin:0;padding:0;box-sizing:border-box}
-  body{width:280px;font-family:"Microsoft YaHei",sans-serif;font-size:13px;background:#0f172a;color:#e2e8f0;padding:14px}
-  h2{font-size:14px;text-align:center;margin-bottom:10px}
-  button{display:block;width:100%;padding:10px;margin:5px 0;border:none;border-radius:8px;font-size:13px;cursor:pointer}
-  .btn1{background:#6366f1;color:#fff}
-  .btn2{background:#1e293b;color:#cbd5e1;border:1px solid #334155}
-  .info{padding:6px;border-radius:4px;margin:6px 0;font-size:11px;text-align:center}
-  .info.ok{background:#064e3b;color:#6ee7b7}
-  .info.err{background:#7f1d1d;color:#fca5a5}
-  .result{max-height:200px;overflow-y:auto;font-size:11px;margin-top:6px}
-  .result .row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #1e293b}
-</style></head>
+  body{
+    width:320px;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","Microsoft YaHei",sans-serif;
+    font-size:13px;background:var(--bg);color:var(--text);padding:14px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Header */
+  .header{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+  }
+  .brand{display:flex;align-items:center;gap:7px}
+  .brand-icon{width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+  .brand-name{font-weight:600;font-size:13px;letter-spacing:-0.01em}
+
+  /* Status badge */
+  .status-badge{
+    display:inline-flex;align-items:center;gap:5px;padding:2px 8px;
+    border-radius:100px;font-size:10px;font-weight:500;
+  }
+  .status-badge.on{background:rgba(34,197,94,.08);color:var(--success);border:1px solid rgba(34,197,94,.2)}
+  .status-badge.off{background:rgba(239,68,68,.08);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
+  .status-dot{width:5px;height:5px;border-radius:50%}
+  .status-badge.on .status-dot{background:var(--success);box-shadow:0 0 4px rgba(34,197,94,.4)}
+  .status-badge.off .status-dot{background:var(--danger)}
+
+  /* Buttons */
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;padding:10px;margin:5px 0;border:1px solid transparent;
+    border-radius:var(--radius-sm);font-size:12px;font-weight:500;
+    cursor:pointer;transition:all .15s;font-family:inherit;
+  }
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 3px rgba(99,102,241,.2)}
+  .btn-primary:hover:not(:disabled){background:var(--primary-hover);transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn-outline{background:transparent;color:var(--text2);border-color:var(--border)}
+  .btn-outline:hover{background:var(--surface);color:var(--text)}
+
+  /* Stats */
+  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+  .stat-card{
+    padding:10px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);
+    text-align:center;
+  }
+  .stat-value{font-size:18px;font-weight:600;letter-spacing:-0.02em}
+  .stat-label{font-size:9px;color:var(--text3);margin-top:2px}
+
+  /* Result */
+  .result{max-height:180px;overflow-y:auto;font-size:11px;margin-top:6px}
+  .result .row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:4px 6px;border-bottom:1px solid var(--surface);
+  }
+  .badge{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:500}
+  .badge.auto{background:rgba(34,197,94,.1);color:var(--success)}
+  .badge.review{background:rgba(245,158,11,.1);color:var(--warn)}
+  .badge.skip{background:rgba(113,113,122,.1);color:var(--text3)}
+</style>
+</head>
 <body>
-  <h2>🤖 ResuMatch AI</h2>
-  <div id="status" class="info err">后端检测中...</div>
-  <button class="btn1" id="scan">🔍 扫描当前页面</button>
-  <button class="btn1" id="fill" style="display:none">✨ 一键填充</button>
-  <button class="btn2" id="upload">📤 上传简历（侧边栏）</button>
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon"></div>
+      <span class="brand-name">ResuMatch</span>
+    </div>
+    <div id="statusBadge" class="status-badge off">
+      <span class="status-dot"></span>
+      <span>检测中</span>
+    </div>
+  </div>
+
+  <div class="stats-grid hidden" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-value" id="statFields">0</div>
+      <div class="stat-label">识别字段</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statAuto">0</div>
+      <div class="stat-label">自动填充</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statManual">0</div>
+      <div class="stat-label">需确认</div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="scan">扫描当前页面</button>
+  <button class="btn btn-primary hidden" id="fill">一键填充</button>
+  <button class="btn btn-outline" id="upload">打开简历档案</button>
+
   <div id="result" class="result"></div>
+
+  <script src="../lib/resume-schema.js"></script>
+  <script src="../lib/template.js"></script>
+  <script src="../lib/api.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

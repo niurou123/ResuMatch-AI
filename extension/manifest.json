@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ResuMatch - 网申面试助手",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "AI驱动的网申自动填充和面试准备助手。上传简历，一键填表，智能问答。",
   "icons": {
     "16": "icons/icon16.png",
@@ -16,8 +16,7 @@
     "default_path": "sidebar/sidebar.html"
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
@@ -36,5 +35,11 @@
   "host_permissions": [
     "<all_urls>",
     "http://localhost:8000/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["sidebar/sidebar.html", "resume-editor.html", "lib/*"],
+      "matches": ["<all_urls>"]
+    }
   ]
 }
