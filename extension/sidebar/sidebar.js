@@ -39,25 +39,80 @@ $('#btnUpload').onclick=async()=>{
     const d=await r.json();
     if(d.success){
       const pp=d.profile||{};
-      // Build profile object
+      const verification=d.verification||{};
+
+      // Build profile — old flat format (compatible with popup matching + resume-editor migration)
       const profile={
         name:pp.name||'',email:pp.email||'',phone:pp.phone||'',
-        gender:'',birthDate:'',idNumber:'',ethnicity:'',politicalStatus:'',nativePlace:'',currentCity:'',
-        educations:[],experiences:[],skills:[],targetCities:[],targetPositions:[],selfEvaluation:'',awards:'',
+        gender:'',birthDate:'',idNumber:'',ethnicity:'',politicalStatus:'',
+        nativePlace:'',currentCity:'',wechat:'',
+        educations:[],experiences:[],skills:[],
+        targetCities:[],targetPositions:[],expectedSalary:'',
+        selfEvaluation:'',awards:'',publications:'',competitions:'',
       };
+
+      // Education
       if(pp.education&&pp.education.length>0){
-        profile.educations=[{type:(pp.education[0].degree||'').includes('硕士')?'硕士':'本科',school:pp.education[0].school||'',major:pp.education[0].major||'',startDate:'',endDate:'',college:'',gpa:'',ranking:'',cet4:'',cet6:''}];
+        const e=pp.education[0];
+        profile.educations=[{
+          type:(e.degree||'').includes('硕士')?'硕士':(e.degree||'').includes('博士')?'博士':'本科',
+          school:e.school||'',major:e.major||'',degree:e.degree||'',
+          startDate:'',endDate:'',college:'',gpa:'',ranking:'',cet4:'',cet6:'',
+        }];
       }
+
+      // Projects → experiences
       if(pp.projects)pp.projects.forEach(p=>{
-        profile.experiences.push({type:'项目',organization:p.name||'',role:p.role||'',description:p.description||'',techStack:p.tech_stack||[],achievements:p.key_result?[p.key_result]:[],startDate:'',endDate:'',bullets:[]});
+        profile.experiences.push({
+          type:'项目',organization:p.name||'',role:p.role||'',
+          startDate:'',endDate:'',
+          description:p.description||'',
+          techStack:p.tech_stack||[],
+          achievements:p.key_result?[p.key_result]:[],
+          bullets:[],
+        });
       });
+
+      // Skills → grouped by category
       if(pp.skills){
-        const by={};pp.skills.forEach(s=>{const c=s.category||'other';if(!by[c])by[c]=[];by[c].push(s.name);});
+        const by={};
+        pp.skills.forEach(s=>{
+          const c=s.category||'other';
+          if(!by[c])by[c]=[];
+          if(!by[c].includes(s.name))by[c].push(s.name);
+        });
         profile.skills=Object.entries(by).map(([c,items])=>({category:c,items}));
       }
+
+      // Achievements → awards + competitions
+      if(pp.achievements&&pp.achievements.length>0){
+        profile.awards=pp.achievements.map(a=>a.description||'').filter(Boolean).join('；');
+      }
+
       await chrome.storage.local.set({profile});
+
+      // Count meaningful fields
+      const fieldCount=[
+        profile.name,profile.email,profile.phone,
+        ...(profile.educations[0]?[profile.educations[0].school]:[]),
+        ...profile.experiences,
+        ...profile.skills,
+        profile.awards,
+      ].filter(v=>{
+        if(!v)return false;
+        if(Array.isArray(v))return v.length>0;
+        if(typeof v==='object')return Object.values(v).some(x=>x);
+        return true;
+      }).length;
+
       $('#parseStatus').classList.remove('hidden');
-      $('#parseStatus').innerHTML='<div class="tip" style="border-color:rgba(34,197,94,.3);color:var(--success)">解析成功，'+Object.values(profile).filter(v=>Array.isArray(v)?v.length>0:v).length+' 个字段已提取。切换到"档案"查看。</div>';
+      const hi=verification.high_confidence||0;
+      const lo=verification.low_confidence||0;
+      $('#parseStatus').innerHTML='<div class="tip" style="border-color:rgba(34,197,94,.3);color:var(--success)">'+
+        '解析成功，'+fieldCount+' 个字段已提取。'+
+        (hi>0?'高置信度 '+hi+' 项，':'')+
+        (lo>0?'低置信度 '+lo+' 项（建议复核）。':'')+
+        '切换到"档案"查看或编辑。</div>';
     }else{
       $('#parseStatus').classList.remove('hidden');
       $('#parseStatus').innerHTML='<div class="tip" style="border-color:rgba(239,68,68,.3);color:var(--danger)">失败: '+(d.message||'未知错误')+'</div>';
@@ -134,7 +189,11 @@ function renderProfileSection(key,profile){
       input('姓名',profile.name,'name')+input('性别',profile.gender,'gender')+
       input('手机',profile.phone,'phone')+input('邮箱',profile.email,'email')+
       input('出生日期',profile.birthDate,'birthDate')+
+      input('微信号',profile.wechat,'wechat')+
       input('现居城市',profile.currentCity,'currentCity')+
+      input('籍贯',profile.nativePlace,'nativePlace')+
+      input('政治面貌',profile.politicalStatus,'politicalStatus')+
+      input('民族',profile.ethnicity,'ethnicity')+
       '</div></div>';
   }else if(key==='edu'){
     html='<div class="section-card"><div class="section-head"><span class="title">教育经历</span></div><div class="section-body">'+
@@ -180,6 +239,8 @@ $('#btnSaveProfile').onclick=async()=>{
 
   profile.name=g('name');profile.gender=g('gender');profile.phone=g('phone');profile.email=g('email');
   profile.birthDate=g('birthDate');profile.currentCity=g('currentCity');
+  profile.wechat=g('wechat');profile.nativePlace=g('nativePlace');
+  profile.politicalStatus=g('politicalStatus');profile.ethnicity=g('ethnicity');
   profile.selfEvaluation=g('self_eval');profile.awards=g('awards');
   profile.targetCities=g('target_cities').split(/[,，、]/).map(s=>s.trim()).filter(Boolean);
   profile.targetPositions=g('target_positions').split(/[,，、]/).map(s=>s.trim()).filter(Boolean);

@@ -5,14 +5,101 @@ const S=window.ResumeSchema;
 const $=s=>document.querySelector(s);
 let profile=null;
 
+// Migrate old flat format → new 14-section format
+function migrateOldProfile(old){
+  if(!old||!S)return S.createEmptyProfile();
+  // Already new format
+  if(old.personal)return old;
+
+  const p=S.createEmptyProfile();
+  const edu=old.educations?.[0]||{};
+  const exps=old.experiences||[];
+
+  // Basic info → personal
+  p.personal.fullName=old.name||'';
+  p.personal.email=old.email||'';
+  p.personal.phone=old.phone||'';
+  p.personal.gender=old.gender||'';
+  p.personal.birthDate=old.birthDate||'';
+  p.personal.idNumber=old.idNumber||'';
+  p.personal.nationality=old.ethnicity||'';
+  p.personal.politicalStatus=old.politicalStatus||'';
+  p.personal.currentCity=old.currentCity||'';
+  p.personal.hometownCity=old.nativePlace||'';
+  p.personal.wechat=old.wechat||'';
+  p.personal.summary=old.selfEvaluation||'';
+  p.personal.highestEducationLevel=edu.type||'';
+  p.additional.awards=old.awards||'';
+  p.additional.publications=old.publications||'';
+  p.additional.competitions=old.competitions||'';
+
+  // Education
+  if(edu.school||edu.major){
+    p.educations[0]={school:'',degree:'',major:'',startDate:'',endDate:'',college:'',gpa:'',ranking:'',cet4:'',cet6:''};
+    p.educations[0].school=edu.school||'';
+    p.educations[0].degree=edu.type||'';
+    p.educations[0].major=edu.major||'';
+    p.educations[0].startDate=edu.startDate||'';
+    p.educations[0].endDate=edu.endDate||'';
+    p.educations[0].college=edu.college||'';
+    p.educations[0].gpa=edu.gpa||'';
+    p.educations[0].ranking=edu.ranking||'';
+    p.educations[0].cet4=edu.cet4||'';
+    p.educations[0].cet6=edu.cet6||'';
+  }
+
+  // Experiences → internships, workExperiences, projects
+  let internIdx=0, workIdx=0, projIdx=0;
+  exps.forEach(e=>{
+    if(e.type==='实习'&&internIdx<(S.getSectionDefinition('internships')?.slots||3)){
+      const t=p.internships[internIdx];
+      t.company=e.organization||'';t.title=e.role||'';
+      t.startDate=e.startDate||'';t.endDate=e.endDate||'';
+      t.description=e.description||'';
+      t.technologies=(e.techStack||[]).join('、');
+      if(e.achievements?.length)t.achievements=e.achievements[0];
+      internIdx++;
+    }else if(e.type==='工作'&&workIdx<(S.getSectionDefinition('workExperiences')?.slots||3)){
+      const t=p.workExperiences[workIdx];
+      t.company=e.organization||'';t.title=e.role||'';
+      t.startDate=e.startDate||'';t.endDate=e.endDate||'';
+      t.description=e.description||'';
+      t.technologies=(e.techStack||[]).join('、');
+      if(e.achievements?.length)t.achievements=e.achievements[0];
+      workIdx++;
+    }else if(e.type==='项目'&&projIdx<(S.getSectionDefinition('projects')?.slots||4)){
+      const t=p.projects[projIdx];
+      t.name=e.organization||'';t.role=e.role||'';
+      t.startDate=e.startDate||'';t.endDate=e.endDate||'';
+      t.description=e.description||'';
+      t.technologies=(e.techStack||[]).join('、');
+      if(e.achievements?.length)t.highlights=e.achievements[0];
+      projIdx++;
+    }
+  });
+
+  // Skills
+  const skillLines=[];
+  (old.skills||[]).forEach(s=>{
+    skillLines.push((s.category||'other')+': '+(s.items||[]).join('、'));
+  });
+  p.skills.primarySkills=skillLines.join('\n');
+
+  // Job preferences
+  p.jobPreferences.targetRole=(old.targetPositions||[]).join('、');
+  p.jobPreferences.expectedCity=(old.targetCities||[]).join('、');
+  p.jobPreferences.expectedSalary=old.expectedSalary||'';
+
+  return p;
+}
+
 // Load profile
 async function loadProfile(){
-  const {profile:p}=await chrome.storage.local.get(['profile']);
-  profile=p||{};
+  const {profile:old}=await chrome.storage.local.get(['profile']);
   if(S&&S.createEmptyProfile){
-    // Migrate old format
-    const empty=S.createEmptyProfile();
-    if(!profile.personal)profile=empty;
+    profile=migrateOldProfile(old);
+  }else{
+    profile=old||{};
   }
   render();
 }
