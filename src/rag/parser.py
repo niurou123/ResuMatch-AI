@@ -298,7 +298,7 @@ class ResumeParser:
             if skill.get('category'):
                 content += f" (类别: {skill['category']})"
             meta = {
-                "type": "skill", "index": i,
+                "type": "skills", "index": i,
                 "name": skill.get("name", ""),
                 "category": skill.get("category", ""),
             }
@@ -318,7 +318,7 @@ class ResumeParser:
             if proj.get('key_result'):
                 parts.append(f"关键成果: {proj['key_result']}")
             meta = {
-                "type": "project", "index": i,
+                "type": "projects", "index": i,
                 "name": proj.get("name", ""),
                 "role": proj.get("role", ""),
             }
@@ -332,14 +332,14 @@ class ResumeParser:
             parts = [f"工作经历: {work.get('company', '')} - {work.get('position', '')}"]
             if work.get('duration'):
                 parts.append(f"时间: {work['duration']}")
-            meta = {"type": "work", "index": i, "company": work.get("company", "")}
+            meta = {"type": "projects", "index": i, "company": work.get("company", "")}
             src = work.get("_source")
             if src:
                 meta["confidence"] = src.confidence if hasattr(src, 'confidence') else 0
             documents.append(Document(content="\n".join(parts), metadata=meta, chunk_id=f"work_{i}"))
 
         for i, ach in enumerate(parsed.achievements):
-            meta = {"type": "achievement", "index": i}
+            meta = {"type": "achievements", "index": i}
             src = ach.get("_source")
             if src:
                 meta["source_text"] = src.source_text[:200] if hasattr(src, 'source_text') else ""
@@ -438,35 +438,53 @@ class ResumeParser:
         return [p.strip() for p in paras if p.strip()]
 
     def _identify_sections(self, paragraphs: List[str]) -> Dict[str, str]:
-        """识别简历分区"""
+        """识别简历分区（严格版 - 精确匹配分区标题行）"""
         sections = {}
         current_section = "header"
         current_content: List[str] = []
 
-        section_keywords = {
-            "skills": ["技能", "技术栈", "专业技能", "技术能力", "skills", "technologies"],
-            "projects": ["项目经验", "项目经历", "项目", "projects", "project experience"],
-            "work": ["工作经历", "工作经验", "实习经历", "work experience", "experience", "employment"],
-            "education": ["教育背景", "教育经历", "学历", "education", "academic"],
-            "achievements": ["获奖", "荣誉", "证书", "achievements", "awards", "honors"],
-        }
+        # 严格分区标题: 只匹配作为单独一行的标题
+        # 格式: "XX经历"、"XX背景"、"XX技能"、"XX项目" 等
+        section_patterns = [
+            ("education", re.compile(
+                r'^(?:教育背景|教育经历|学历|education|academic|主修课程)'
+                r'(?:[：:].*)?\s*$', re.IGNORECASE)),
+            ("skills", re.compile(
+                r'^(?:专业技能|技能|技术栈|技术能力|skills|technologies)'
+                r'(?:[：:].*)?\s*$', re.IGNORECASE)),
+            ("work", re.compile(
+                r'^(?:工作经历|工作经验|实习经历|科研经历|科研项目|'
+                r'work experience|experience|employment)'
+                r'(?:[：:].*)?\s*$', re.IGNORECASE)),
+            ("projects", re.compile(
+                r'^(?:项目经历|项目经验|实习项目|项目|projects|project experience)'
+                r'(?:[：:].*)?\s*$', re.IGNORECASE)),
+            ("achievements", re.compile(
+                r'^(?:获奖|荣誉证书|证书|achievements|awards|honors|'
+                r'论文发表|论文|发表)'
+                r'(?:[：:].*)?\s*$', re.IGNORECASE)),
+        ]
 
         for para in paragraphs:
             first_line = para.strip().split("\n")[0].strip()
-            first_line_clean = re.sub(r'^#+\s*', '', first_line).lower()
+            first_line_clean = re.sub(r'^#+\s*', '', first_line)
+
             matched = False
-            for section_name, keywords in section_keywords.items():
-                if any(kw in first_line_clean for kw in keywords) and len(first_line) < 50:
-                    if current_content:
-                        sections[current_section] = "\n".join(current_content)
-                    current_section = section_name
-                    current_content = []
-                    lines = para.strip().split("\n")
-                    remaining = [l.strip() for l in lines[1:] if l.strip() and not l.strip().startswith("#")]
-                    if remaining:
-                        current_content.extend(remaining)
-                    matched = True
-                    break
+            # 只匹配短行（分区标题通常 < 30 字符）
+            if len(first_line_clean) <= 30:
+                for section_name, pattern in section_patterns:
+                    if pattern.match(first_line_clean):
+                        if current_content:
+                            sections[current_section] = "\n".join(current_content)
+                        current_section = section_name
+                        current_content = []
+                        lines = para.strip().split("\n")
+                        remaining = [l.strip() for l in lines[1:] if l.strip() and not l.strip().startswith("#")]
+                        if remaining:
+                            current_content.extend(remaining)
+                        matched = True
+                        break
+
             if not matched:
                 current_content.append(para)
 
@@ -642,34 +660,57 @@ class ResumeParser:
         return skills
 
     def _extract_projects_v2(self, sections: Dict[str, str], raw_lines: List[str]) -> List[Dict[str, Any]]:
-        """
-        增强版项目提取：
-        - 更好的项目边界检测
-        - 提取时间段
-        - 提取量化成果
-        - 来源追踪
-        """
+        """增强版项目提取：多策略分割，适配多种简历格式"""
         projects = []
         project_text = sections.get("projects", "")
         if not project_text:
             return projects
 
-        # 按项目标题分割
-        # 匹配模式：项目名（可能含中英文、数字、特殊字符）后面跟分隔符
+        # 项目分割：合并两种边界格式，一次识别所有项目，避免顺序互斥导致漏分
+        #   边界A: "项目名 + 4+空白 + 日期"（如 "ResuMatch AI ... 2026.05 - 至今"）
+        #   边界B: "项目名 | 角色 [公司]"（如 "视觉康复随访管理系统 | 全栈开发工程师  XX科技"）
+        # 用 | 交替合成为单一正则，任意匹配即切分，保证两种格式的项目都能被识别
         project_blocks = re.split(
-            r'\n(?=[A-Za-z一-鿿][^\n]{0,80}(?:项目|系统|平台|助手|工具|引擎|服务|应用|网站|App|APP))',
+            r'\n(?=[A-Za-z一-鿿（(](?:[^\n]{3,120}\s{4,}\d{4}[.\-]'
+            r'|[^\n]{5,100}\s*\|\s*[^\n]{1,30}))',
             project_text
         )
 
         for block in project_blocks:
             block = block.strip()
-            if not block or len(block) < 10:
+            if not block or len(block) < 15:
                 continue
 
             lines = block.split("\n")
-            name = lines[0].strip() if lines else "未知项目"
+            first_line = lines[0].strip() if lines else "未知项目"
             # 清理项目名中的编号前缀
-            name = re.sub(r'^[\d]+[\.\)、]\s*', '', name)
+            name = re.sub(r'^[\d]+[\.\)、]\s*', '', first_line)
+            # 清理尾部长空白及日期
+            name = re.sub(r'\s{4,}.*$', '', name)
+            name = name.strip()
+            # 从 "项目名 | 角色   公司" 首行中拆分出角色（| 分隔）
+            role = ""
+            if "|" in name:
+                parts = name.split("|", 1)
+                name = parts[0].strip()
+                role_raw = parts[1].strip()
+                # 角色通常为 2-8 字，截取 "|" 后的第一个角色段（排除尾随的公司名）
+                role_match = re.match(r'^([^\s]{2,12}?)(?:\s{2,}.*)?$', role_raw)
+                if role_match:
+                    role = role_match.group(1).strip()
+            if len(name) > 120:
+                name = name[:120]
+            # 跳过明显不是项目名的块
+            if re.match(r'^(?:项目简介|设计|主要工作|简历|技能|工具|语言|基于前后|负责|封装|搭建|引入|实现)', name):
+                continue
+            if len(name) < 5:
+                continue
+
+            # 提取角色（若首行未含 |，则从 "角色/岗位/职位: xxx" 提取）
+            if not role:
+                role_match = re.search(r'(?:角色|岗位|职位|role)[：:]\s*([^\n]{2,15})', block, re.IGNORECASE)
+                if role_match:
+                    role = role_match.group(1).strip()
 
             # 提取时间段
             time_period = ""
@@ -680,39 +721,57 @@ class ResumeParser:
             if time_match:
                 time_period = time_match.group(1).strip()
             else:
-                # 尝试匹配 "2023.06 - 2024.12" 这样的日期格式
+                # 兼容 "2026.05 – 至今" / "2026.05 - 2026.09" / "2024.03-2024.09" 等格式
                 date_match = re.search(
-                    r'(\d{4}[./年]\d{1,2}[月]?\s*[-–—至到]\s*\d{4}[./年]\d{1,2}[月]?(?:\s*至今|现在|present)?)',
-                    block
+                    r'(\d{4}[./年]\d{1,2}[月]?\s*[-–—至到]\s*'
+                    r'(?:\d{4}[./年]\d{1,2}[月]?|\d{4}|\s*至今|现在|present))',
+                    block, re.IGNORECASE
                 )
                 if date_match:
                     time_period = date_match.group(1)
 
-            # 提取技术栈
+            # 提取技术栈: 只认显式标签（"技术栈"/"tech stack"），
+            # 裸 "技术：" 仅在非中文词尾时视为标签，避免误抓 "6项RAG增强技术：" 这类正文
             tech_stack = []
             tech_match = re.findall(
-                r'(?:技术栈|技术|tech stack|tech)[：:]\s*(.+?)(?:\n|$)',
+                r'(?:技术栈|tech stack|technologies|(?<![一-鿿])技术)[：:]\s*(.+?)(?:\n|$)',
                 block, re.IGNORECASE
             )
             if tech_match:
                 tech_stack = [t.strip() for t in re.split(r'[,，、/]', tech_match[0]) if t.strip()]
+            # 如果没找到\"技术栈\"标签，从内容中提取技术关键词
+            if not tech_stack:
+                tech_keywords = re.findall(
+                    r'(LangGraph|FastAPI|ChromaDB|DeepSeek|Transformer|BERT|BART|LoRA|'
+                    r'HyDE|Self-Query|Cross-Encoder|bge|RAG|LLaVA|CoreNLP|SAM|FG-CLIP|'
+                    r'Python|C\+\+|Docker|Git|Linux|MySQL|PostgreSQL|Redis|'
+                    r'FAISS|Milvus|Streamlit|React|Vue|TypeScript)',
+                    block, re.IGNORECASE
+                )
+                tech_stack = list(dict.fromkeys(tech_keywords))  # 去重保序
 
-            # 提取角色
-            role = ""
-            role_match = re.search(r'(?:角色|岗位|职位|role)[：:]\s*(.+?)(?:\n|$)', block, re.IGNORECASE)
-            if role_match:
-                role = role_match.group(1).strip()
+            # 提取角色（若前面已从 "| 角色" 提取到则保留）
+            if not role:
+                role_match = re.search(r'(?:角色|岗位|职位|role)[：:]\s*(.+?)(?:\n|$)', block, re.IGNORECASE)
+                if role_match:
+                    role = role_match.group(1).strip()
 
             # 提取量化成果
             key_result = self._extract_key_result_v2(block)
+            # 如果没提取到，用\"项目简介\"行+量化行作为替代
+            if not key_result:
+                intro_match = re.search(r'项目简介[：:]\s*(.+?)(?:\n|$)', block)
+                if intro_match:
+                    key_result = intro_match.group(1).strip()[:300]
 
             # 来源追踪
             line_range = self._find_line_range(name, raw_lines)
-            confidence = 0.85 if (tech_stack or role or key_result) else 0.5
+            has_data = bool(tech_stack or role or key_result)
+            confidence = 0.85 if has_data else 0.5
 
             projects.append({
                 "name": name,
-                "description": block[:500],
+                "description": block[:800],
                 "role": role,
                 "tech_stack": tech_stack,
                 "time_period": time_period,
@@ -727,7 +786,23 @@ class ResumeParser:
                 ),
             })
 
-        return projects
+        # 合并小块：只有当后续块"不像独立项目"（无日期/角色/管道，短名且无项目关键词）才视为延续
+        # 避免误吞自带项目头信号的块（如 "西湖大学张紫阳实验室 ... 2024.03-2024.09" 是独立项目）
+        merged = []
+        for proj in projects:
+            has_header_signal = bool(proj.get("time_period") or proj.get("role") or "|" in proj.get("name", ""))
+            if (merged and not has_header_signal
+                    and len(proj["name"]) < 20 and not re.search(r'[项目系统平台助手工具]', proj["name"])):
+                # 这是上一块的延续，追加描述
+                merged[-1]["description"] += "\n" + proj["name"] + "\n" + proj["description"]
+            else:
+                # 去掉\"项目简介\"等非项目名块（它们属于上一个项目)
+                if not re.match(r'^(?:项目简介|设计|简历|6项|5项)', proj["name"]):
+                    merged.append(proj)
+                elif merged:
+                    merged[-1]["description"] += "\n" + proj["name"] + "\n" + proj["description"]
+
+        return merged
 
     def _extract_key_result_v2(self, text: str) -> str:
         """增强版量化成果提取"""

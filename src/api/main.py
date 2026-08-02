@@ -20,6 +20,22 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     print("🚀 正在启动 ResuMatch AI...")
     ensure_directories()
+
+    # 预热嵌入模型 + 精排模型（冷启动 10-20s，预热后首次请求秒回）
+    try:
+        import time
+        t0 = time.time()
+        from src.rag.embedder import get_embedder
+        get_embedder().model  # 触发模型加载
+        try:
+            from src.rag.reranker import get_reranker
+            get_reranker().model
+        except Exception as e:
+            print(f"[WARN] reranker 预热失败: {e}")
+        print(f"✅ 模型预热完成 ({time.time()-t0:.1f}s)")
+    except Exception as e:
+        print(f"[WARN] 模型预热失败（首次请求可能较慢）: {e}")
+
     print(f"✅ {settings.APP_NAME} v{settings.APP_VERSION} 已就绪")
     yield
     print("👋 应用正在关闭...")

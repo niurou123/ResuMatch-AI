@@ -13,8 +13,10 @@ from src.api.schemas import (
     InterviewRequest, InterviewResponse,
     MockInterviewStartRequest, MockInterviewStartResponse,
     MockInterviewNextRequest, MockInterviewNextResponse,
+    MockSuggestRequest, MockSuggestResponse, MockProjectsResponse,
     SelfIntroRequest, SelfIntroResponse,
     JDMatchRequest, JDMatchResponse,
+    ProjectMatchRequest, ProjectMatchResponse,
     FormFillRequest, FormFillResponse,
     SystemInfoResponse, HealthResponse,
 )
@@ -39,6 +41,75 @@ router = APIRouter(prefix="/api/v1")
 # 全局会话管理
 _sessions: Dict[str, Any] = {}
 _session_memory = SessionMemory()
+
+
+async def _generate_mock_answer(question: str, profile: dict) -> dict:
+    """生成面试对练的 AI 候选人回答（单次 LLM 调用，快且稳）。
+
+    与完整多Agent工作流不同，这里用一次 LLM 调用完成：
+    - 基于简历真实素材生成 STAR 回答
+    - 简历未覆盖的技术细节，基于通用框架知识推理补充（不编造简历没有的量化成果）
+
+    返回 {answer, question_type, citations}
+    """
+    try:
+        from src.core.llm_client import get_client, Message
+
+        # 汇总简历已知技能/项目
+        known_skills, known_projects = [], []
+        for sk in profile.get("skills", [])[:15]:
+            name = sk.get("name") if isinstance(sk, dict) else str(sk)
+            if name:
+                known_skills.append(name)
+        for p in profile.get("projects", [])[:4]:
+            if isinstance(p, dict) and p.get("name"):
+                techs = p.get("tech_stack") or []
+                known_projects.append(
+                    f"- {p['name']}（角色:{p.get('role','')}，技术:{', '.join(techs[:8])}，成果:{p.get('key_result','')[:80]}）"
+                )
+        skills_text = "、".join(dict.fromkeys(known_skills)) or "（简历暂未上传）"
+        projects_text = "\n".join(known_projects) or "（暂无项目）"
+
+        system_prompt = """你是专业的AI面试助手，为候选人生成面试回答。候选人简历素材可能不完整。
+
+## 核心原则
+1. **STAR结构**: 严格按 Situation → Task → Action → Result 组织
+2. **真实性**: 简历明确记载的内容正常陈述；简历未记载的具体细节，基于该技术的通用框架知识做**合理推理阐述**
+3. **区分来源**: 简历记载的 → 正常说；基于推理的 → 用"基于我对XX的理解""通常做法是"等表述
+4. **禁止编造量化成果**: 简历没有的具体数字/百分比/时间线不得虚构；没有就说"简历未记录具体量化指标"
+5. **第一人称** "我"叙述
+
+## 覆盖规则
+- 若问题涉及的技术在简历技能/项目中出现 → 结合真实经历回答
+- 若技术简历未出现，但属于候选人技术栈相关的通用知识 → 基于框架知识推理回答，明确标注是推理
+- 不要因为简历素材缺失就拒绝回答，要用推理给出有价值的内容"""
+        user_prompt = f"""## 候选人简历技能
+{skills_text}
+
+## 候选人项目经历
+{projects_text}
+
+## 面试官的问题
+{question}
+
+请生成第一人称的 STAR 面试回答。"""
+
+        client = get_client()
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=user_prompt),
+        ]
+        answer = await client.chat_sync(messages, temperature=0.6, max_tokens=900)
+        answer = (answer or "").strip()
+        return {
+            "answer": answer,
+            "question_type": "STAR",
+            "citations": [],
+        }
+    except Exception as e:
+        import traceback
+        print(f"[ERROR] _generate_mock_answer:\n{traceback.format_exc()}")
+        return {"answer": "", "question_type": "", "citations": []}
 
 
 # ===== 健康检查 =====
@@ -137,6 +208,13 @@ async def upload_resume(file: UploadFile = File(...)):
             ],
         }
 
+        # 结构化档案落盘（项目库持久化，供项目-JD 匹配引擎读取）
+        try:
+            from src.features.profile_store import ProfileStore
+            ProfileStore.save(profile)
+        except Exception as e:
+            print(f"[WARN] 项目库落盘失败: {e}")
+
         # 提取统计（用于用户验证）
         stats = parsed.extraction_stats
         verification = {
@@ -194,20 +272,40 @@ async def get_profile():
 @router.post("/interview/answer", response_model=InterviewResponse)
 async def interview_answer(request: InterviewRequest):
     """单次面试问答"""
-    import concurrent.futures
-    import asyncio as aio
-    loop = aio.get_event_loop()
-
-    def do_interview(q):
-        import sys, asyncio
-        sys.setrecursionlimit(50000)
-        async def _run():
-            from src.agents.graph import run_interview_workflow
-            return await run_interview_workflow(q, str(__import__('uuid').uuid4()))
-        return asyncio.run(_run())
+    import sys
+    sys.setrecursionlimit(50000)
 
     try:
-        state = await loop.run_in_executor(None, do_interview, request.question)
+        from src.agents.graph import run_interview_workflow
+
+        # 读取当前简历画像作为 user_profile
+        profile = {}
+        try:
+            from src.rag.vector_store import get_vector_store
+            vs = get_vector_store()
+            info = vs.get_collection_info()
+            if sum(info.values()) > 0:
+                # 收集所有已索引的文档作为用户画像
+                all_docs = {}
+                for coll in ["skills", "projects", "achievements", "education"]:
+                    results = vs.search("", coll, top_k=50)
+                    for r in results:
+                        all_docs[r.get("id", "")] = {
+                            "content": r.get("content", ""),
+                            "collection": r.get("collection", ""),
+                            "metadata": r.get("metadata", {}),
+                        }
+                profile["indexed_docs"] = list(all_docs.values())
+                profile["name"] = "候选人"
+                profile["collections"] = info
+        except Exception:
+            pass
+
+        state = await run_interview_workflow(
+            request.question,
+            str(uuid.uuid4()),
+            user_profile=profile,
+        )
 
         return InterviewResponse(
             question=request.question,
@@ -221,6 +319,9 @@ async def interview_answer(request: InterviewRequest):
         )
 
     except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        print(f"[ERROR] interview_answer: {tb}")
         raise HTTPException(500, f"面试推理失败: {str(e)}")
 
 
@@ -244,7 +345,7 @@ async def interview_stream(request: InterviewRequest):
 # ===== 模拟面试 =====
 @router.post("/mock/start", response_model=MockInterviewStartResponse)
 async def mock_interview_start(request: MockInterviewStartRequest):
-    """开始模拟面试"""
+    """开始模拟面试（AI 候选人模式：你当面试官提问，AI 基于简历回答）"""
     session_id = str(uuid.uuid4())[:8]
     _sessions[session_id] = {
         "round": 0,
@@ -254,50 +355,273 @@ async def mock_interview_start(request: MockInterviewStartRequest):
         "difficulty": request.difficulty,
     }
 
-    first_question = "你好！感谢参加今天的面试。请先做一个简短的自我介绍吧。"
+    first_question = ""
+    hint = "你作为面试官，可以开始提问了。AI 候选人将基于你的简历素材作答。"
     if request.focus_areas:
         areas = "、".join(request.focus_areas)
-        first_question = f"你好！我看到你比较关注{areas}领域。请先简要介绍一下你自己，特别是与这些领域相关的经验。"
+        hint = f"你作为面试官，可以围绕 {areas} 领域提问。AI 候选人将基于你的简历素材作答。"
 
     return MockInterviewStartResponse(
         session_id=session_id,
         first_question=first_question,
         total_rounds=request.max_rounds,
+        message=hint,
     )
 
 
 @router.post("/mock/next", response_model=MockInterviewNextResponse)
 async def mock_interview_next(request: MockInterviewNextRequest):
-    """下一轮追问"""
+    """面试官提问 → AI 候选人基于简历生成 STAR 回答"""
     session = _sessions.get(request.session_id)
     if not session:
         raise HTTPException(404, "会话不存在或已过期")
 
+    # 面试官的问题（优先新字段 question，兼容旧 answer）
+    question = (request.question or request.answer or "").strip()
+    if not question:
+        raise HTTPException(400, "请先输入面试问题")
+
     session["round"] += 1
     session["history"].append({
         "round": session["round"],
-        "answer": request.answer,
+        "question": question,
+        "answer": "",  # AI 回答在下方生成后填充
     })
 
     is_last = session["round"] >= session["max_rounds"]
 
-    # 基于上下文生成追问
-    next_question = "请详细说说你在项目中遇到的最大技术挑战以及你是如何解决的？"
-    if is_last:
-        next_question = "最后一个问题：你对未来的职业发展有什么规划？"
+    # 用多Agent工作流生成 AI 候选人回答（基于简历素材，含项目归属约束）
+    ai_answer = ""
+    question_type = ""
+    citations = []
+    review_scores = {}
+    review_total = 0.0
+    revision_count = 0
+    try:
+        import sys
+        sys.setrecursionlimit(50000)
+        from src.agents.graph import run_interview_workflow
+
+        # 读取简历画像（技能/项目）
+        profile = {}
+        try:
+            from src.features.profile_store import ProfileStore
+            stored = ProfileStore.load()
+            if stored:
+                profile = stored
+            else:
+                from src.rag.vector_store import get_vector_store
+                vs = get_vector_store()
+                info = vs.get_collection_info()
+                if sum(info.values()) > 0:
+                    skills, projects = [], []
+                    for r in vs.search("", "skills", top_k=30):
+                        n = (r.get("metadata") or {}).get("name", "")
+                        if n:
+                            skills.append({"name": n})
+                    for r in vs.search("", "projects", top_k=20):
+                        md = r.get("metadata") or {}
+                        content = r.get("content", "") or ""
+                        if md.get("name"):
+                            projects.append({
+                                "name": md.get("name", ""),
+                                "role": md.get("role", ""),
+                                "tech_stack": [],
+                                "key_result": "",
+                                "description": content,
+                            })
+                    profile["skills"] = skills
+                    profile["projects"] = projects
+        except Exception:
+            pass
+
+        # 用专用单次 LLM 调用生成回答（快且稳，含技术推理退路）
+        gen = await _generate_mock_answer(question, profile)
+        ai_answer = gen.get("answer", "")
+        question_type = gen.get("question_type", "")
+        citations = gen.get("citations", [])
+        review_scores = {}
+        review_total = 0
+        revision_count = 0
+
+        if not ai_answer:
+            ai_answer = "抱歉，回答生成失败，请重试。"
+    except Exception as e:
+        import traceback
+        print(f"[ERROR] mock_interview_next:\n{traceback.format_exc()}")
+        ai_answer = f"生成回答时出错: {str(e)[:200]}"
+
+    # 更新会话历史
+    session["history"][-1]["answer"] = ai_answer
 
     return MockInterviewNextResponse(
-        question=next_question,
+        question=question,
         round_number=session["round"],
         is_last=is_last,
+        ai_answer=ai_answer,
+        question_type=question_type,
+        citations=citations,
+        review_scores=review_scores,
+        review_total=review_total,
+        revision_count=revision_count,
     )
+
+
+@router.get("/mock/projects", response_model=MockProjectsResponse)
+async def mock_projects():
+    """返回简历项目列表（供前端选择生成问题的目标项目）"""
+    projects = []
+    try:
+        from src.features.profile_store import ProfileStore
+        for p in ProfileStore.get_projects():
+            name = p.get("name", "").strip()
+            if name and name not in projects:
+                projects.append(name)
+        if not projects:
+            from src.rag.vector_store import get_vector_store
+            vs = get_vector_store()
+            for r in vs.search("", "projects", top_k=30):
+                name = (r.get("metadata") or {}).get("name", "").strip()
+                if name and name not in projects:
+                    projects.append(name)
+    except Exception:
+        pass
+    return MockProjectsResponse(projects=projects[:10])
+
+
+@router.post("/mock/suggest", response_model=MockSuggestResponse)
+async def mock_suggest_question(request: MockSuggestRequest):
+    """AI 生成问题：支持选择项目 + 追问/新问题两种模式"""
+    session = _sessions.get(request.session_id)
+    history = session.get("history", []) if session else []
+    mode = request.mode or "followup"
+    target_project = (request.project or "").strip()
+
+    # 读取简历素材（技能/项目/成果）作为生成依据
+    resume_context = ""
+    try:
+        from src.rag.vector_store import get_vector_store
+        vs = get_vector_store()
+        info = vs.get_collection_info()
+        if sum(info.values()) > 0:
+            parts = []
+            for coll in ["skills", "projects", "achievements", "education"]:
+                results = vs.search("", coll, top_k=15)
+                for r in results:
+                    content = (r.get("content") or "").strip()
+                    if content and not content.startswith(f"{coll} #"):
+                        parts.append(f"[{coll}] {content[:120]}")
+            resume_context = "\n".join(parts[:30])
+    except Exception:
+        pass
+
+    # 指定了项目：优先用该项目素材，并把素材范围收窄到该项目
+    project_context = ""
+    if target_project:
+        try:
+            from src.rag.vector_store import get_vector_store
+            vs = get_vector_store()
+            for coll in ["projects", "achievements"]:
+                for r in vs.search(target_project, coll, top_k=15):
+                    content = (r.get("content") or "").strip()
+                    if content and (target_project in content or target_project in str((r.get("metadata") or {}).get("name", ""))):
+                        project_context += f"[{coll}] {content[:200]}\n"
+        except Exception:
+            pass
+
+    # 构造历史问答上下文
+    if history:
+        history_text = "\n".join([
+            f"第{h['round']}轮 问题: {h['question'][:100]}\n回答: {h['answer'][:150]}"
+            for h in history[-3:]  # 最近3轮
+        ])
+    else:
+        history_text = "（尚无问答，面试刚开始）"
+
+    focus = "、".join(request.focus_areas) if request.focus_areas else "不限定"
+
+    # 按模式构建 system prompt
+    if mode == "new":
+        system_prompt = """你是资深面试官助手。面试官想开启一个**全新话题**的问题（不一定基于上一轮回答）。
+
+## 要求
+1. 围绕指定项目/关注领域，提出一个**新角度**的面试问题
+2. 可选角度：技术深度（架构/性能/难点）、项目细节（角色/决策/复盘）、行为（协作/冲突/成长）、系统设计
+3. 直接输出一个完整、自然的面试问题（20-60字），不要解释"""
+    else:  # followup 追问
+        system_prompt = """你是资深面试官助手。面试官想要一个**针对性的追问**（紧扣上下文深挖）。
+
+## 要求
+1. 结合已有问答上下文，提出一个**深挖候选人能力**的追问
+2. 追问应紧扣上一轮回答中**未展开的点**（技术细节、量化成果、决策过程、遇到的坑）
+3. 直接输出一个完整、自然的面试问题（20-60字），不要解释
+4. 若无上下文：从简历素材中选择一个最值得深挖的方向自由发挥"""
+
+    # 项目范围说明
+    if target_project:
+        project_note = f"目标项目：{target_project}\n该项目素材：\n{project_context[:1500] if project_context else '（未检索到该项目素材）'}"
+    else:
+        project_note = "目标项目：不限（可从全部简历素材中选择）"
+
+    user_prompt = f"""## 候选人简历素材
+{resume_context[:2000] if resume_context else '（暂未上传简历或素材为空）'}
+
+## {project_note}
+
+## 已有问答上下文
+{history_text}
+
+## 关注领域
+{focus}
+
+## 模式
+{'【新问题】开启一个全新话题' if mode == 'new' else '【追问】紧扣上下文深挖'}
+
+请生成一个面试问题。"""
+
+    try:
+        from src.core.llm_client import get_client, Message
+        client = get_client()
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=user_prompt),
+        ]
+        question = ""
+        # 生成并校验：LLM 偶发空/过短/非问题内容时重试一次
+        for _ in range(2):
+            raw = await client.chat_sync(messages, temperature=0.8, max_tokens=200)
+            q = (raw or "").strip().strip('"').strip("'").strip("`")
+            # 清理多余前缀/换行，只保留一行有效问题
+            q = q.split("\n")[0].strip()
+            # 去掉可能的 "问题：" 前缀
+            q = q.replace("问题：", "").replace("追问：", "").replace("Question:", "").strip()
+            # 去掉 "。?" 等结尾标点前残留
+            if q and not q.endswith(("？", "?", "。")):
+                q += "？"
+            if len(q) >= 25:  # 有效问题长度阈值（避免过短的不完整问题）
+                question = q
+                break
+
+        # 生成依据说明
+        if mode == "new":
+            reason = f"新问题·{target_project if target_project else '不限项目'}"
+        else:
+            reason = "追问·" + ("上一轮回答的未展开点" if history else "简历素材中最值得深挖的方向")
+            if target_project:
+                reason += f"·{target_project}"
+        return MockSuggestResponse(question=question, reason=reason)
+    except Exception as e:
+        import traceback
+        print(f"[ERROR] mock_suggest_question:\n{traceback.format_exc()}")
+        # 降级：返回规则化追问
+        fallback = "请详细说说你在这个项目中最具挑战性的一项工作，以及你是如何解决的？"
+        return MockSuggestResponse(question=fallback, reason="规则化兜底（LLM不可用）")
 
 
 # ===== 自我介绍 =====
 @router.post("/intro/generate", response_model=SelfIntroResponse)
 async def generate_intro(request: SelfIntroRequest):
     """生成自我介绍"""
-    from src.core.prompts import build_self_intro_prompt
     from src.core.llm_client import get_client, Message
 
     vector_store = _get_vector_store()
@@ -306,17 +630,71 @@ async def generate_intro(request: SelfIntroRequest):
     if sum(stats.values()) == 0:
         raise HTTPException(400, "请先上传简历")
 
+    # 从 ChromaDB 读取真实简历数据
+    profile = {}
+    all_docs = []
+    for coll in ["skills", "projects", "achievements", "education"]:
+        results = vector_store.search("", coll, top_k=50)
+        for r in results:
+            all_docs.append({
+                "content": r.get("content", ""),
+                "collection": r.get("collection", ""),
+                "name": r.get("metadata", {}).get("name", ""),
+            })
+
+    # 组织 profile 数据
+    profile["name"] = "候选人"
+    profile["skills"] = [
+        {"name": d["name"]}
+        for d in all_docs if d["collection"] == "skills" and d["name"]
+    ]
+    profile["projects"] = [
+        {"name": d["name"], "key_result": d["content"][:300]}
+        for d in all_docs if d["collection"] == "projects" and d["name"]
+    ]
+    profile["achievements"] = [
+        {"description": d["content"]}
+        for d in all_docs if d["collection"] == "achievements"
+    ]
+    profile["education"] = [
+        {"description": d["content"]}
+        for d in all_docs if d["collection"] == "education"
+    ]
+
     client = get_client()
 
     async def generate_one(length: str) -> str:
-        system, user = build_self_intro_prompt(
-            profile={},  # 从 vector store 获取
-            target_position=request.target_position,
-            length=length,
-        )
+        system_prompt = """你是专业的求职顾问。请根据候选人的真实简历，生成自然流畅的自我介绍。
+
+严格要求:
+1. 只能使用下面提供的简历素材中的信息，绝不编造
+2. 如果简历中某项信息不存在，直接跳过，不要说"可能"、"大概"
+3. 包含：姓名(如果有)、核心技能(来自素材)、代表性项目(来自素材)、关键成果(来自素材)
+4. 根据时长要求控制详略程度"""
+        user_prompt = f"""## 候选人简历素材
+
+姓名: {profile.get('name', '')}
+
+### 技能
+{chr(10).join(['- ' + s['name'] for s in profile.get('skills', [])[:15]])}
+
+### 项目经验
+{chr(10).join(['- ' + p['name'] + ': ' + p['key_result'][:200] for p in profile.get('projects', [])[:3]])}
+
+### 关键成果
+{chr(10).join(['- ' + a['description'][:200] for a in profile.get('achievements', [])[:3]])}
+
+### 教育背景
+{chr(10).join(['- ' + e['description'][:150] for e in profile.get('education', [])[:2]])}
+
+## 目标职位: {request.target_position or '技术岗位'}
+## 时长: {length} (30s约80字, 1min约200字, 3min约600字)
+
+请生成自我介绍，直接输出，不加标题。"""
+
         messages = [
-            Message(role="system", content=system),
-            Message(role="user", content=user),
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=user_prompt),
         ]
         return await client.chat_sync(messages, temperature=0.7)
 
@@ -395,6 +773,31 @@ async def analyze_jd_match(request: JDMatchRequest):
         strength_analysis=result.get("strength_analysis", ""),
         gap_analysis=result.get("gap_analysis", ""),
     )
+
+
+# ===== 项目-JD 匹配 =====
+@router.post("/match/projects", response_model=ProjectMatchResponse)
+async def analyze_project_match(request: ProjectMatchRequest):
+    """项目-JD 智能匹配：JD需求提取 + 三维度项目匹配 + 针对性生成"""
+    from src.features.project_matcher import ProjectJDMatchService
+
+    vector_store = _get_vector_store()
+
+    try:
+        service = ProjectJDMatchService()
+        result = await service.analyze(
+            request.jd_text,
+            target_position=request.target_position,
+            vs=vector_store,
+        )
+        return ProjectMatchResponse(**result)
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        print(f"[ERROR] analyze_project_match: {tb}")
+        return ProjectMatchResponse(
+            message=f"项目匹配分析失败: {str(e)[:200]}",
+        )
 
 
 # ===== 智能表单填充 =====

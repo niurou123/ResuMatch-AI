@@ -58,8 +58,11 @@ cp .env.example .env
 # 3. 启动后端
 python -m src.api.main
 
-# 4. 启动前端（新终端）
-streamlit run app.py
+# 4. 启动前端（React，新终端）
+cd frontend
+npm install
+npm run dev
+# 默认 http://localhost:5173
 ```
 
 ### 加载 Chrome 扩展
@@ -71,7 +74,7 @@ streamlit run app.py
 
 ### 使用流程
 
-1. 打开 http://localhost:8501 或点击扩展图标
+1. 打开 http://localhost:5173 或点击扩展图标
 2. 上传简历（PDF/Word/Markdown/TXT）
 3. 在「面试模拟」输入问题，获取 STAR 格式回答
 4. 打开网申页面，点击「扫描页面」→「一键填充」
@@ -85,7 +88,7 @@ streamlit run app.py
 interview-rag-system/
 ├── CLAUDE.md                   # AI 开发指南（最高优先级）
 ├── SPEC.md                     # 功能规格文档（项目大脑）
-├── app.py                      # Streamlit 前端 (v3.0 Pro Design)
+├── app.py                      # ⚠️ DEPRECATED — Streamlit 前端（已迁移至 frontend/ React）
 │
 ├── src/
 │   ├── agents/                 # LangGraph 多Agent工作流 (v3.0)
@@ -118,12 +121,21 @@ interview-rag-system/
 │   ├── features/               # 业务功能层
 │   │   ├── self_intro.py        # 自我介绍生成器
 │   │   ├── mock_interview.py    # 模拟面试引擎
-│   │   └── jd_matcher.py        # JD匹配度分析
+│   │   ├── jd_matcher.py        # JD匹配度分析 (技能级)
+│   │   ├── project_matcher.py   # 项目-JD匹配引擎 (三维度)
+│   │   └── profile_store.py     # 结构化档案/项目库持久化 (JSON)
 │   │
 │   └── api/                    # FastAPI 层
 │       ├── main.py              # 应用入口 + CORS
-│       ├── routes.py            # 10个API端点
+│       ├── routes.py            # 10+ API端点
 │       └── schemas.py           # Pydantic 请求/响应模型
+│
+├── frontend/                   # React 前端 (Vite + TypeScript + Tailwind)
+│   ├── src/
+│   │   ├── pages/               # 简历上传/面试/自我介绍/JD匹配
+│   │   ├── lib/                 # api.ts / types.ts / constants.ts
+│   │   └── components/          # 布局与共享组件
+│   └── package.json
 │
 ├── extension/                  # Chrome 扩展 (Manifest V3)
 │   ├── manifest.json
@@ -179,7 +191,7 @@ GET  /api/v1/system/info          # 系统信息
 
 | 层 | 技术 |
 |----|------|
-| 前端 | Chrome Extension MV3, Streamlit, vanilla JS |
+| 前端 | React (Vite + TypeScript + Tailwind) — frontend/, Chrome Extension MV3 |
 | 后端 | Python, FastAPI, LangGraph |
 | LLM | DeepSeek v4-pro |
 | 向量库 | ChromaDB, bge-small-zh (512维) |

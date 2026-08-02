@@ -50,7 +50,9 @@ async def star_writer_node(state: AgentState) -> AgentState:
         full_answer = await client.chat_sync(messages)
 
         # ===== Agent通信：自我检查不确定声明 =====
-        uncertain_claims = _detect_uncertain_claims(full_answer)
+        # 快速模式（面试对练）：跳过 Agent 间通信/二次精修，仅生成一次，优先速度
+        is_fast = state.get("planner_decisions", {}).get("skip_review", False)
+        uncertain_claims = _detect_uncertain_claims(full_answer) if not is_fast else []
 
         if uncertain_claims and reranked_context:
             # 向正确性Reviewer咨询不确定的声明
@@ -85,16 +87,12 @@ async def star_writer_node(state: AgentState) -> AgentState:
                 if refined and len(refined) > 20:
                     full_answer = refined
 
-        # 后处理：验证引用
+        # 后处理：验证引用（宽松模式 — 检测中括号引用和间接引用）
         citations = _extract_citations(full_answer, reranked_context)
         validated_answer = _validate_citations(full_answer, citations)
 
         state["draft_answer"] = validated_answer
         state["citations"] = citations
-
-        # 如果无引用且不是第一轮，加警告
-        if not citations and state.get("revision_count", 0) > 0:
-            state["draft_answer"] += "\n\n⚠️ 注意：此回答未包含明确的经历引用，建议补充具体项目经验。"
 
     except Exception as e:
         state["draft_answer"] = f"生成回答时出错: {str(e)}"
@@ -164,19 +162,17 @@ def _detect_uncertain_claims(answer: str) -> List[str]:
 
 
 def _extract_citations(answer: str, context: List[Dict]) -> List[Dict[str, Any]]:
-    """从回答中提取引用标注"""
+    """从回答中提取引用标注（宽松模式）"""
     citations = []
 
-    # 匹配 [来源: xxx] 或 [Citation: xxx] 格式
+    # 匹配 [来源: xxx] 或 [Citation: xxx] 或 [来源：xxx] 格式
     patterns = [
         r'\[(?:来源|Citation|引用)[：:]\s*(.+?)\]',
         r'\[(?:source|citation)[：:]\s*(.+?)\]',
     ]
-
     for pattern in patterns:
         matches = re.findall(pattern, answer, re.IGNORECASE)
         for match in matches:
-            # 在上下文中找到对应的文档
             for ctx in context:
                 if match.lower() in ctx.get("content", "").lower():
                     citations.append({
@@ -186,6 +182,15 @@ def _extract_citations(answer: str, context: List[Dict]) -> List[Dict[str, Any]]
                         "score": ctx.get("rerank_score", ctx.get("score", 0)),
                     })
                     break
+
+    # 备选：检测 [来源: collection] 短格式（不指定具体内容名）
+    short_cite = re.findall(r'\[来源[：:]\s*([a-zA-Z_]+)\]', answer, re.IGNORECASE)
+    for coll_name in short_cite:
+        citations.append({
+            "text": f"[来源: {coll_name}]",
+            "collection": coll_name,
+            "score": 0.5,
+        })
 
     return citations
 

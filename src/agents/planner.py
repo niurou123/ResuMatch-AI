@@ -17,7 +17,8 @@ SCHEDULING_POLICY: Dict[str, Dict[str, Any]] = {
         "retrieval_top_k": 10,
         "revise_priority": "correctness",
         "temperature": 0.3,
-        "description": "技术深度问题：全部3路检索+严格正确性审查",
+        "skip_review": False,
+        "description": "技术深度：3路检索+3路评审",
     },
     "project_followup": {
         "active_retrievers": ["keyword", "semantic", "graph"],
@@ -26,16 +27,18 @@ SCHEDULING_POLICY: Dict[str, Dict[str, Any]] = {
         "retrieval_top_k": 8,
         "revise_priority": "completeness",
         "temperature": 0.5,
-        "description": "项目追问：全检索+重点检查STAR完整性",
+        "skip_review": False,
+        "description": "项目追问：3路检索+3路评审",
     },
     "behavioral": {
-        "active_retrievers": ["semantic", "graph"],
-        "active_reviewers": ["completeness", "advantage"],
+        "active_retrievers": ["keyword", "semantic", "graph"],
+        "active_reviewers": ["correctness", "completeness", "advantage"],
         "decomposition_depth": 1,
         "retrieval_top_k": 6,
         "revise_priority": "advantage",
         "temperature": 0.6,
-        "description": "行为面试：语义+图谱检索，重优势展示",
+        "skip_review": False,
+        "description": "行为面试：3路检索+3路评审",
     },
     "self_intro": {
         "active_retrievers": ["semantic"],
@@ -47,13 +50,13 @@ SCHEDULING_POLICY: Dict[str, Dict[str, Any]] = {
         "description": "自我介绍：仅语义检索，轻量审查",
     },
     "general": {
-        "active_retrievers": ["semantic"],
-        "active_reviewers": ["completeness"],
+        "active_retrievers": ["keyword", "semantic", "graph"],
+        "active_reviewers": ["correctness", "completeness", "advantage"],
         "decomposition_depth": 0,
         "retrieval_top_k": 5,
         "revise_priority": "completeness",
         "temperature": 0.7,
-        "description": "通用问题：单路检索，轻量审查",
+        "description": "通用：3路检索+3路评审",
     },
 }
 
@@ -126,19 +129,47 @@ async def dynamic_planner_node(state: AgentState) -> AgentState:
             policy["retrieval_top_k"] + modifier["retrieval_top_k"]))
 
     # ===== 基于用户画像微调 =====
-    has_many_projects = len(user_profile.get("projects", [])) > 3
-    has_many_skills = len(user_profile.get("skills", [])) > 10
+    # 从 user_profile 获取技能数（兼容两种数据结构）
+    skills_count = len(user_profile.get("skills", []))
+    projects_count = len(user_profile.get("projects", []))
+    # 如果 user_profile 使用的是 indexed_docs 结构，从中推断
+    if not skills_count or not projects_count:
+        indexed = user_profile.get("indexed_docs", [])
+        if indexed:
+            skills_count = sum(1 for d in indexed if d.get("collection") == "skills")
+            projects_count = sum(1 for d in indexed if d.get("collection") == "projects")
+    # 兜底：从 collections 统计推断
+    collections = user_profile.get("collections", {})
+    if not skills_count and collections:
+        skills_count = collections.get("skills", 0)
+    if not projects_count and collections:
+        projects_count = collections.get("projects", 0)
+
+    has_many_projects = projects_count > 3
+    has_many_skills = skills_count > 10
+
+    retriever_list = policy.get("active_retrievers", [])
+    print(f"[Planner] question_type={question_type} has_many_skills={has_many_skills} skills_count={skills_count} projects_count={projects_count}")
+    print(f"[Planner] active before adjust: {retriever_list}")
+
+    # 如果有数据但 planner 因为 has_many_skills=False 移除了 keyword，重新补上
+    if "keyword" not in retriever_list and skills_count > 0:
+        retriever_list = list(retriever_list) + ["keyword"]
+    if "graph" not in retriever_list and skills_count > 5:
+        retriever_list = list(retriever_list) + ["graph"]
+
+    # 去重后回写
+    policy["active_retrievers"] = list(dict.fromkeys(retriever_list))
 
     if has_many_projects and question_type == "project_followup":
-        # 项目多的候选人，增大召回量
         policy["retrieval_top_k"] += 2
 
-    if not has_many_skills and question_type == "technical_depth":
-        # 技能少的候选人，去掉关键词检索（避免空结果）
-        if "keyword" in policy["active_retrievers"] and len(policy["active_retrievers"]) > 1:
-            policy["active_retrievers"].remove("keyword")
+    print(f"[Planner] active after adjust: {policy['active_retrievers']}")
 
     # ===== 输出决策 =====
+    # 保留快速模式标志：若入口已设置 skip_review（如面试对练 fast=True），强制覆盖回 policy
+    if state.get("planner_decisions", {}).get("skip_review"):
+        policy["skip_review"] = True
     state["planner_decisions"] = policy
 
     # 将 top_k 传递给后续检索Agent使用

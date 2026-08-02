@@ -84,7 +84,16 @@ class ResumeVectorStore:
         """批量索引文档到指定集合"""
         collection = self._collections[collection_name]
 
-        texts = [doc.content for doc in documents]
+        # 确保 content 不为空（否则 ChromaDB 会存储空字符串导致无意义检索）
+        texts = []
+        for doc in documents:
+            if doc.content and doc.content.strip():
+                texts.append(doc.content)
+            else:
+                # 用 metadata 中的 name 作为后备 content
+                name = doc.metadata.get("name", "")
+                texts.append(name if name else f"{collection_name} #{doc.metadata.get('index', doc.chunk_id)}")
+
         embeddings = self.embedder.encode(texts)
         ids = [doc.chunk_id for doc in documents]
         metadatas = [

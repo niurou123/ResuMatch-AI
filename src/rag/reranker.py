@@ -1,5 +1,6 @@
 """Cross-Encoder 重排器 - 精排初检结果"""
 from typing import List, Dict, Any, Optional
+import threading
 import numpy as np
 from src.config import settings
 
@@ -19,18 +20,21 @@ class CrossEncoderReranker:
     def __init__(self, model_name: str = None):
         self.model_name = model_name or settings.RERANKER_MODEL
         self._model = None
+        self._lock = threading.Lock()  # 防止并发重复加载
 
     @property
     def model(self):
         """延迟加载 Cross-Encoder 模型"""
         if self._model is None:
-            try:
-                from sentence_transformers import CrossEncoder
-                self._model = CrossEncoder(self.model_name)
-            except ImportError:
-                raise ImportError(
-                    "需要安装 sentence-transformers: pip install sentence-transformers"
-                )
+            with self._lock:
+                if self._model is None:
+                    try:
+                        from sentence_transformers import CrossEncoder
+                        self._model = CrossEncoder(self.model_name)
+                    except ImportError:
+                        raise ImportError(
+                            "需要安装 sentence-transformers: pip install sentence-transformers"
+                        )
         return self._model
 
     def rerank(

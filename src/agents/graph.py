@@ -43,28 +43,22 @@ from src.config import settings
 
 def should_retrieve(state: AgentState) -> str:
     """
-    Planner + Router联合决策：是否需要检索增强？
+    Planner + Router 联合决策
 
-    - 自我介绍模式：跳过检索（Profile数据已足够）
-    - 通用问题：跳过检索
-    - 技术/项目/行为问题：执行检索
+    当 user_profile 中有 indexed_docs 时就执行检索（已上传简历），
+    否则按问题类型判断
     """
-    mode = state.get("mode", "interview")
     qtype = state.get("question_type", "general")
+    profile = state.get("user_profile", {})
 
-    # 模式级别跳过
-    if mode in ("self_intro", "jd_match"):
-        return "skip"
-
-    # 问题类型级别跳过
-    if qtype in ("general", "self_intro"):
-        return "skip"
-
-    # 有简历数据才检索
-    if state.get("profile_initialized") or state.get("reranked_context"):
+    # 有 indexed_docs 或 collections → 简历数据可用，执行检索
+    if profile.get("indexed_docs") or profile.get("collections"):
         return "retrieve"
 
-    # 默认跳过（没有索引数据时无意义检索）
+    # 项目/技术/行为类问题
+    if qtype in ("project_followup", "technical_depth", "behavioral"):
+        return "retrieve"
+
     return "skip"
 
 
@@ -76,12 +70,23 @@ def should_revise(state: AgentState) -> Literal["revise", "accept"]:
     - needs_revision=True 且 revision_count < MAX_REVISION_ROUNDS → 修订
     - 否则 → 接受
     """
+    # 快速模式（跳过评审）：直接接受，不再走修订回环
+    if state.get("planner_decisions", {}).get("skip_review"):
+        return "accept"
+
     needs_revision = state.get("needs_revision", False)
     revision_count = state.get("revision_count", 0)
 
     if needs_revision and revision_count < settings.MAX_REVISION_ROUNDS:
         return "revise"
     return "accept"
+
+
+def should_review(state: AgentState) -> Literal["review", "skip"]:
+    """是否执行并行评审？快速模式（skip_review=True）跳过评审直接完成"""
+    if state.get("planner_decisions", {}).get("skip_review"):
+        return "skip"
+    return "review"
 
 
 # ==================== 工作流构建 ====================
@@ -134,8 +139,15 @@ def build_graph() -> StateGraph:
     # ===== ParallelRetrieval → Writer =====
     workflow.add_edge("parallel_retrieval", "writer")
 
-    # ===== Writer → ParallelReview =====
-    workflow.add_edge("writer", "parallel_review")
+    # ===== Writer → 条件：评审或快速完成（快速模式跳过评审） =====
+    workflow.add_conditional_edges(
+        "writer",
+        should_review,
+        {
+            "review": "parallel_review",
+            "skip": END,
+        },
+    )
 
     # ===== ParallelReview → 条件 =====
     workflow.add_conditional_edges(
@@ -173,6 +185,7 @@ async def run_interview_workflow(
     query: str,
     session_id: str = "default",
     user_profile: dict = None,
+    fast: bool = False,
 ) -> AgentState:
     """
     运行完整的面试工作流
@@ -181,6 +194,7 @@ async def run_interview_workflow(
         query: 面试问题
         session_id: 会话ID（用于对话历史追踪）
         user_profile: 用户画像（如果已预先加载）
+        fast: 快速模式（跳过并行评审与修订回环，适合面试对练/实时预览场景）
 
     Returns:
         包含最终回答和评审结果的 AgentState
@@ -191,6 +205,10 @@ async def run_interview_workflow(
     if user_profile:
         initial["user_profile"] = user_profile
         initial["profile_initialized"] = True
+
+    # 快速模式：跳过评审 + 修订回环，直接 writer → END
+    if fast:
+        initial["planner_decisions"] = {**initial.get("planner_decisions", {}), "skip_review": True}
 
     config = {"configurable": {"thread_id": session_id}}
 
@@ -213,6 +231,7 @@ async def run_interview_stream(
     在每个节点完成后 yield 进度事件
     """
     import json
+    import time
 
     graph = get_graph()
     initial = create_initial_state(query, mode="interview")
@@ -223,55 +242,111 @@ async def run_interview_stream(
 
     config = {"configurable": {"thread_id": session_id}}
 
-    yield {"type": "start", "content": "开始处理..."}
+    yield {"type": "start", "node": "__start__", "content": "开始处理..."}
 
+    final_state = None
     async for event in graph.astream(initial, config):
         for node_name, node_state in event.items():
-            # 进度事件
+            final_state = node_state
+
+            # ===== Planner: 动态调度决策 =====
             if node_name == "planner":
-                summary = get_planner_summary(node_state)
-                yield {"type": "progress", "content": f"Planner决策完成\n{summary}"}
+                dec = node_state.get("planner_decisions", {})
+                yield {
+                    "type": "node_complete", "node": "planner", "status": "success",
+                    "data": {
+                        "description": dec.get("description", ""),
+                        "active_retrievers": dec.get("active_retrievers", []),
+                        "active_reviewers": dec.get("active_reviewers", []),
+                        "retrieval_top_k": dec.get("retrieval_top_k", 5),
+                        "temperature": dec.get("temperature", 0.7),
+                        "skip_review": dec.get("skip_review", False),
+                    },
+                }
 
+            # ===== Router: 问题分类与拆解 =====
             elif node_name == "router":
-                qtype = node_state.get("question_type", "unknown")
-                difficulty = node_state.get("difficulty", "unknown")
-                yield {"type": "progress", "content": f"问题分类: {qtype} ({difficulty})"}
+                yield {
+                    "type": "node_complete", "node": "router", "status": "success",
+                    "data": {
+                        "question_type": node_state.get("question_type", "unknown"),
+                        "difficulty": node_state.get("difficulty", "unknown"),
+                        "decomposed_queries": node_state.get("decomposed_queries", []),
+                    },
+                }
 
+            # ===== 并行检索: 3路Agent + Fusion =====
             elif node_name == "parallel_retrieval":
                 stats = node_state.get("fusion_stats", {})
                 yield {
-                    "type": "progress",
-                    "content": f"并行检索完成 ({stats.get('parallel_elapsed_ms', 0)}ms) | "
-                              f"召回: {stats.get('total_docs_retrieved', 0)}篇",
+                    "type": "node_complete", "node": "parallel_retrieval", "status": "success",
+                    "data": {
+                        "elapsed_ms": stats.get("parallel_elapsed_ms", 0),
+                        "total_docs": stats.get("total_docs_retrieved", 0),
+                        "active_agents": stats.get("active_agents", []),
+                        "agent_timing": stats.get("agent_timing", {}),
+                        "agent_breakdown": stats.get("agent_breakdown", {}),
+                    },
                 }
 
+            # ===== Writer: STAR生成 (含修订回环) =====
             elif node_name == "writer":
                 draft = node_state.get("draft_answer", "")
                 revision = node_state.get("revision_count", 0)
-                tag = f"(第{revision}轮修订)" if revision > 0 else ""
-                yield {"type": "chunk", "content": draft, "revision": revision}
-
-            elif node_name == "parallel_review":
-                report = node_state.get("quality_report", {})
-                votes = report.get("votes", {})
-                total = node_state.get("review_total", 0)
-                needs_rev = node_state.get("needs_revision", False)
-
+                citations = node_state.get("citations", [])
                 yield {
-                    "type": "review",
-                    "content": f"评审完成 | 总分: {total}/25 | "
-                              f"投票: {votes.get('yes', 0)}修订/{votes.get('no', 0)}接受 | "
-                              f"决策: {'修订' if needs_rev else '通过'}",
-                    "scores": node_state.get("review_scores", {}),
-                    "total": total,
-                    "needs_revision": needs_rev,
+                    "type": "node_complete", "node": "writer", "status": "success",
+                    "data": {
+                        "draft": draft,
+                        "revision_count": revision,
+                        "citations_count": len(citations),
+                        "citations": citations[:5],
+                    },
                 }
 
-    # 最终答案
+            # ===== 并行评审: 3路Reviewer + 多数表决 =====
+            elif node_name == "parallel_review":
+                votes = node_state.get("revision_votes", {})
+                scores = node_state.get("review_scores", {})
+                total = node_state.get("review_total", 0)
+                needs_rev = node_state.get("needs_revision", False)
+                rev_count = node_state.get("revision_count", 0)
+                feedback = node_state.get("revision_feedback", "")
+                qr = node_state.get("quality_report", {})
+
+                reviewers = {}
+                for rn in ["correctness", "completeness", "advantage"]:
+                    rd = votes.get(rn, {})
+                    reviewers[rn] = {
+                        "needs_revision": rd.get("needs_revision", False),
+                        "scores": rd.get("scores", {}),
+                        "feedback": rd.get("feedback", ""),
+                        "confidence": rd.get("confidence", 0),
+                    }
+
+                yield {
+                    "type": "node_complete", "node": "parallel_review", "status": "success",
+                    "data": {
+                        "reviewers": reviewers,
+                        "review_scores": scores,
+                        "review_total": total,
+                        "needs_revision": needs_rev,
+                        "revision_count": rev_count,
+                        "revision_feedback": feedback,
+                        "vote_decision": qr.get("votes", {}).get("decision", "accept"),
+                        "elapsed_ms": qr.get("parallel_elapsed_ms", 0),
+                    },
+                }
+
+    # ===== 最终结果 =====
+    fa = (final_state or {}).get("final_answer", "") or (final_state or {}).get("draft_answer", "")
+    rt = (final_state or {}).get("review_total", 0)
+    rc = (final_state or {}).get("revision_count", 0)
     yield {
-        "type": "done",
-        "content": final.get("final_answer", final.get("draft_answer", "")),
-        "final_answer": final.get("final_answer", final.get("draft_answer", "")),
-        "review_total": final.get("review_total", 0),
-        "quality_report": final.get("quality_report", {}),
+        "type": "done", "node": "end", "status": "success",
+        "data": {
+            "final_answer": fa,
+            "review_total": rt,
+            "revision_count": rc,
+        },
     }

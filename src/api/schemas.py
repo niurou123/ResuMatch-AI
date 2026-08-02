@@ -70,12 +70,14 @@ class MockInterviewStartResponse(BaseModel):
     session_id: str
     first_question: str
     total_rounds: int = 5
+    message: str = ""
 
 
 class MockInterviewNextRequest(BaseModel):
-    """下一轮追问请求"""
+    """下一轮追问请求（面试官提问，AI 候选人回答）"""
     session_id: str
-    answer: str
+    question: str   # 面试官的问题
+    answer: str = ""  # 兼容旧字段
 
 
 class MockInterviewNextResponse(BaseModel):
@@ -85,6 +87,31 @@ class MockInterviewNextResponse(BaseModel):
     previous_feedback: Dict[str, Any] = {}
     is_last: bool = False
     session_summary: Optional[str] = None
+    ai_answer: str = ""        # AI 候选人基于简历的 STAR 回答
+    question_type: str = ""    # 问题类型（技术/项目/行为/通用）
+    citations: List[Dict[str, Any]] = []
+    review_scores: Dict[str, float] = {}
+    review_total: float = 0.0
+    revision_count: int = 0
+
+
+class MockSuggestRequest(BaseModel):
+    """AI 生成追问请求（面试官不知道问什么时）"""
+    session_id: str
+    focus_areas: List[str] = []  # 关注领域
+    project: str = ""            # 指定项目名（可选，空则从全部简历素材生成）
+    mode: str = "followup"       # followup=基于上下文追问 / new=开启新话题的问题
+
+
+class MockSuggestResponse(BaseModel):
+    """AI 生成追问响应"""
+    question: str = ""
+    reason: str = ""   # 生成依据说明（简短）
+
+
+class MockProjectsResponse(BaseModel):
+    """简历项目列表响应"""
+    projects: List[str] = []
 
 
 # ===== 自我介绍相关 =====
@@ -138,6 +165,27 @@ class JDMatchResponse(BaseModel):
     missing_categories: List[str] = []
     strength_analysis: str = ""
     gap_analysis: str = ""
+
+
+# ===== 项目-JD 匹配相关 =====
+class ProjectMatchRequest(BaseModel):
+    """项目-JD 匹配请求"""
+    jd_text: str
+    target_position: str = ""
+
+
+class ProjectMatchResponse(BaseModel):
+    """项目-JD 匹配响应 — 三维度项目匹配 + 针对性生成"""
+    jd_requirements: Dict[str, Any] = {}   # JD 需求提取结果
+    projects: List[Dict[str, Any]] = []    # 排序后的项目匹配明细
+    top_project: Optional[Dict[str, Any]] = None
+    targeted_answer: str = ""              # 针对性 STAR 面试回答
+    targeted_resume_desc: str = ""         # 针对性简历项目描述
+    resume_content: str = ""               # 针对性完整简历内容（技术栈增强+项目描述）
+    added_skills: List[str] = []           # 建议新增的技术栈（JD要求但简历缺失）
+    matched_skills: List[str] = []
+    missing_skills: List[str] = []
+    message: str = ""
 
 
 # ===== 系统相关 =====

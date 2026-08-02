@@ -88,7 +88,12 @@ class ParentChildChunker:
         children = []
         for i in range(0, len(sentences), self.child_size):
             group = sentences[i:i + self.child_size]
-            child_text = "。".join(group) + "。" if group[-1].endswith("。") else ""
+            if not group:
+                continue
+            # 拼接句子；句末无标点时补充句号，避免生成空 chunk
+            child_text = "。".join(group)
+            if not child_text.endswith(("。", "！", "？", ".", "!", "?")):
+                child_text += "。"
             child = Document(
                 content=child_text.strip(),
                 metadata={**metadata, "chunk_type": "child", "parent_id": 0},

@@ -47,3 +47,19 @@ htmlcov/
 
 # Test data
 data/chroma_db_test/
+
+# 开发杂项（不提交）
+=2.6.0
+=4.48.0
+python
+app_python_backup.py
+vibe-*.txt
+TECH_STACK_ANALYSIS.md
+*.png
+*.docx
+!frontend/public/**/*.png
+
+# 数据（隐私/运行时产物，不提交）
+data/profile.json
+data/chroma_db_test/
+data/questions.json

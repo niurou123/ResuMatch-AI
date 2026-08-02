@@ -37,6 +37,12 @@ content.js: 表单扫描+填充执行        │  src/rag/: RAG管道 (6项增�
 background.js: 消息路由              │  src/api/: 10个端点
 ```
 
+**当前模型配置**：
+- LLM：`deepseek-v4-pro`（DeepSeek API）
+- 嵌入模型：`BAAI/bge-small-zh`（512维）
+- Cross-Encoder 精排：`cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`
+- 向量库：ChromaDB 多集合存储（skills/projects/achievements/education）
+
 ---
 
 ## 三、路线图（按优先级排列）
@@ -58,11 +64,13 @@ background.js: 消息路由              │  src/api/: 10个端点
 
 ### 🟠 P1 — 核心功能
 
-#### 3.4 项目经验库 ⏳ (新增)
-- [ ] 项目结构化存储 (名称/角色/技术栈/成果/时间)
-- [ ] JD需求自动提取 (技术栈+软技能+经验要求)
-- [ ] 项目-JD智能匹配引擎 (技术交集+年限+复杂度)
-- [ ] 基于匹配结果生成针对性简历/回答
+#### 3.4 项目经验库 ✅ (已完成 v16)
+- [x] 项目结构化存储 (名称/角色/技术栈/成果/时间) — v14 多策略项目分割+技术栈智能提取
+- [x] 2个项目正确解析：ResuMatch AI（AI全栈面试助手）+ 视觉康复随访管理系统（医疗多端协同平台）
+- [x] 技术栈自动识别：LangGraph, FastAPI, ChromaDB, DeepSeek, HyDE, Self-Query等
+- [x] JD需求自动提取 (技术栈+软技能+经验要求) — v16 纯规则化提取
+- [x] 项目-JD智能匹配引擎 (技术交集+年限+复杂度) — v16 三维度打分排序
+- [x] 基于匹配结果生成针对性简历/回答 — v16 针对性STAR回答+简历描述（基于项目库真实数据，不虚构）
 
 #### 3.1 多Agent架构 ✅ (已完成 v3.0)
 - [x] 3并行检索Agent (关键词/语义/知识图谱) → Fusion投票
@@ -105,7 +113,7 @@ background.js: 消息路由              │  src/api/: 10个端点
 
 | 层 | 技术 |
 |----|------|
-| 前端 | Chrome Extension MV3, vanilla JS |
+| 前端 | React (Vite + TypeScript + Tailwind CSS) — frontend/；Chrome Extension MV3 (vanilla JS) — extension/；Streamlit 已弃用 |
 | 后端 | Python, FastAPI, LangGraph |
 | LLM | DeepSeek v4-pro |
 | 向量库 | ChromaDB, bge-small-zh (512维) |
@@ -114,7 +122,75 @@ background.js: 消息路由              │  src/api/: 10个端点
 
 ---
 
-## 五、用户的想法
+## 五、项目简历
+
+> 基于项目实际代码库和架构自动生成，定期更新。
+
+### ResuMatch AI — AI 驱动的校招网申面试助手
+
+**时间**：2026.05 - 至今  
+**角色**：全栈开发工程师（独立开发）  
+**作品集**：https://github.com/niurou123
+
+#### 项目简介
+
+面向校招求职场景的AI全栈应用，覆盖"简历上传 → AI 蒸馏解析 → 向量化存储 → 网申表单智能填充 → 项目-JD 智能匹配 → 面试问答/对练"完整链路。前端为 React（Vite + TypeScript + Tailwind）+ Chrome 插件（Manifest V3），后端基于 FastAPI + LangGraph 多 Agent 协作架构。
+
+#### 技术栈
+
+Python, FastAPI, LangGraph, ChromaDB, DeepSeek, Sentence-Transformers, bge-small-zh, PyMuPDF, React, TypeScript, Tailwind CSS, Chrome Extension Manifest V3, Docker
+
+#### 核心工作
+
+**1. LangGraph 多 Agent 面试工作流（v3.0）**
+
+设计 6 节点工作流 + 条件修订边：Planner（动态策略调度）→ Router（规则化问题分类，0s 延迟）→ 3 路并行检索（Keyword / Semantic / Graph，asyncio.gather 并发）→ Fusion 投票融合 → STAR Writer（引用约束 + Agent 间通信）→ 3 路并行评审（正确性 / 完整性 / 优势，多数表决）→ 修订回环（最多 3 轮）。全链路异步非阻塞，单 Agent 失败不影响整体。支持**快速模式**（面试对练跳过评审/修订，回答提速 3-4 倍）。
+
+**2. 6 项 RAG 增强技术**
+
+- **HyDE 假设文档嵌入**：LLM 生成假设回答 → 用假设回答的向量检索（Recall@5 ↑15-25%）
+- **Self-Query 结构化检索**：LLM 自动将自然语言翻译为 ChromaDB metadata 过滤条件
+- **Cross-Encoder 精排**：Bi-Encoder 初检 Top-K → Cross-Encoder 逐对打分（精度 ↑10-20%）
+- **Parent-Child 父子分块**：子块 2-3 句检索 → 父块完整段落送入 LLM
+- **Skill Graph 知识图谱**：16 个技术类别 × 80+ 技术节点，归类词 → 具体技能展开
+- **LLM-as-Judge 评测基线**：5 维自动评分（相关性 / STAR 完整性 / 优势展示 / 量化密度 / 真实性）
+
+**3. 项目-JD 智能匹配引擎（需求2）**
+
+JD 需求自动提取（技术栈/软技能/经验年限，纯规则化）→ 项目库三维度匹配（**技术交集 / 经验年限 / 复杂度**，SkillGraph 语义归类）→ 排序打分 → 生成**针对性 STAR 回答 + 简历内容增强**（保留原有技能，补充 JD 要求技能，优化项目描述）。结构化项目库 JSON 持久化（data/profile.json），ChromaDB 仅作降级兜底。
+
+**4. 面试对练（AI 候选人模式）**
+
+用户扮演面试官提问，AI 基于简历生成 STAR 回答，支持多轮追问。**AI 生成问题**：选择目标项目 + 追问/新问题双模式，基于上下文和简历生成深挖问题。**推理式退路**：简历未覆盖的技术细节，基于简历真实技术栈 + 通用框架知识推理回答，不编造量化成果。
+
+**5. Chrome 插件全栈开发（Manifest V3）**
+
+Background Service Worker 消息路由 + Content Script 表单扫描与填充执行 + Popup/Sidebar 双 UI。支持 ATS 系统自动检测（北森 / Moka / 智联 / Ant Design），React/Vue 受控组件兼容填充（native setter + 事件链），50+ 字段映射规则 + 三级匹配引擎（精确匹配 → 别名匹配 → LLM 智能匹配），字段覆盖率 85%+。120+ 规则本地毫秒匹配 + LLM 兜底。
+
+**6. 简历智能蒸馏**
+
+支持 PDF/DOCX 多格式解析（PyMuPDF + python-docx + XML 回退），纯规则分区识别 + 结构化提取（零 LLM 介入），每个字段标注来源行号 + 原始文本片段 + 提取方法 + 置信度。ChromaDB 四集合向量存储（skills / projects / achievements / education），字段提取准确率 95%+。
+
+**7. React 前端（替代 Streamlit）**
+
+全量迁移至 React（Vite + TypeScript + Tailwind），深色渐变主题（#0a0a1a + 蓝紫渐变）。四大页面：简历上传 / 面试模拟（多Agent DAG 可视化）/ 自我介绍 / JD 匹配（技能 + 项目双维度）。Streamlit 已弃用。
+
+**8. 工程优化与 Bug 修复**
+
+- 嵌入模型 bge-small-zh 缓存修复 + 启动预热 + 并发加锁（首请求提速 10-20s）
+- Parent-Child 分块器三目优先级 Bug 修复（消除 74% 空 chunk 污染检索）
+- 修复 STAR 回答张冠李戴（项目归属约束 + 检索定向召回/剔除）
+- 修复 LLM 编造量化数据（禁止编造提示约束，缺失如实标注）
+- 结构化档案/项目库持久化 + 项目-JD 匹配改读可靠数据源
+- 10 个经典 Bug 修复记录于 BUG_LOG.md（事件循环死锁、协程泄露、编码冲突等）
+
+**9. 端到端测试覆盖**
+
+pytest 测试框架，覆盖简历解析 → 向量检索 → Agent 工作流全链路。4 个面试问题类型验证（技术深度 / 项目追问 / 行为面试 / 通用问题），全部通过 3 路检索 + 3 路评审工作流。
+
+---
+
+## 七、用户的想法
 
 <!-- 在这里写下你的需求和想法，AI执行时会参考 -->
 
@@ -122,6 +198,8 @@ background.js: 消息路由              │  src/api/: 10个端点
 2. **项目经验库 + JD智能匹配**：将用户做过的项目结构化存储为"项目经验库"，上传JD后自动分析JD需求 → 从项目库中筛选最相关的项目 → 生成针对性简历/回答。
 3. **UI要有档次**：当前界面过于卡通，需要提升品质感。风格方向：简洁但有质感、使用渐变元素、不能简陋到只剩控件，要有设计感，体现专业工具的品牌调性。
 4. **完善简历档案结构**：学习参考项目 AI-Resume-Form-Filling-Assistant + 主流招聘网站（北森/Moka/智联/51job/牛客），建立全面的简历档案Schema，覆盖网申可能遇到的所有字段类型。
+5. **前端面试Agent功能可视化**：前端（React，frontend/）需体现多Agent工作流的运行过程，让用户看到Planner→Router→并行检索→Fusion→Writer→并行评审→多数表决的完整链路。在前端展示Agent执行状态、中间结果、各节点耗时，让用户感知到"AI正在分步骤思考"，而非一个黑盒。覆盖面试问答生成的方方面面：问题理解、知识检索、回答生成、质量评审。
+   
 ---
 
 ### 5.1 需求细化
@@ -174,12 +252,47 @@ background.js: 消息路由              │  src/api/: 10个端点
 - 下拉选项智能别名匹配（50+别名组）
 - 参考来源：AI-Resume-Form-Filling-Assistant + 北森/Moka/智联/51job/牛客
 
+**需求5：前端面试Agent功能可视化**
+- 目标：将多Agent工作流的内部运行过程在前端（Streamlit）可视化呈现，消除"黑盒感"
+- Agent流程展示：
+  - Planner阶段：展示问题类型识别结果（行为面试/技术问题/项目深挖/情景题）及调度策略
+  - Router阶段：展示检索路由决策（选择了哪些检索通道、权重分配）
+  - 并行检索阶段：3路检索（关键词/语义/知识图谱）的实时进度条 + 各通道命中数量
+  - Fusion阶段：展示融合投票结果，各通道贡献度
+  - Writer阶段：展示生成进度（流式输出回答内容）
+  - 并行评审阶段：3路评审（正确性/完整性/优势）的评审意见 + 投票结果
+  - 回环机制：如需修改，展示 Revise → 重新评审 的迭代过程
+- 可视化元素：
+  - 工作流拓扑图：DAG节点+连线，高亮当前执行节点
+  - 节点状态指示灯：等待中/执行中/已完成/失败（纯CSS，与P2 UI风格统一）
+  - 各节点耗时统计（ms级），帮助用户感知性能
+  - 折叠/展开：默认高级用户展开全部，普通用户只看最终结果
+- 面试功能覆盖：
+  - 行为面试：STAR模型拆解（Situation→Task→Action→Result），展示每个环节的匹配依据
+  - 技术问题：知识库检索过程 + 技术栈匹配度
+  - 项目深挖：展示项目-JD匹配引擎的评分明细（技术交集/年限/复杂度三个维度）
+  - 情景题：多方案生成 + 优劣对比
+- 降级与容错：
+  - 单个Agent失败不影响整体流程（错误隔离）
+  - LLM不可用时退化为规则化回答（前端明确标注"规则模式"）
+  - 检索无结果时展示"知识库覆盖不足"提示而非编造内容
+- 前端技术要求：
+  - 使用 Streamlit 原生组件（expander/progress/status/spinner/columns）实现，不引入额外前端框架
+  - 工作流状态通过 Server-Sent Events (SSE) 或轮询方式从后端获取实时更新
+  - 与现有深色渐变主题（v9 UI品质升级）视觉统一
+
 ---
 
-## 六、变更日志
+## 八、变更日志
 
 | 日期 | 版本 | 改动 |
 |------|------|------|
+| 8.1 | v17 | **前端迁移 React + 项目库落地**: 前端全部迁移至 React (frontend/，Streamlit 弃用)、结构化档案/项目库持久化 (ProfileStore, data/profile.json)、项目-JD 匹配改读项目库（修复 ChromaDB 碎 chunk 数据源缺陷）、React JD匹配页双 tab（技能/项目）、修复 bge-small-zh 嵌入模型缓存不完整导致上传失败 |
+| 8.1 | v16 | **项目-JD智能匹配引擎 (需求2 完成)**: JD需求自动提取（技术栈/软技能/经验年限/职责，纯规则化）+ 项目库三维度匹配（技术交集/经验年限/复杂度，SkillGraph语义归类）+ 针对性STAR回答/简历描述生成（基于项目库真实数据，不虚构）+ /match/projects 端点 + React JD匹配页双标签页（技能匹配/项目匹配） |
+| 7.31 | v15 | **项目简历生成**: 第五节新增完整项目简历，基于实际代码库+架构总结，覆盖6大核心工作模块，可独立作为简历项目经历使用 |
+| 7.31 | v14 | **项目经验库完善 + 简历解析增强 + Bug修复**: 简历解析器全面改进（严格分区识别+多策略项目分割+技术栈智能提取）、自我介绍真实数据注入、向量存储空content回退、Retriever 3路全激活、Writer引用警告修复 |
+| 7.30 | v13 | **系统联调 + 环境适配**: requirements.txt 纯ASCII化、config.py 损坏字符修复、routes.py 事件循环死锁修复、ChromaDB 数据注入 user_profile、should_retrieve 检测 indexed_docs、Planner 多数据结构兼容、Router 技术栈分类规则增强 |
+| 7.28 | v12 | **需求5 前端Agent可视化**: 面试多Agent工作流前端展示 — DAG拓扑图/节点状态/耗时统计/STAR拆解/检索过程/评审意见/降级标注 |
 | 7.27 | v11 | **完整简历档案**: resume-schema v3 — 14分区/200+字段，参考AI-Resume-Form-Filling-Assistant + 主流招聘网站 |
 | 7.26 | v10 | **P2 UI品质升级**: 全平台去卡通化（Streamlit + popup + sidebar），深色渐变主题，Linear/Notion风格 |
 | 7.26 | v9 | **P0 简历如实提取**: 解析器v2.0（来源追踪+置信度+验证报告）+ LLM标准化映射层 + LLM使用边界明确化 |

@@ -9,9 +9,23 @@ STAR_SYSTEM_PROMPT = """你是一个专业的AI面试助手。你的任务是帮
 ## 核心原则
 1. **真实性第一**: 只能使用提供的「简历素材」中的信息，绝不编造数据
 2. **STAR结构**: 严格按 Situation → Task → Action → Result 组织回答
-3. **量化成果**: 优先引用具体的数字和百分比
+3. **量化成果**: 优先引用素材中真实出现的数字和百分比
 4. **第一人称**: 使用"我"来叙述，让回答听起来真实自然
-5. **引用标注**: 每个事实性陈述必须标注素材来源"""
+5. **引用标注**: 每个事实性陈述必须标注素材来源
+
+## ⚠️ 禁止编造（最重要，与真实性第一同等）
+1. **素材中没有的量化数据一律不得编造**——包括：百分比、倍率、数字指标、日期/时间线、评分、人数、成本等。
+2. 如果素材里没有量化成果，就**如实描述过程与动作**，不要虚构"提升X%""达到X分"等数字。
+3. **禁止编造时间线**：素材没有的项目启动时间、上线时间、迭代计划，不得自行捏造（如"2024年启动""计划2025年上线"）。
+4. 缺失信息时明确说"根据我的简历，这部分信息暂时没有详细记录"，而不是补一个数字。
+5. 素材里出现过的数字可以直接引用并标注来源；素材没有的数字绝不能编。
+
+## ⚠️ 项目归属约束
+每条素材都标注了所属项目（`[项目: xxx]`）。回答必须遵守：
+1. **只使用与问题指向项目一致的项目素材**。如果问题问的是项目A，就只用 `[项目: A]` 的素材。
+2. **禁止跨项目混用技术/成果**。例如：项目A的素材里出现了某个技术，不能把它说成项目B做的。
+3. 如果检索素材里混入了多个项目的素材，优先采用与问题最相关的那个项目，**忽略其他项目**的素材，不要拼接到同一个回答里。
+4. 无法确定素材属于哪个项目时，标注 `[来源: 素材]` 并谨慎引用；不要臆测。"""
 
 STAR_USER_TEMPLATE = Template("""## 候选人背景
 姓名: {{ profile.name }}
@@ -146,13 +160,62 @@ SELF_INTRO_USER_TEMPLATE = Template("""## 候选人信息
 请生成一段自我介绍，直接输出内容，不要加标题。""")
 
 
+def _infer_project_name(ctx: Dict[str, Any]) -> str:
+    """推断素材所属项目名。优先按内容文本判断（更可靠），再回退到 metadata。
+
+    注意：source_text 可能被分块污染（视觉康复素材的 source_text 误标为 ResuMatch），
+    所以以 content 内容为准匹配项目关键词。
+    """
+    md = ctx.get("metadata", {}) or {}
+    content = str(ctx.get("content", "") or "")
+    source_text = str(md.get("source_text", "") or "")
+
+    # 项目关键词表：别名 → 项目名（内容命中优先）
+    project_keywords = [
+        ("视觉康复", ["视觉康复", "随访", "医疗", "康复", "多端协同"]),
+        ("ResuMatch", ["ResuMatch", "网申", "面试助手", "多Agent", "检索增强", "RAG"]),
+        ("PaperPilot", ["PaperPilot", "科研助手", "论文"]),
+        ("MLLM", ["MLLM", "多模态摘要", "图神经网络"]),
+    ]
+
+    # 1. 内容优先：content 命中哪个项目就归哪个（防 source_text 污染）
+    content_hits = [proj for proj, aliases in project_keywords if any(a in content for a in aliases)]
+    if content_hits:
+        return content_hits[0]
+
+    # 2. 回退：metadata.name
+    name = md.get("name", "") or ""
+    if name:
+        return name
+
+    # 3. 再回退：source_text
+    import re as _re
+    m = _re.search(r'(ResuMatch[^\s（）()]*|PaperPilot[^\s（）()]*|视觉康复[^\s（）()]*)', source_text)
+    return m.group(1) if m else ""
+
+
+def _annotate_project(ctx: Dict[str, Any]) -> str:
+    """给素材渲染文本，附上项目归属标注。"""
+    proj = _infer_project_name(ctx)
+    tag = f"[项目: {proj}] " if proj else ""
+    return f"{tag}{ctx.get('content', '')}"
+
+
 def build_star_prompt(state: Dict[str, Any]) -> tuple[str, str]:
-    """构建 STAR 生成的 system/user prompt"""
+    """构建 STAR 生成的 system/user prompt
+
+    对检索素材做「项目归属标注」：每条素材前加 [项目: xxx]，
+    配合 STAR_SYSTEM_PROMPT 的项目归属约束，避免 writer 跨项目混用素材。
+    """
     system = STAR_SYSTEM_PROMPT
+    annotated_context = [
+        {**ctx, "content": _annotate_project(ctx)}
+        for ctx in state.get("reranked_context", [])
+    ]
     user = STAR_USER_TEMPLATE.render(
         profile=state.get("user_profile", {}),
         query=state.get("query", ""),
-        reranked_context=state.get("reranked_context", []),
+        reranked_context=annotated_context,
         retrieved_projects=state.get("retrieved_projects", []),
         revision_feedback=state.get("revision_feedback", ""),
     )

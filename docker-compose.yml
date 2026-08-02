@@ -34,14 +34,14 @@ services:
       retries: 3
       start_period: 40s
 
-  # Streamlit 前端
+  # React 前端 (Nginx)
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.streamlit
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: interview-rag-frontend
     ports:
-      - "8501:8501"
+      - "3000:80"
     environment:
       - API_URL=http://api:8000
     depends_on:
@@ -49,8 +49,6 @@ services:
         condition: service_healthy
     networks:
       - interview-rag
-    volumes:
-      - ./frontend:/app/frontend
 
   # 可选：Redis 缓存
   redis:
