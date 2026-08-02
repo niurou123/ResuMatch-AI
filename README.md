@@ -1,28 +1,30 @@
 # ResuMatch AI — 多Agent面试 + 网申助手
 
-基于多Agent协作的AI校招助手。简历智能解析、网申一键填充、面试问答生成。
+基于多Agent协作的AI校招助手。简历智能解析、网申一键填充、项目-JD智能匹配、面试对练、面试问答生成。
 
 ## 核心场景
 
 1. **上传简历** → AI 纯规则提取结构化数据 → 本地档案存储
 2. **打开网申页面** → 扫描表单 → 一键智能填充
 3. **输入面试问题** → 多Agent并行检索 + 评审 → STAR 格式回答
+4. **项目-JD 智能匹配** → 三维度打分 + 针对性简历内容生成（技术栈增强）
+5. **面试对练** → 你当面试官，AI 基于简历作答 + AI 生成追问
 
 ---
 
 ## 技术架构 (v3.0)
 
 ```
-Chrome Extension (Manifest V3)     │  Python Backend (FastAPI) — 多Agent并行架构
+React 前端 (Vite+TS+Tailwind)       │  Python Backend (FastAPI) — 多Agent并行架构
 ───────────────────────────────────┼──────────────────────────────────────────
-popup.js: 扫描+本地匹配+填充        │  Planner → Router → 3路并行检索Agent
-  - 120+规则本地毫秒匹配             │    (keyword/semantic/graph, asyncio.gather)
-  - LLM兜底(仅未匹配字段)            │  → Fusion投票 → Writer(Agent通信)
+简历上传 / 面试模拟 / 自我介绍        │  Planner → Router → 3路并行检索Agent
+JD匹配 (技能+项目双维度)             │    (keyword/semantic/graph, asyncio.gather)
+面试对练 (AI候选人+AI生成问题)       │  → Fusion投票 → Writer(Agent通信)
                                     │  → 3路并行Reviewer(正确性/完整性/优势)
-sidebar.js: 简历上传+档案编辑       │  → 多数表决 → END/Revise回环
-content.js: 表单扫描+填充执行        │
-background.js: 消息路由              │  RAG管道: 解析器v2.0 + 标准化映射层
-resume-editor: 14分区完整编辑器      │  10个API端点 + 来源追踪 + 验证报告
+Chrome Extension (MV3)              │  → 多数表决 → END/Revise回环
+  - 120+规则本地毫秒匹配 + LLM兜底    │
+  - 表单扫描+一键填充                │  RAG管道: 解析器v2.0 + 6项增强技术
+                                    │  项目-JD匹配: 三维度打分 + 简历内容增强
 ```
 
 ### 6 节点 LangGraph 工作流
@@ -74,11 +76,11 @@ npm run dev
 
 ### 使用流程
 
-1. 打开 http://localhost:5173 或点击扩展图标
+1. 打开 http://localhost:5173（React 前端）或点击扩展图标
 2. 上传简历（PDF/Word/Markdown/TXT）
-3. 在「面试模拟」输入问题，获取 STAR 格式回答
+3. 在「面试模拟」输入问题，获取 STAR 格式回答，或进入「多轮模拟」面试对练
 4. 打开网申页面，点击「扫描页面」→「一键填充」
-5. 使用「JD 匹配」分析职位匹配度
+5. 使用「JD 匹配」分析匹配度，并生成针对岗位的简历内容（技术栈增强）
 
 ---
 
@@ -174,12 +176,15 @@ GET  /api/v1/resume/profile       # 获取简历画像
 POST /api/v1/interview/answer     # 单次面试问答
 POST /api/v1/interview/stream     # 流式问答 (SSE)
 
-POST /api/v1/mock/start           # 开始模拟面试
-POST /api/v1/mock/next            # 下一轮追问
+POST /api/v1/mock/start           # 开始面试对练 (你当面试官)
+POST /api/v1/mock/next            # 面试官提问 → AI 候选人 STAR 回答
+POST /api/v1/mock/suggest         # AI 生成问题 (项目选择 + 追问/新问题模式)
+GET  /api/v1/mock/projects        # 简历项目列表
 
 POST /api/v1/form/fill            # 智能表单填充 (LLM驱动)
 POST /api/v1/intro/generate       # 生成自我介绍
-POST /api/v1/match/analyze        # JD匹配度分析
+POST /api/v1/match/analyze        # JD匹配度分析 (技能级)
+POST /api/v1/match/projects       # 项目-JD匹配 (三维度 + 简历内容增强)
 
 GET  /api/v1/health               # 健康检查
 GET  /api/v1/system/info          # 系统信息
@@ -216,8 +221,9 @@ pytest tests/test_parser.py -v
 |--------|------|------|
 | P0 | 简历如实提取 (来源追踪+置信度) | ✅ |
 | P1 | 多Agent并行架构 | ✅ |
-| P1 | 项目经验库 + JD智能匹配 | ⏳ |
-| P2 | UI品质升级 (深色渐变主题) | ✅ |
+| P1 | 项目经验库 + JD智能匹配 | ✅ |
+| P1 | 面试对练 (AI候选人 + AI生成问题) | ✅ |
+| P2 | UI品质升级 (深色渐变主题 + React) | ✅ |
 | P2 | 网申填充增强 | ⏳ |
 | P3 | OCR / 简历编辑器 / 进度追踪 | ⏳ |
 
