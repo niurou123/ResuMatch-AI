@@ -39,19 +39,25 @@ export function JDMatch() {
   );
 }
 
-// ===== 技能匹配（原有逻辑） =====
+// ===== 技能匹配（原有逻辑 + 简历增强） =====
 function SkillMatch() {
   const [jdText, setJdText] = useState('');
   const [position, setPosition] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<JDMatchResponse | null>(null);
+  const [enhanced, setEnhanced] = useState<ProjectMatchResponse | null>(null);
 
   const handleAnalyze = async () => {
     if (!jdText.trim()) { toast.error('请输入 JD 文本'); return; }
     setLoading(true);
     try {
-      const data = await analyzeMatch(jdText, position);
+      // 并行调用：技能级分析 + 项目匹配（含简历内容增强）
+      const [data, enh] = await Promise.all([
+        analyzeMatch(jdText, position),
+        analyzeMatchProjects(jdText, position).catch(() => null),
+      ]);
       setResult(data);
+      setEnhanced(enh);
       toast.success(`匹配度: ${data.match_score}%`);
     } catch (err) {
       toast.error(`分析失败: ${(err as Error).message}`);
@@ -137,6 +143,26 @@ function SkillMatch() {
               <div className="flex flex-wrap gap-2">
                 {result.recommended_skills.map((s, i) => <span key={i} className="tag-skill">{s}</span>)}
               </div>
+            </div>
+          )}
+
+          {/* 技术栈增强：保留原有 + 建议补充 */}
+          {enhanced?.added_skills && enhanced.added_skills.length > 0 && (
+            <div className="card-custom">
+              <div className="card-header">🧩 技术栈增强（保留原有 + 建议补充）</div>
+              <p className="text-text-3 text-xs mb-3">在原有技术栈基础上，为更匹配该岗位建议补充以下技能：</p>
+              <div className="flex flex-wrap">
+                {enhanced.added_skills.map((s, i) => <span key={i} className="tag-missing">{s} ＋</span>)}
+              </div>
+            </div>
+          )}
+
+          {/* 针对性简历内容（技术栈增强 + 项目描述增强） */}
+          {enhanced?.resume_content && (
+            <div className="card-custom">
+              <div className="card-header">📄 针对性简历内容（面向该岗位优化）</div>
+              <p className="text-text-3 text-xs mb-3">已保留原有技能，新增岗位要求的技能，并优化了 Top 匹配项目描述。</p>
+              <pre className="text-text-2 text-sm leading-relaxed whitespace-pre-wrap font-sans">{enhanced.resume_content}</pre>
             </div>
           )}
         </div>
