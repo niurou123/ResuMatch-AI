@@ -375,6 +375,32 @@ class ResumeParser:
             with open(file_path, "r", encoding="utf-8") as f:
                 return f.read()
 
+    def _extract_text_bytes(self, content: bytes, ext: str) -> str:
+        """从字节内容提取文本（用于上传接口，不落盘）"""
+        if ext == "pdf":
+            import fitz
+            import io
+            doc = fitz.open(stream=content, filetype="pdf")
+            text_parts = []
+            for page in doc:
+                text_parts.append(page.get_text("text"))
+            doc.close()
+            return "\n".join(text_parts)
+        elif ext == "docx":
+            import io
+            from docx import Document as DocxDocument
+            doc = DocxDocument(io.BytesIO(content))
+            text_parts = [para.text for para in doc.paragraphs if para.text.strip()]
+            # 表格文本
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        if cell.text.strip():
+                            text_parts.append(cell.text)
+            return "\n".join(text_parts)
+        else:
+            return content.decode("utf-8", errors="ignore")
+
     def _extract_pdf(self, file_path: str) -> str:
         """PyMuPDF 直接提取"""
         try:
@@ -669,9 +695,10 @@ class ResumeParser:
         # 项目分割：合并两种边界格式，一次识别所有项目，避免顺序互斥导致漏分
         #   边界A: "项目名 + 4+空白 + 日期"（如 "ResuMatch AI ... 2026.05 - 至今"）
         #   边界B: "项目名 | 角色 [公司]"（如 "视觉康复随访管理系统 | 全栈开发工程师  XX科技"）
-        # 用 | 交替合成为单一正则，任意匹配即切分，保证两种格式的项目都能被识别
+        #   md 标题: "### 项目名 | 角色"（允许 # 前缀）
+        # 用 | 交替合成为单一正则，任意匹配即切分，保证各种格式的项目都能被识别
         project_blocks = re.split(
-            r'\n(?=[A-Za-z一-鿿（(](?:[^\n]{3,120}\s{4,}\d{4}[.\-]'
+            r'\n(?=#*\s*[A-Za-z一-鿿（(](?:[^\n]{3,120}\s{4,}\d{4}[.\-]'
             r'|[^\n]{5,100}\s*\|\s*[^\n]{1,30}))',
             project_text
         )

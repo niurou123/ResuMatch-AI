@@ -449,7 +449,7 @@ function MockInterview() {
       const res = await fetch('/api/v1/mock/next', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, question: currentQuestion }),
+        body: JSON.stringify({ session_id: sessionId, question: currentQuestion, project: targetProject }),
       });
       const data = await res.json();
       if (res.ok) {

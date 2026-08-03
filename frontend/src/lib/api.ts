@@ -83,6 +83,23 @@ export const deleteProfileProject = (projectIndex: number) =>
 export const updateProfileSkills = (skills: string[]) =>
   api.put<{ success: boolean; message: string }>('/api/v1/profile/skills', { skills });
 
+// ===== 项目资料库（RAG 文档） =====
+export const uploadProjectDoc = (projectName: string, file: File) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.upload<{ success: boolean; message: string; indexed: number }>(
+    `/api/v1/project/${encodeURIComponent(projectName)}/docs`, fd,
+  );
+};
+
+export const listProjectDocs = (projectName: string) =>
+  api.get<{ project: string; documents: string[] }>(`/api/v1/project/${encodeURIComponent(projectName)}/docs`);
+
+export const searchProjectDocs = (projectName: string, query: string) =>
+  api.post<{ results: { content: string; score: number }[] }>(
+    `/api/v1/project/${encodeURIComponent(projectName)}/docs/search`, { query },
+  );
+
 // ===== 面试 =====
 export const interviewAnswer = (question: string) =>
   api.post<InterviewResponse>('/api/v1/interview/answer', {

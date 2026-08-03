@@ -110,6 +110,7 @@ class MockInterviewNextRequest(BaseModel):
     session_id: str
     question: str   # 面试官的问题
     answer: str = ""  # 兼容旧字段
+    project: str = ""  # 目标项目（可选，指定则优先检索该项目 RAG 文档）
 
 
 class MockInterviewNextResponse(BaseModel):

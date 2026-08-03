@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { getProfileDetail, updateProfileProject, deleteProfileProject, updateProfileSkills } from '@/lib/api';
+import { getProfileDetail, updateProfileProject, deleteProfileProject, updateProfileSkills, uploadProjectDoc, listProjectDocs } from '@/lib/api';
 
 interface ProjectItem {
   name: string;
@@ -229,6 +229,8 @@ export function Profile() {
                   )}
                   {p.challenges && <p className="text-text-3 text-xs mb-1">挑战: {p.challenges}</p>}
                   {p.responsibilities && <p className="text-text-3 text-xs">职责: {p.responsibilities}</p>}
+                  {/* 项目资料库（RAG 文档上传） */}
+                  <ProjectDocs projectName={p.name || ''} />
                 </div>
               ))}
               {projects.length === 0 && <p className="text-text-3 text-sm">暂无项目，可点击「新增项目」手动添加</p>}
@@ -294,6 +296,71 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
+    </div>
+  );
+}
+
+// 项目资料库：上传项目文档（技术栈/模型/细节）存入 RAG，面试回答会检索
+function ProjectDocs({ projectName }: { projectName: string }) {
+  const [docs, setDocs] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const loadDocs = useCallback(async () => {
+    if (!projectName) return;
+    try {
+      const data = await listProjectDocs(projectName);
+      setDocs(data.documents || []);
+    } catch {
+      setDocs([]);
+    }
+  }, [projectName]);
+
+  useEffect(() => { loadDocs(); }, [loadDocs]);
+
+  const handleUpload = async (file: File | undefined) => {
+    if (!file || !projectName) return;
+    setUploading(true);
+    try {
+      const res = await uploadProjectDoc(projectName, file);
+      toast.success(res.message || '文档已上传并索引');
+      await loadDocs();
+    } catch (err) {
+      toast.error(`上传失败: ${(err as Error).message}`);
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-3" style={{ borderTop: '1px dashed #2a2a5a' }}>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-text-3 text-xs">📄 项目资料库（面试回答会检索）</span>
+        <button
+          className="px-2.5 py-1 rounded-btn text-xs border border-border text-text-2 hover:text-text"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? '上传中...' : '上传资料'}
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".pdf,.docx,.md,.txt"
+          className="hidden"
+          onChange={(e) => handleUpload(e.target.files?.[0])}
+        />
+      </div>
+      {docs.length > 0 ? (
+        <ul className="space-y-0.5">
+          {docs.map((d, i) => (
+            <li key={i} className="text-text-3 text-xs">{d}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-text-3 text-xs">尚未上传资料，可上传技术栈/模型/项目细节文档</p>
+      )}
     </div>
   );
 }

@@ -19,7 +19,7 @@ class ResumeVectorStore:
     - education: 教育背景向量
     """
 
-    COLLECTIONS = ["skills", "projects", "achievements", "education"]
+    COLLECTIONS = ["skills", "projects", "achievements", "education", "project_docs"]
 
     def __init__(self, persist_path: str = None):
         self.persist_path = persist_path or settings.CHROMA_DB_PATH

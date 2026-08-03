@@ -45,11 +45,12 @@ _sessions: Dict[str, Any] = {}
 _session_memory = SessionMemory()
 
 
-async def _generate_mock_answer(question: str, profile: dict) -> dict:
+async def _generate_mock_answer(question: str, profile: dict, project: str = "") -> dict:
     """生成面试对练的 AI 候选人回答（单次 LLM 调用，快且稳）。
 
     与完整多Agent工作流不同，这里用一次 LLM 调用完成：
     - 基于简历真实素材生成 STAR 回答
+    - 检索目标项目的 RAG 资料文档（如有），基于真实文档作答
     - 简历未覆盖的技术细节，基于通用框架知识推理补充（不编造简历没有的量化成果）
 
     返回 {answer, question_type, citations}
@@ -86,6 +87,34 @@ async def _generate_mock_answer(question: str, profile: dict) -> dict:
         skills_text = "、".join(dict.fromkeys(known_skills)) or "（简历暂未上传）"
         projects_text = "\n".join(known_projects) or "（暂无项目）"
 
+        # ===== 项目 RAG 资料检索 =====
+        # 确定目标项目：优先请求指定，其次从问题匹配项目名
+        target_project = project.strip()
+        if not target_project:
+            for p in profile.get("projects", []):
+                if isinstance(p, dict) and p.get("name") and p["name"] in question:
+                    target_project = p["name"]
+                    break
+        project_refs = ""
+        if target_project:
+            try:
+                from src.rag.vector_store import get_vector_store
+                vs = get_vector_store()
+                results = vs.search(question, "project_docs", top_k=5, where={"project_name": target_project})
+                if results:
+                    parts = [f"[{target_project} 资料文档]"]
+                    for r in results:
+                        c = (r.get("content") or "").strip()
+                        if c:
+                            parts.append(c[:400])
+                    project_refs = "\n".join(parts)
+            except Exception:
+                project_refs = ""
+        if project_refs:
+            refs_section = f"\n## 该项目参考资料（来自上传的文档，回答应优先采用）\n{project_refs}\n"
+        else:
+            refs_section = ""
+
         system_prompt = """你是专业的AI面试助手，为候选人生成面试回答。候选人简历素材可能不完整。
 
 ## 核心原则
@@ -104,7 +133,7 @@ async def _generate_mock_answer(question: str, profile: dict) -> dict:
 
 ## 候选人项目经历
 {projects_text}
-
+{refs_section}
 ## 面试官的问题
 {question}
 
@@ -369,6 +398,96 @@ async def update_skills(request: ProfileUpdateSkillsRequest):
     return ProfileMessageResponse(success=True, message=f"已保存 {len(skills)} 项技能")
 
 
+# ===== 项目资料库（RAG 文档） =====
+@router.post("/project/{project_name}/docs")
+async def upload_project_doc(project_name: str, file: UploadFile = File(...)):
+    """上传项目资料文档（md/txt/docx/pdf），分块存入 RAG，供面试回答检索"""
+    import sys
+    sys.setrecursionlimit(50000)
+
+    ext = file.filename.split(".")[-1].lower() if "." in file.filename else ""
+    if ext not in settings.get_supported_formats():
+        raise HTTPException(400, f"不支持的格式: .{ext}")
+
+    # 读取原始文本（复用 parser 提取逻辑：pdf/docx 特殊处理，md/txt 直读）
+    content = await file.read()
+    try:
+        from src.rag.parser import ResumeParser
+        p = ResumeParser()
+        raw_text = p._extract_text_bytes(content, ext)
+    except Exception as e:
+        # 兜底：按 utf-8 直读
+        try:
+            raw_text = content.decode("utf-8", errors="ignore")
+        except Exception:
+            raise HTTPException(400, f"无法读取文档: {str(e)[:100]}")
+
+    if not raw_text or len(raw_text.strip()) < 20:
+        raise HTTPException(400, "文档内容过短，无法索引")
+
+    # 分块 + 入库（追加，不 reset）
+    from src.rag.chunker import ParentChildChunker
+    from src.rag.vector_store import get_vector_store
+    from src.rag.parser import Document
+    import uuid
+
+    chunker = ParentChildChunker()
+    doc = Document(content=raw_text, metadata={"type": "project_docs", "project_name": project_name})
+    children, _, _ = chunker.chunk_documents([doc])
+
+    docs = []
+    for i, ch in enumerate(children):
+        if not ch.content.strip():
+            continue
+        docs.append(Document(
+            content=ch.content,
+            metadata={
+                "type": "project_docs",
+                "project_name": project_name,
+                "filename": file.filename,
+            },
+            chunk_id=f"projdoc_{uuid.uuid4().hex[:8]}_{i}",
+        ))
+
+    vs = get_vector_store()
+    total = vs.index_documents(docs)
+    return {"success": True, "message": f"已索引 {total} 个片段", "indexed": total, "filename": file.filename}
+
+
+@router.get("/project/{project_name}/docs")
+async def list_project_docs(project_name: str):
+    """列出项目的资料文档清单"""
+    from src.rag.vector_store import get_vector_store
+    vs = get_vector_store()
+    results = vs.search("", "project_docs", top_k=200, where={"project_name": project_name})
+    filenames = []
+    seen = set()
+    for r in results:
+        fn = (r.get("metadata") or {}).get("filename", "")
+        if fn and fn not in seen:
+            seen.add(fn)
+            filenames.append(fn)
+    return {"project": project_name, "documents": filenames}
+
+
+@router.post("/project/{project_name}/docs/search")
+async def search_project_docs(project_name: str, request: Request):
+    """检索项目资料文档（按问题返回相关片段）"""
+    from src.rag.vector_store import get_vector_store
+    body = await request.json()
+    query = (body.get("query") or "").strip()
+    if not query:
+        return {"results": []}
+    vs = get_vector_store()
+    results = vs.search(query, "project_docs", top_k=5, where={"project_name": project_name})
+    return {
+        "results": [
+            {"content": r.get("content", ""), "score": r.get("score", 0)}
+            for r in results
+        ]
+    }
+
+
 # ===== 面试问答 =====
 @router.post("/interview/answer", response_model=InterviewResponse)
 async def interview_answer(request: InterviewRequest):
@@ -536,8 +655,8 @@ async def mock_interview_next(request: MockInterviewNextRequest):
         except Exception:
             pass
 
-        # 用专用单次 LLM 调用生成回答（快且稳，含技术推理退路）
-        gen = await _generate_mock_answer(question, profile)
+        # 用专用单次 LLM 调用生成回答（快且稳，含技术推理退路 + 项目文档检索）
+        gen = await _generate_mock_answer(question, profile, project=request.project or "")
         ai_answer = gen.get("answer", "")
         question_type = gen.get("question_type", "")
         citations = gen.get("citations", [])
