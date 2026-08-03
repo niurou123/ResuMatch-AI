@@ -316,13 +316,15 @@ class TargetedGenerator:
         return await self._safe_generate(system_prompt, user_prompt)
 
     async def generate_resume_content(
-        self, jd_req: Dict[str, Any], project: Dict[str, Any], user_skills: List[str]
+        self, jd_req: Dict[str, Any], project: Dict[str, Any], user_skills: List[str],
+        raw_skill_text: str = "",
     ) -> Dict[str, Any]:
         """生成针对性完整简历内容（含技术栈增强）。
 
         返回 {resume_content, added_skills, original_skills}
         - resume_content: 面向目标岗位的简历文本（技能+项目描述增强，保留原有基础）
         - added_skills: 新增的技术栈（JD 要求但简历未覆盖，保留原有技能）
+        - raw_skill_text: 简历原始技能段落（作为输出格式模板，如"熟练掌握.../深入理解..."）
         """
         if not project or not project.get("name"):
             return {"resume_content": "", "added_skills": [], "original_skills": user_skills}
@@ -334,22 +336,24 @@ class TargetedGenerator:
         system_prompt = """你是资深简历优化顾问。请基于候选人真实简历，生成一份**更匹配目标 JD 的简历内容**。
 
 ## 核心要求
-1. **技术栈增强（最重要）**：在候选人原有技能基础上，**补充目标 JD 要求但简历缺失的技能**，生成一份增强后的技能清单（原有技能一个都不删，新增技能追加在后）。对新增技能标注「（建议补充）」。
-2. **项目描述增强**：将 Top 匹配项目描述改写得更贴合 JD，突出与 JD 重合的技术，弱化无关细节。
-3. **真实性约束**：项目描述只能使用简历中真实存在的内容（项目名/角色/技术栈/成果），不编造简历没有的量化成果；但新增技能是"建议补充项"，不属于简历事实陈述。
-4. 格式清晰，输出纯文本。"""
+1. **技术栈增强（最重要）**：在候选人原有技能基础上，**补充目标 JD 要求但简历缺失的技能**，生成增强后的技能清单。
+2. **输出格式必须严格遵循候选人简历原始技能段落的写法**——每行以"熟练掌握 / 深入理解 / 熟悉 / 熟练使用"等动词开头，写成一个完整的技能陈述句（技能 + 具体能力描述），不要逐项罗列孤立的技能名。
+3. **原有技能段落一个都不删**，完整保留；新增技能以相同句式追加在对应位置（如补充"熟悉 LangGraph、ChromaDB 向量检索"这类 JD 要求项），并在新增行末尾标注「（建议补充）」。
+4. **项目描述增强**：将 Top 匹配项目描述改写得更贴合 JD，突出与 JD 重合的技术，弱化无关细节。
+5. **真实性约束**：项目描述只能使用简历中真实存在的内容，不编造简历没有的量化成果；新增技能是"建议补充项"，不属于简历事实陈述。
+6. 格式清晰，输出纯文本。"""
         user_prompt = f"""## 目标 JD 技术栈要求
 {jd_tech}
 
-## 候选人原有技能
-{skills_text}
+## 候选人简历原始技能段落（必须严格沿用此格式输出）
+{raw_skill_text if raw_skill_text else skills_text}
 
 ## 我的真实项目素材（Top 匹配项目）
 {project_text}
 
 请生成增强后的简历内容。输出格式：
-【增强后技术栈】
-（原有技能 + 建议补充技能，每行一个）
+【增强后技能】
+（严格沿用原始技能段落格式，原有每行保留 + 新增行以相同句式追加并标注「（建议补充）」）
 【项目描述增强】
 （面向 JD 优化后的项目描述，3-4 行要点）"""
 
@@ -357,11 +361,11 @@ class TargetedGenerator:
         original_lower = {s.lower() for s in user_skills}
         added_skills = [t for t in jd_req.get("tech_stack", []) if t.lower() not in original_lower]
 
-        # 生成并重试：LLM 偶发返回空/过短内容，重试最多 3 次
+        # 生成并重试：LLM 偶发返回空/过短内容，重试最多 4 次（格式模板 prompt 响应方差大）
         raw = ""
-        for attempt in range(3):
-            raw = await self._safe_generate(system_prompt, user_prompt, max_tokens=1200)
-            if raw and len(raw) >= 50:
+        for attempt in range(4):
+            raw = await self._safe_generate(system_prompt, user_prompt, max_tokens=1500)
+            if raw and len(raw) >= 100:
                 break
             await asyncio.sleep(1)
         if not raw or len(raw) < 50:
@@ -453,9 +457,12 @@ class ProjectJDMatchService:
             top_full = self._find_full(projects, top_project.get("name"))
             target = top_full or top_project
             user_skills = self._load_user_skills()
+            raw_skill_text = self._load_raw_skill_text()
             # 串行生成：STAR 回答 → 完整简历内容（含技术栈增强 + 项目描述增强）
             targeted_answer = await self.generator.generate_answer(jd_req, target)
-            content_res = await self.generator.generate_resume_content(jd_req, target, user_skills)
+            content_res = await self.generator.generate_resume_content(
+                jd_req, target, user_skills, raw_skill_text=raw_skill_text
+            )
             resume_content = content_res.get("resume_content", "") if content_res else ""
             added_skills = content_res.get("added_skills", []) if content_res else []
 
@@ -497,6 +504,32 @@ class ProjectJDMatchService:
             return names[:50]
         except Exception:
             return []
+
+    def _load_raw_skill_text(self) -> str:
+        """从原始简历文本提取技能段落（作为输出格式模板）。
+
+        技能段落通常每行以"熟练掌握/深入理解/熟悉/熟练使用"等开头，
+        保留该原始格式供 LLM 生成增强版技能清单时沿用。
+        """
+        try:
+            import glob
+            from src.rag.parser import ResumeParser
+            # 找最近上传的简历
+            files = sorted(glob.glob("data/resumes/*"), key=lambda f: __import__("os").path.getmtime(f), reverse=True)
+            for fp in files:
+                if not fp.lower().endswith((".pdf", ".docx", ".md", ".txt")):
+                    continue
+                try:
+                    p = ResumeParser()
+                    parsed = p.parse(fp)
+                    skill_text = parsed.sections.get("skills", "").strip()
+                    if skill_text and len(skill_text) > 30:
+                        return skill_text[:1500]
+                except Exception:
+                    continue
+            return ""
+        except Exception:
+            return ""
 
     def _load_projects(self, vs) -> List[Dict[str, Any]]:
         """读取项目库。优先从结构化档案 (data/profile.json) 读取（可靠），
