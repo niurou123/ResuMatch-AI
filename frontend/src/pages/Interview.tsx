@@ -2,6 +2,7 @@ import { useState, useCallback, useReducer, useRef } from 'react';
 import { toast } from 'sonner';
 import { streamSSE } from '@/lib/sse';
 import { MetricCard } from '@/components/shared/MetricCard';
+import { VoiceInputButton } from '@/components/shared/VoiceInputButton';
 import type { DAGState, DAGNodeId, WriterEntry, ReviewEntry } from '@/lib/types';
 
 // ===== DAG Reducer =====
@@ -260,14 +261,22 @@ function SingleQA() {
     <div className="space-y-4">
       <div>
         <label className="text-sm text-text-2 mb-1.5 block">输入面试问题</label>
-        <textarea
-          className="w-full bg-surface border border-border rounded-btn p-3 text-text text-sm resize-none focus:outline-none focus:border-primary transition-colors"
-          rows={3}
-          placeholder="例如：请介绍一下你的 AI Agent 项目..."
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          disabled={running}
-        />
+        <div className="relative">
+          <textarea
+            className="w-full bg-surface border border-border rounded-btn p-3 text-text text-sm resize-none focus:outline-none focus:border-primary transition-colors"
+            rows={3}
+            placeholder="例如：请介绍一下你的 AI Agent 项目..."
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            disabled={running}
+          />
+          <div className="absolute right-2 bottom-2">
+            <VoiceInputButton
+              onTranscript={(text) => setQuestion((q) => (q ? q + text : text))}
+              disabled={running}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-3">
@@ -504,14 +513,22 @@ function MockInterview() {
           <div className="card-custom">
             <div className="card-header">第 {round + 1} 轮 · 面试官提问</div>
             {hint && <p className="text-text-3 text-xs mb-3">{hint}</p>}
-            <textarea
-              className="w-full bg-surface border border-border rounded-btn p-3 text-text text-sm resize-none focus:outline-none focus:border-primary transition-colors"
-              rows={3}
-              placeholder="输入你的面试问题，例如：请介绍一下 ResuMatch 项目的多Agent架构..."
-              value={currentQuestion}
-              onChange={(e) => setCurrentQuestion(e.target.value)}
-              disabled={loading}
-            />
+            <div className="relative">
+              <textarea
+                className="w-full bg-surface border border-border rounded-btn p-3 text-text text-sm resize-none focus:outline-none focus:border-primary transition-colors"
+                rows={3}
+                placeholder="输入你的面试问题，例如：请介绍一下 ResuMatch 项目的多Agent架构..."
+                value={currentQuestion}
+                onChange={(e) => setCurrentQuestion(e.target.value)}
+                disabled={loading}
+              />
+              <div className="absolute right-2 bottom-2">
+                <VoiceInputButton
+                  onTranscript={(text) => setCurrentQuestion((q) => (q ? q + text : text))}
+                  disabled={loading}
+                />
+              </div>
+            </div>
             {/* AI 生成问题：项目选择 + 模式切换 */}
             <div className="flex flex-wrap items-center gap-3 mt-3">
               <div className="flex items-center gap-2">
