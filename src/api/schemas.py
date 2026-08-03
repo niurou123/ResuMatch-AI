@@ -26,6 +26,38 @@ class ProfileResponse(BaseModel):
     collection_stats: Dict[str, int] = {}
 
 
+# ===== 档案管理 =====
+class ProfileDetailResponse(BaseModel):
+    """完整档案响应（供档案编辑页）"""
+    profile: Dict[str, Any] = {}
+
+
+class ProfileUpdateProjectRequest(BaseModel):
+    """新增或更新单个项目"""
+    project_index: int = -1   # -1=新增；>=0=更新该下标项目
+    name: str
+    role: str = ""
+    tech_stack: list = []
+    time_period: str = ""
+    key_result: str = ""
+    description: str = ""
+    details: list = []           # 项目细节（分点列表：1. 2. 3. ...）
+    difficulties: list = []      # 项目难点问题（分点列表：1. 2. 3. ...）
+    challenges: str = ""
+    responsibilities: str = ""
+
+
+class ProfileUpdateSkillsRequest(BaseModel):
+    """整体替换技能列表"""
+    skills: list = []
+
+
+class ProfileMessageResponse(BaseModel):
+    """档案操作响应"""
+    success: bool = True
+    message: str = ""
+
+
 # ===== 面试相关 =====
 class InterviewRequest(BaseModel):
     """面试请求"""

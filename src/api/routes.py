@@ -10,6 +10,8 @@ import json
 
 from src.api.schemas import (
     ResumeUploadResponse, ProfileResponse,
+    ProfileDetailResponse, ProfileUpdateProjectRequest,
+    ProfileUpdateSkillsRequest, ProfileMessageResponse,
     InterviewRequest, InterviewResponse,
     MockInterviewStartRequest, MockInterviewStartResponse,
     MockInterviewNextRequest, MockInterviewNextResponse,
@@ -64,9 +66,23 @@ async def _generate_mock_answer(question: str, profile: dict) -> dict:
         for p in profile.get("projects", [])[:4]:
             if isinstance(p, dict) and p.get("name"):
                 techs = p.get("tech_stack") or []
-                known_projects.append(
-                    f"- {p['name']}（角色:{p.get('role','')}，技术:{', '.join(techs[:8])}，成果:{p.get('key_result','')[:80]}）"
-                )
+                desc = p.get("description", "") or ""
+                challenges = p.get("challenges", "") or ""
+                responsibilities = p.get("responsibilities", "") or ""
+                details = p.get("details") or []
+                difficulties = p.get("difficulties") or []
+                line = f"- {p['name']}（角色:{p.get('role','')}，技术:{', '.join(techs[:8])}，成果:{p.get('key_result','')[:80]}）"
+                if desc:
+                    line += f"\n  项目描述: {desc[:150]}"
+                if responsibilities:
+                    line += f"\n  职责: {responsibilities[:150]}"
+                if details:
+                    line += f"\n  项目细节: {'；'.join(str(d)[:60] for d in details[:5])}"
+                if difficulties:
+                    line += f"\n  项目难点: {'；'.join(str(d)[:60] for d in difficulties[:5])}"
+                if challenges:
+                    line += f"\n  挑战与解决: {challenges[:150]}"
+                known_projects.append(line)
         skills_text = "、".join(dict.fromkeys(known_skills)) or "（简历暂未上传）"
         projects_text = "\n".join(known_projects) or "（暂无项目）"
 
@@ -185,6 +201,11 @@ async def upload_resume(file: UploadFile = File(...)):
                     "tech_stack": p.get("tech_stack", []),
                     "time_period": p.get("time_period", ""),
                     "key_result": p.get("key_result", ""),
+                    "description": p.get("description", ""),
+                    "details": p.get("details", ""),
+                    "difficulties": p.get("difficulties", ""),
+                    "challenges": p.get("challenges", ""),
+                    "responsibilities": p.get("responsibilities", ""),
                     "confidence": p["_source"].confidence if p.get("_source") else 0,
                 }
                 for p in parsed.projects
@@ -266,6 +287,86 @@ async def get_profile():
         projects_count=stats.get("projects", 0),
         achievements_count=stats.get("achievements", 0),
     )
+
+
+# ===== 档案管理 =====
+@router.get("/profile", response_model=ProfileDetailResponse)
+async def get_profile_detail():
+    """获取完整档案（供档案编辑页查看/编辑）"""
+    from src.features.profile_store import ProfileStore
+    profile = ProfileStore.load()
+    # 兼容旧数据：给项目补充缺失的扩展字段
+    for p in profile.get("projects", []):
+        p.setdefault("description", "")
+        p.setdefault("details", [])
+        p.setdefault("difficulties", [])
+        p.setdefault("challenges", "")
+        p.setdefault("responsibilities", "")
+    return ProfileDetailResponse(profile=profile)
+
+
+@router.put("/profile/projects", response_model=ProfileMessageResponse)
+async def update_project(request: ProfileUpdateProjectRequest):
+    """新增或更新一个项目（project_index=-1 新增，>=0 更新）"""
+    from src.features.profile_store import ProfileStore
+    profile = ProfileStore.load()
+    projects = profile.get("projects", [])
+
+    new_project = {
+        "name": request.name,
+        "role": request.role,
+        "tech_stack": request.tech_stack,
+        "time_period": request.time_period,
+        "key_result": request.key_result,
+        "description": request.description,
+        "details": request.details,
+        "difficulties": request.difficulties,
+        "challenges": request.challenges,
+        "responsibilities": request.responsibilities,
+    }
+    if not new_project["name"].strip():
+        raise HTTPException(400, "项目名称不能为空")
+
+    idx = request.project_index
+    if idx >= 0 and idx < len(projects):
+        projects[idx] = {**projects[idx], **new_project}  # 保留 confidence 等旧字段
+    else:
+        projects.append(new_project)
+
+    profile["projects"] = projects
+    ProfileStore.save(profile)
+    return ProfileMessageResponse(success=True, message="项目已保存")
+
+
+@router.delete("/profile/projects", response_model=ProfileMessageResponse)
+async def delete_project(project_index: int = -1):
+    """删除指定下标项目"""
+    from src.features.profile_store import ProfileStore
+    profile = ProfileStore.load()
+    projects = profile.get("projects", [])
+    if project_index < 0 or project_index >= len(projects):
+        raise HTTPException(400, "项目下标无效")
+    removed = projects.pop(project_index)
+    profile["projects"] = projects
+    ProfileStore.save(profile)
+    return ProfileMessageResponse(success=True, message=f"已删除项目: {removed.get('name', '')}")
+
+
+@router.put("/profile/skills", response_model=ProfileMessageResponse)
+async def update_skills(request: ProfileUpdateSkillsRequest):
+    """整体替换技能列表"""
+    from src.features.profile_store import ProfileStore
+    profile = ProfileStore.load()
+    # 技能可能是 dict（旧）或 str；统一存 {name, category}
+    skills = []
+    for s in request.skills:
+        if isinstance(s, str) and s.strip():
+            skills.append({"name": s.strip(), "category": "manual"})
+        elif isinstance(s, dict) and s.get("name"):
+            skills.append({"name": s["name"], "category": s.get("category", "manual")})
+    profile["skills"] = skills
+    ProfileStore.save(profile)
+    return ProfileMessageResponse(success=True, message=f"已保存 {len(skills)} 项技能")
 
 
 # ===== 面试问答 =====

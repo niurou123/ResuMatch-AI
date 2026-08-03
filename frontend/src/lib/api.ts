@@ -36,6 +36,10 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
+  put: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined }),
+  delete: <T>(path: string) =>
+    request<T>(path, { method: 'DELETE' }),
   upload: <T>(path: string, formData: FormData) =>
     request<T>(path, { method: 'POST', body: formData, headers: {} }),
 };
@@ -53,6 +57,31 @@ export const uploadResume = (file: File) => {
 
 export const getProfile = () =>
   api.get<ProfileResponse>('/api/v1/resume/profile');
+
+// ===== 档案管理 =====
+export const getProfileDetail = () =>
+  api.get<{ profile: Record<string, unknown> }>('/api/v1/profile');
+
+export const updateProfileProject = (payload: {
+  project_index?: number;
+  name: string;
+  role?: string;
+  tech_stack?: string[];
+  time_period?: string;
+  key_result?: string;
+  description?: string;
+  details?: string[];
+  difficulties?: string[];
+  challenges?: string;
+  responsibilities?: string;
+}) =>
+  api.put<{ success: boolean; message: string }>('/api/v1/profile/projects', payload);
+
+export const deleteProfileProject = (projectIndex: number) =>
+  api.delete<{ success: boolean; message: string }>(`/api/v1/profile/projects?project_index=${projectIndex}`);
+
+export const updateProfileSkills = (skills: string[]) =>
+  api.put<{ success: boolean; message: string }>('/api/v1/profile/skills', { skills });
 
 // ===== 面试 =====
 export const interviewAnswer = (question: string) =>
