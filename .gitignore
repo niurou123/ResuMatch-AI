@@ -54,7 +54,6 @@ data/chroma_db_test/
 python
 app_python_backup.py
 vibe-*.txt
-TECH_STACK_ANALYSIS.md
 *.png
 *.docx
 !frontend/public/**/*.png
