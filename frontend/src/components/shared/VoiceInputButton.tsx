@@ -2,14 +2,16 @@ import { useRef, useState } from 'react';
 import { Mic } from 'lucide-react';
 
 interface VoiceInputButtonProps {
-  onTranscript: (text: string) => void;  // 识别结果回调（追加到现有文本）
+  onTranscript: (text: string) => void;  // 最终识别结果回调
   disabled?: boolean;
 }
 
 /**
  * 语音输入按钮 — 使用浏览器原生 Web Speech API
  * 支持中文识别（lang=zh-CN），Chrome/Edge 原生支持，零依赖
- * 点击开始/停止录音，识别结果通过 onTranscript 追加到输入框
+ *
+ * 修复重复 bug：关闭 interimResults（中间结果），只在语音停顿后
+ * 一次性回调最终识别文本，避免中间结果被反复追加导致大量重复。
  */
 export function VoiceInputButton({ onTranscript, disabled }: VoiceInputButtonProps) {
   const [listening, setListening] = useState(false);
@@ -22,8 +24,8 @@ export function VoiceInputButton({ onTranscript, disabled }: VoiceInputButtonPro
     if (!SR) return null;
     const rec = new SR();
     rec.lang = 'zh-CN';
-    rec.continuous = true;       // 连续识别
-    rec.interimResults = true;   // 返回中间结果（实时显示）
+    rec.continuous = true;
+    rec.interimResults = false;  // 关键：关闭中间结果，只在最终结果时回调，避免重复
     recognitionRef.current = rec;
     return rec;
   };
@@ -44,13 +46,15 @@ export function VoiceInputButton({ onTranscript, disabled }: VoiceInputButtonPro
 
     let finalText = '';
     rec.onresult = (e: any) => {
-      let interim = '';
+      // 只取 isFinal 的结果（interimResults=false 时基本都是 final）
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
         if (res.isFinal) finalText += res[0].transcript;
-        else interim += res[0].transcript;
       }
-      onTranscript(finalText + interim);
+      if (finalText.trim()) {
+        onTranscript(finalText);
+        finalText = '';
+      }
     };
     rec.onerror = () => { setListening(false); };
     rec.onend = () => { setListening(false); };
