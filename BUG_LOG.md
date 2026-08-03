@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-08-03
+
+### 案例 9：JD 匹配简历增强 `resume_content` 偶发为空/极短
+
+**现象**：JD 匹配的"针对性简历内容"功能时好时坏——`added_skills` 稳定返回，但 `resume_content` 有时为 0、有时 84 字、有时正常几百字。裸 LLM 调用返回 1381 字，但走 API 完整流程却返回空。
+
+**根因**（逐层排查）：
+1. 先在 `_safe_generate` 里用 `DeepSeekClient(timeout=150)` 新建独立 client → 同一 prompt 只返回 **26 字**（异常变短），而全局单例 `get_client()` 返回 499+ 字。**新建 client 实例会导致 DeepSeek 响应异常短**，必须用全局单例。
+2. 即使改回全局 client，LLM 对同一 prompt 仍**偶发返回空/极短内容**（不稳定，非超时非异常，无错误日志），单次调用不可靠。
+
+**解决方案**（[src/features/project_matcher.py](src/features/project_matcher.py)）：
+1. `_safe_generate` **必须用全局单例 `self.client`（get_client）**，禁止新建 DeepSeekClient 实例
+2. `generate_resume_content` 对空/过短结果（<50字）**重试最多 3 次**
+3. `added_skills` 规则化计算（不依赖 LLM），LLM 失败仍返回
+
+**验证**：修复后 API 实测返回 640 字完整内容——增强后技术栈（原有技能全保留 + DeepSeek 建议补充）+ 项目描述增强（LangGraph/HyDE/ChromaDB），量化数据来自简历真实内容。
+
+---
+
 ## 2026-08-02
 
 ### 案例 7：STAR 回答编造量化数据/时间线（幻觉）

@@ -7,6 +7,7 @@
 
 LLM 使用边界：LLM 只做基于真实项目字段的针对性润色/组织，禁止编造项目或成果。
 """
+import asyncio
 import re
 from typing import Dict, Any, List, Optional, Set
 
@@ -356,8 +357,14 @@ class TargetedGenerator:
         original_lower = {s.lower() for s in user_skills}
         added_skills = [t for t in jd_req.get("tech_stack", []) if t.lower() not in original_lower]
 
-        raw = await self._safe_generate(system_prompt, user_prompt)
-        if not raw:
+        # 生成并重试：LLM 偶发返回空/过短内容，重试最多 3 次
+        raw = ""
+        for attempt in range(3):
+            raw = await self._safe_generate(system_prompt, user_prompt, max_tokens=1200)
+            if raw and len(raw) >= 50:
+                break
+            await asyncio.sleep(1)
+        if not raw or len(raw) < 50:
             # LLM 失败时仍返回规则化的新增技能建议
             return {"resume_content": "", "added_skills": added_skills, "original_skills": user_skills}
 
@@ -382,16 +389,20 @@ class TargetedGenerator:
             lines.append(f"描述: {desc[:500]}")
         return "\n".join(lines)
 
-    async def _safe_generate(self, system_prompt: str, user_prompt: str, max_tokens: int = 1024) -> str:
-        """LLM 调用 + 错误隔离（失败返回空串）。加大 max_tokens 避免长内容截断"""
+    async def _safe_generate(self, system_prompt: str, user_prompt: str, max_tokens: int = 1024, timeout: int = None) -> str:
+        """LLM 调用 + 错误隔离（失败返回空串）。
+        注意：必须使用全局单例 client（get_client），新建 DeepSeekClient 实例会导致响应异常变短。"""
         try:
+            from src.core.llm_client import get_client
             messages = [
                 Message(role="system", content=system_prompt),
                 Message(role="user", content=user_prompt),
             ]
             result = await self.client.chat_sync(messages, temperature=0.6, max_tokens=max_tokens)
             return result.strip()
-        except Exception:
+        except Exception as e:
+            import traceback
+            print(f"[WARN] _safe_generate 失败: {type(e).__name__}: {str(e)[:150]}")
             return ""
 
 
