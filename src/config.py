@@ -59,6 +59,15 @@ class Settings(BaseSettings):
     SUMMARY_MAX_CHARS: int = 500       # 摘要最大字符数
     COMPRESSION_THRESHOLD: int = 48000 # 触发压缩的 token 阈值
 
+    # ===== Redis 配置（会话持久化 + LLM 缓存，不可用时自动降级内存） =====
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str = ""
+    REDIS_TTL_SESSION: int = 3600      # 会话过期（秒）
+    REDIS_TTL_CACHE: int = 86400       # LLM 缓存过期（秒）
+    REDIS_CACHE_ENABLED: bool = True
+
     # ===== 数据路径 =====
     RESUME_UPLOAD_PATH: str = "data/resumes"
 

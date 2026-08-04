@@ -40,9 +40,9 @@ def _run_interview_stream(*args, **kwargs):
 
 router = APIRouter(prefix="/api/v1")
 
-# 全局会话管理
-_sessions: Dict[str, Any] = {}
+# 全局会话管理（Redis 持久化，不可用时降级内存）
 _session_memory = SessionMemory()
+from src.core.redis_store import session_store, llm_cache
 
 
 async def _generate_mock_answer(question: str, profile: dict, project: str = "") -> dict:
@@ -144,12 +144,24 @@ async def _generate_mock_answer(question: str, profile: dict, project: str = "")
             Message(role="system", content=system_prompt),
             Message(role="user", content=user_prompt),
         ]
+
+        # ===== LLM 语义缓存：相同问题+项目 命中直接返回（省成本/延迟） =====
+        import hashlib
+        cache_payload = f"{question}|{target_project}|{skills_text[:200]}|{projects_text[:200]}|{project_refs[:200]}"
+        cache_key = "mock_answer"
+        cached = llm_cache.get(cache_key, cache_payload)
+        if cached:
+            return {"answer": cached, "question_type": "STAR", "citations": [], "cached": True}
+
         answer = await client.chat_sync(messages, temperature=0.6, max_tokens=900)
         answer = (answer or "").strip()
+        if answer and len(answer) >= 100:
+            llm_cache.set(cache_key, cache_payload, answer)
         return {
             "answer": answer,
             "question_type": "STAR",
             "citations": [],
+            "cached": False,
         }
     except Exception as e:
         import traceback
@@ -451,6 +463,8 @@ async def upload_project_doc(project_name: str, file: UploadFile = File(...)):
 
     vs = get_vector_store()
     total = vs.index_documents(docs)
+    # 上传了新项目资料 → 失效该项目的 LLM 回答缓存，确保下次用新数据
+    llm_cache.flush_prefix("mock_answer")
     return {"success": True, "message": f"已索引 {total} 个片段", "indexed": total, "filename": file.filename}
 
 
@@ -567,13 +581,13 @@ async def interview_stream(request: InterviewRequest):
 async def mock_interview_start(request: MockInterviewStartRequest):
     """开始模拟面试（AI 候选人模式：你当面试官提问，AI 基于简历回答）"""
     session_id = str(uuid.uuid4())[:8]
-    _sessions[session_id] = {
+    session_store.set(session_id, {
         "round": 0,
         "max_rounds": request.max_rounds,
         "history": [],
         "focus_areas": request.focus_areas,
         "difficulty": request.difficulty,
-    }
+    })
 
     first_question = ""
     hint = "你作为面试官，可以开始提问了。AI 候选人将基于你的简历素材作答。"
@@ -592,7 +606,7 @@ async def mock_interview_start(request: MockInterviewStartRequest):
 @router.post("/mock/next", response_model=MockInterviewNextResponse)
 async def mock_interview_next(request: MockInterviewNextRequest):
     """面试官提问 → AI 候选人基于简历生成 STAR 回答"""
-    session = _sessions.get(request.session_id)
+    session = session_store.get(request.session_id)
     if not session:
         raise HTTPException(404, "会话不存在或已过期")
 
@@ -673,6 +687,7 @@ async def mock_interview_next(request: MockInterviewNextRequest):
 
     # 更新会话历史
     session["history"][-1]["answer"] = ai_answer
+    session_store.set(request.session_id, session)  # 持久化会话（含 history）
 
     return MockInterviewNextResponse(
         question=question,
@@ -712,7 +727,7 @@ async def mock_projects():
 @router.post("/mock/suggest", response_model=MockSuggestResponse)
 async def mock_suggest_question(request: MockSuggestRequest):
     """AI 生成问题：支持选择项目 + 追问/新问题两种模式"""
-    session = _sessions.get(request.session_id)
+    session = session_store.get(request.session_id)
     history = session.get("history", []) if session else []
     mode = request.mode or "followup"
     target_project = (request.project or "").strip()
