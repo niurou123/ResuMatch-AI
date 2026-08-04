@@ -130,25 +130,17 @@ background.js: 消息路由              │  src/api/: 10个端点
 
 **项目简介**：面向校招求职场景的AI全栈应用，覆盖"简历上传 → AI 蒸馏解析 → 向量化存储 → 网申表单智能填充 → 项目-JD 智能匹配 → 面试问答/对练"完整链路。前端为 React（Vite + TypeScript + Tailwind）+ Chrome 插件（Manifest V3），后端基于 FastAPI + LangGraph 多 Agent 协作架构。
 
-1. **多Agent工作流引擎**：设计 6 节点 LangGraph 工作流 + 条件修订边 —— Planner（动态调度）→ Router（规则化分类，0s延迟）→ 3路并行检索（keyword / semantic / graph，asyncio.gather 并发）→ Fusion 投票融合 → STAR Writer（引用约束 + Agent 间通信）→ 3路并行评审（正确性 / 完整性 / 优势，多数表决），支持 N 轮修订回环。支持快速模式（面试对练跳过评审/修订，回答提速 3-4 倍）。
+1. **多Agent工作流引擎**：设计 6 节点 LangGraph 工作流 + 条件修订边 —— Planner（动态调度）→ Router（规则化分类，0s延迟）→ 3路并行检索（keyword / semantic / graph，asyncio.gather 并发）→ Fusion 投票融合 → STAR Writer（引用约束 + Agent 间通信）→ 3路并行评审（正确性 / 完整性 / 优势，多数表决），支持 N 轮修订回环。
 
 2. **6项RAG增强技术**：HyDE 假设文档嵌入（Recall@5 ↑15-25%）、Self-Query 结构化检索（LLM → ChromaDB metadata 过滤）、Cross-Encoder 精排（Bi-Encoder → Cross-Encoder，精度 ↑10-20%）、Parent-Child 父子分块、Skill Graph 知识图谱（80+ 技术分类）、LLM-as-Judge 评测基线。ChromaDB 五集合存储，bge-small-zh 嵌入（512维）。
 
-3. **项目-JD 智能匹配引擎**：JD 需求自动提取（技术栈/软技能/年限）+ 项目库三维度匹配（技术交集/年限/复杂度，SkillGraph 语义归类）+ 排序打分 + 生成针对性简历内容增强（保留原有技能，补充 JD 要求技能，按简历原始技能段落格式输出）。
+3. **项目-JD 智能匹配引擎**：JD 需求自动提取（技术栈/软技能/年限）+ 项目库三维度匹配（技术交集/年限/复杂度）+ 排序打分 + 生成针对性简历内容增强（保留原有技能，补充 JD 要求技能）。简历智能蒸馏：纯规则分区识别 + 结构化提取（零 LLM 介入），字段提取准确率 95%+，每字段标注来源与置信度。
 
-4. **Chrome 插件全栈开发（Manifest V3）**：Background 消息路由 + Content Script 表单扫描填充 + Popup / Sidebar UI，支持 ATS 自动检测（北森 / Moka / 智联 / Ant Design）、React / Vue 受控组件兼容填充（native setter + 事件链）、50+ 字段映射规则 + 三级匹配引擎，字段覆盖率 85%+。解决 FastAPI asyncio 与 ChromaDB 递归冲突。
+4. **Chrome 插件全栈开发（Manifest V3）**：Background 消息路由 + Content Script 表单扫描填充 + Popup / Sidebar UI，支持 ATS 自动检测（北森 / Moka / 智联 / Ant Design）、React / Vue 受控组件兼容填充、50+ 字段映射规则 + 三级匹配引擎，字段覆盖率 85%+。
 
-5. **简历智能蒸馏**：支持 PDF / DOCX 多格式解析（PyMuPDF + python-docx + XML 回退），纯规则分区识别 + 结构化提取（零 LLM 介入），字段提取准确率 95%+，每个字段标注来源行号、原始文本、提取方法、置信度。
+5. **档案管理 + 项目RAG文档库**：档案页手动完善项目细节（动态分点列表）；按项目上传资料文档（md/txt/docx/pdf）分块存 ChromaDB project_docs，面试回答自动检索该项目文档基于真实资料作答。面试对练支持多轮追问 + AI 生成问题 + 语音输入（Web Speech API 中文识别）。
 
-6. **档案管理 + 项目RAG文档库**：档案页手动完善项目细节（动态分点列表：项目细节/难点问题）；按项目上传资料文档（md/txt/docx/pdf）分块存 ChromaDB project_docs，面试回答自动检索该项目文档基于真实资料作答。
-
-7. **面试对练增强**：AI 候选人模式 + 多轮追问 + AI 生成问题（项目选择/追问·新问题）+ 语音输入（Web Speech API 中文识别）+ 推理式退路（简历未覆盖时基于技术框架推理回答，不编造量化成果）。
-
-8. **Redis 接入**：面试会话状态持久化（跨重启保留）+ LLM 语义缓存（相同问题秒回）+ 上传文档自动失效 + 降级退路（Redis 不可用自动回退内存）。
-
-9. **三层会话记忆 + LLM 摘要压缩**：短期记忆（deque 10轮）+ 中期主题追踪 + 长期画像；超 48K tokens 自动触发 LLM 压缩至 ≤500 字。
-
-10. **全链路工程质量**：React + Chrome 插件双前端，14+ API 端点（含 SSE 流式），端到端测试覆盖解析 + 检索 + 生成全链路，错误隔离（单 Agent 失败不影响整体）+ 退路机制（LLM 不可用时规则化降级）。修复 10+ 经典 Bug（记录于 BUG_LOG.md）。
+6. **工程与稳定性**：React + Chrome 插件双前端，14+ API 端点（含 SSE 流式），端到端测试覆盖全链路。Redis 会话持久化 + LLM 语义缓存 + 降级退路；三层会话记忆 + LLM 摘要压缩（>48K tokens → ≤500 字）；错误隔离 + 退路机制（LLM 不可用时规则化降级）。
 
 ---
 
