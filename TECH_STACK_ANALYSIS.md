@@ -26,6 +26,31 @@
 - **禁止**：编造简历中不存在的量化数据/时间线/项目
 - 回答必须标注来源，缺失信息如实说明（"根据我的简历，这部分没有详细记录"）
 
+### 1.3 横向对比：为什么选 DeepSeek v4-pro
+
+| 维度 | **DeepSeek v4-pro（选用）** | GPT-4o | Claude Sonnet | Gemini 2.0 Flash | Qwen2.5-72B |
+|------|---------------------------|--------|---------------|------------------|-------------|
+| **中文理解** | 极佳（中文原生优化） | 优秀 | 优秀 | 优秀 | 极佳 |
+| **推理成本** | 低（约 $0.28/M in，$0.42/M out） | 高（约 $2.50/M in） | 中高 | 低（但受配额） | 中 |
+| **API 稳定性** | OpenAI 兼容，稳定 | 稳定 | 稳定 | 稳定 | 需自部署 |
+| **长上下文** | 64K-128K | 128K | 200K | 1M | 32K-128K |
+| **代码/逻辑** | 强 | 强 | 强 | 强 | 强 |
+| **国内可直连** | ✅（无需代理） | ❌ 需代理 | ❌ 需代理 | ❌ 需代理 | 视部署 |
+| **调用成本（本项目面试对练高频）** | ⭐ 最低 | 高 | 中高 | 低 | 中 |
+
+**选择理由**：
+1. **成本敏感**：面试对练/简历增强是高频 LLM 调用（一次回答 5-8 次调用），DeepSeek 成本最低，可无压力高频使用
+2. **中文简历/面试场景**：DeepSeek 中文原生优化，理解中文简历、生成自然中文面试回答更佳
+3. **国内网络直连**：无需代理/翻墙，部署简单稳定
+4. **OpenAI 兼容协议**：`DeepSeekClient` 自研封装，未来可平滑切换其他 OpenAI 兼容模型
+
+### 1.4 备用方案（可切换）
+
+若 DeepSeek 不可用，`DeepSeekClient` 仅需改 `base_url`+`model` 即可切换：
+- **Qwen 通义千问**（阿里，OpenAI 兼容，中文好）
+- **GLM-4**（智谱，OpenAI 兼容，中文好）
+- 兼容 OpenAI 协议的任何模型（GPT/Claude 需配代理）
+
 ---
 
 ## 二、嵌入模型
@@ -44,6 +69,19 @@
 
 - **线程锁**：`threading.Lock` 防止多线程并发重复加载（冷启动 10-20s）
 - **启动预热**：`main.py` lifespan 启动时预热嵌入+精排模型，首请求秒回
+
+### 2.2 横向对比：为什么选 bge-small-zh
+
+| 维度 | **bge-small-zh（选用）** | bge-large-zh | text2vec-large-chinese | m3e-base | OpenAI text-embedding-3 |
+|------|------------------------|--------------|------------------------|----------|------------------------|
+| **维度** | 512 | 1024 | 1024 | 768 | 1536 |
+| **中文效果** | 强（中文特化） | 极强 | 强 | 中上 | 好 |
+| **推理速度** | ⭐ 快（小模型） | 慢 | 慢 | 中 | 外部 API |
+| **本地离线** | ✅ 可离线 | ✅ | ✅ | ✅ | ❌ 需 API |
+| **存储开销** | ⭐ 低 | 高 | 高 | 中 | 高 |
+| **中文命名实体/简历术语** | ⭐ 好 | 好 | 好 | 中 | 中 |
+
+**选择理由**：bge-small-zh 在**中文简历检索场景**（技能名/项目名/成果描述）效果好，512 维平衡精度与速度/存储，且可完全本地离线运行（隐私友好，不依赖外部 API）。
 
 ---
 
@@ -180,3 +218,50 @@ Planner（动态调度）
 | 框架 | pytest |
 | 覆盖 | 简历解析 → 向量检索 → Agent 工作流全链路 |
 | 面试类型 | 技术深度/项目追问/行为面试/通用问题 |
+
+---
+
+## 十三、Python 开发能力与技术栈
+
+### 13.1 语言与运行环境
+
+| 维度 | 当前值 |
+|------|--------|
+| 语言 | Python 3.10+ |
+| 包管理 | pip + requirements.txt（纯 ASCII） |
+| 类型标注 | TypedDict / Pydantic（`AgentState`、API schemas） |
+| 异步 | async/await（FastAPI、LLM 客户端、asyncio.gather 并行） |
+| 代码位置 | [src/](src/) 全部后端 |
+
+### 13.2 核心 Python 技术栈
+
+| 库/框架 | 版本 | 用途 |
+|---------|------|------|
+| **FastAPI** | 0.104.1 | Web 框架，14+ RESTful 端点 + SSE 流式 |
+| **LangGraph** | ≥0.2.0 | 多 Agent 有状态工作流（MemorySaver 检查点） |
+| **ChromaDB** | ≥0.5.0 | 向量数据库（5 集合，含 project_docs） |
+| **sentence-transformers** | ≥3.0.0 | 嵌入模型加载（bge-small-zh + reranker） |
+| **PyMuPDF / python-docx / mammoth** | — | 简历 PDF/DOCX 解析（含 XML 回退） |
+| **httpx** | — | 异步 LLM API 客户端（流式 + 超时控制） |
+| **pydantic** | — | 数据模型 + 校验（AgentState / schemas） |
+| **python-dotenv** | — | 环境变量加载（.env） |
+| **pytest** | — | 端到端测试 |
+
+### 13.3 项目用到的 Python 高级能力
+
+1. **异步并发**：`asyncio.gather` 真正并行 3 路检索 + 3 路评审，总耗时 = max(单路) 而非 sum
+2. **线程安全模型加载**：`threading.Lock` + 双重检查，防多线程并发重复加载嵌入模型
+3. **事件循环隔离**：`run_in_executor` 线程池跑简历解析，规避 ChromaDB 与 asyncio 递归冲突（`sys.setrecursionlimit`）
+4. **原子文件写入**：`tempfile.mkstemp` + `os.replace` 原子写 `profile.json`，防写坏
+5. **流式 SSE**：`StreamingResponse` + `async for` 实现问答流式输出
+6. **Pydantic 校验**：`AgentState` 状态机 + API 请求/响应模型 + LLM 结构化输出
+7. **错误隔离与退路**：每 Agent 独立 try/except，单 Agent 失败不影响整体；LLM 不可用时规则化降级
+
+### 13.4 为什么 Python 适合本项目
+
+- **AI 生态最成熟**：LangGraph / sentence-transformers / ChromaDB 等 Agent 与 RAG 生态一应俱全
+- **快速迭代**：动态类型 + 丰富库，适合功能快速演进
+- **异步 + 科学计算**：asyncio 处理高并发 LLM 调用，配合 numpy 向量运算
+- **生态兼容**：DeepSeek / OpenAI / 各家 LLM 均有 Python SDK，切换模型成本低
+
+---
