@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { getProfileDetail, updateProfileProject, deleteProfileProject, updateProfileSkills, uploadProjectDoc, listProjectDocs } from '@/lib/api';
 
@@ -304,7 +304,6 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
 function ProjectDocs({ projectName }: { projectName: string }) {
   const [docs, setDocs] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const loadDocs = useCallback(async () => {
     if (!projectName) return;
@@ -319,7 +318,7 @@ function ProjectDocs({ projectName }: { projectName: string }) {
   useEffect(() => { loadDocs(); }, [loadDocs]);
 
   const handleUpload = async (file: File | undefined) => {
-    if (!file || !projectName) return;
+    if (!file || !projectName || uploading) return;
     setUploading(true);
     try {
       const res = await uploadProjectDoc(projectName, file);
@@ -329,7 +328,6 @@ function ProjectDocs({ projectName }: { projectName: string }) {
       toast.error(`上传失败: ${(err as Error).message}`);
     } finally {
       setUploading(false);
-      if (inputRef.current) inputRef.current.value = '';
     }
   };
 
@@ -337,20 +335,20 @@ function ProjectDocs({ projectName }: { projectName: string }) {
     <div className="mt-3 pt-3" style={{ borderTop: '1px dashed #2a2a5a' }}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-text-3 text-xs">📄 项目资料库（面试回答会检索）</span>
-        <button
-          className="px-2.5 py-1 rounded-btn text-xs border border-border text-text-2 hover:text-text"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
+        <label
+          className="px-2.5 py-1 rounded-btn text-xs border border-border text-text-2 hover:text-text cursor-pointer"
+          style={uploading ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+          title="上传项目资料文档"
         >
           {uploading ? '上传中...' : '上传资料'}
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".pdf,.docx,.md,.txt"
-          className="hidden"
-          onChange={(e) => handleUpload(e.target.files?.[0])}
-        />
+          <input
+            type="file"
+            accept=".pdf,.docx,.md,.txt"
+            className="sr-only"
+            disabled={uploading}
+            onChange={(e) => handleUpload(e.target.files?.[0])}
+          />
+        </label>
       </div>
       {docs.length > 0 ? (
         <ul className="space-y-0.5">

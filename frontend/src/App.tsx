@@ -5,6 +5,7 @@ import { ResumeUpload } from '@/pages/ResumeUpload';
 import { Interview } from '@/pages/Interview';
 import { SelfIntro } from '@/pages/SelfIntro';
 import { JDMatch } from '@/pages/JDMatch';
+import { Profile } from '@/pages/Profile';
 import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
@@ -22,6 +23,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Navigate to="/resume" replace />} />
             <Route path="/resume" element={<ResumeUpload />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/interview" element={<Interview />} />
             <Route path="/intro" element={<SelfIntro />} />
             <Route path="/match" element={<JDMatch />} />

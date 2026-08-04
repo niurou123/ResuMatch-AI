@@ -19,6 +19,7 @@ export const DAG_NODES = [
 // 导航项
 export const NAV_ITEMS = [
   { to: '/resume', label: '简历上传' },
+  { to: '/profile', label: '档案' },
   { to: '/interview', label: '面试模拟' },
   { to: '/intro', label: '自我介绍' },
   { to: '/match', label: 'JD 匹配' },
