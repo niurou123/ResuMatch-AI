@@ -138,7 +138,7 @@ background.js: 消息路由              │  src/api/: 10个端点
 
 #### 技术栈
 
-Python, FastAPI, LangGraph, ChromaDB, DeepSeek, Sentence-Transformers, bge-small-zh, PyMuPDF, React, TypeScript, Tailwind CSS, Chrome Extension Manifest V3, Docker
+Python, FastAPI, LangGraph, ChromaDB, Redis, DeepSeek, Sentence-Transformers, bge-small-zh, PyMuPDF, React, TypeScript, Tailwind CSS, Web Speech API, Chrome Extension Manifest V3, Docker
 
 #### 核心工作
 
@@ -187,6 +187,28 @@ Background Service Worker 消息路由 + Content Script 表单扫描与填充执
 **9. 端到端测试覆盖**
 
 pytest 测试框架，覆盖简历解析 → 向量检索 → Agent 工作流全链路。4 个面试问题类型验证（技术深度 / 项目追问 / 行为面试 / 通用问题），全部通过 3 路检索 + 3 路评审工作流。
+
+**10. 档案管理与项目资料库（RAG 文档）**
+
+- **档案页**：简历自动解析入库 + 手动完善项目细节（动态分点列表：项目细节 / 项目难点问题，可增删自动编号）
+- **项目级 RAG 文档库**：按项目上传资料文档（技术栈/模型/细节，md/txt/docx/pdf）分块存 ChromaDB `project_docs` 集合，面试回答自动检索该项目文档，基于真实资料作答
+- 结构化档案 `data/profile.json` 持久化，面试对练 / JD 匹配均读此可靠数据源
+
+**11. 面试对练增强**
+
+- **AI 生成问题**：选择目标项目 + 追问/新问题双模式，基于上下文与简历自动生成深挖问题
+- **语音输入提问**：Web Speech API 中文识别，零依赖，说话自动转文字填入
+- **多轮追问**：基于前几轮回答生成有针对性追问
+
+**12. Redis 接入（会话持久化 + LLM 语义缓存）**
+
+- 面试会话状态存 Redis（`session:{id}` + TTL），服务重启不丢（实测跨重启保留）
+- LLM 回答语义缓存（相同问题+项目命中秒回），上传项目文档自动失效
+- Redis 不可用自动降级内存，符合退路原则；redis-py `protocol=2` 兼容 Redis 5.x
+
+**13. 技术选型文档**
+
+完整的技术选型分析（TECH_STACK_ANALYSIS.md）：LLM / 嵌入模型 / 向量库 / 后端框架 / 前端 / RAG 全维度横向对比 + 选择理由 + Python 开发能力章节。
 
 ---
 
@@ -288,6 +310,7 @@ pytest 测试框架，覆盖简历解析 → 向量检索 → Agent 工作流全
 | 日期 | 版本 | 改动 |
 |------|------|------|
 | 8.1 | v17 | **前端迁移 React + 项目库落地**: 前端全部迁移至 React (frontend/，Streamlit 弃用)、结构化档案/项目库持久化 (ProfileStore, data/profile.json)、项目-JD 匹配改读项目库（修复 ChromaDB 碎 chunk 数据源缺陷）、React JD匹配页双 tab（技能/项目）、修复 bge-small-zh 嵌入模型缓存不完整导致上传失败 |
+| 8.4 | v18 | **档案管理 + 项目RAG文档库 + Redis + 面试增强**: 档案页手动完善项目细节（动态分点列表）、项目级RAG文档库（按项目上传资料，面试回答检索）、面试对练增强（AI生成问题/语音输入/多轮追问）、Redis会话持久化+LLM语义缓存（降级退路）、技术选型文档完整对比 |
 | 8.1 | v16 | **项目-JD智能匹配引擎 (需求2 完成)**: JD需求自动提取（技术栈/软技能/经验年限/职责，纯规则化）+ 项目库三维度匹配（技术交集/经验年限/复杂度，SkillGraph语义归类）+ 针对性STAR回答/简历描述生成（基于项目库真实数据，不虚构）+ /match/projects 端点 + React JD匹配页双标签页（技能匹配/项目匹配） |
 | 7.31 | v15 | **项目简历生成**: 第五节新增完整项目简历，基于实际代码库+架构总结，覆盖6大核心工作模块，可独立作为简历项目经历使用 |
 | 7.31 | v14 | **项目经验库完善 + 简历解析增强 + Bug修复**: 简历解析器全面改进（严格分区识别+多策略项目分割+技术栈智能提取）、自我介绍真实数据注入、向量存储空content回退、Retriever 3路全激活、Writer引用警告修复 |
