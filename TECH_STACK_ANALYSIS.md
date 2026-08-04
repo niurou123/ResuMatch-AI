@@ -281,7 +281,46 @@ Planner（动态调度）
 
 ---
 
-## 十二、测试
+## 十二、Redis（会话持久化 + LLM 语义缓存）
+
+### 12.1 当前选型
+
+| 维度 | 当前值 |
+|------|--------|
+| 服务 | Redis 5.0.14（Windows 便携版，tporadowski 移植）|
+| 客户端 | redis-py ≥5.0（`protocol=2` 兼容 Redis 5.x）|
+| 地址 | `localhost:6379`（config：REDIS_HOST/PORT/DB）|
+| 代码位置 | [src/core/redis_store.py](src/core/redis_store.py) |
+
+### 12.2 应用场景（已落地）
+
+1. **会话状态持久化**：mock 面试会话存 Redis（`session:{id}`，JSON + TTL 过期），替代内存 dict `_sessions`
+   - 服务重启不丢会话（实测：跨重启 round 1→2）
+   - 多实例部署可共享会话
+2. **LLM 语义缓存**：面试对练回答缓存（相同问题+项目命中秒回），key 含 model + question + 简历上下文哈希
+   - 省 LLM 调用成本/延迟（一次回答 5-8 次调用）
+   - 上传新项目文档时自动失效缓存（`flush_prefix`）
+3. **降级退路**：Redis 不可用（未装/未启动/连接失败）→ 自动回退内存 dict，功能不受影响
+
+### 12.3 缓存策略设计
+
+| 项 | 设计 |
+|----|------|
+| Key 设计 | `cache:{prefix}:{sha256(model+prompt+参数)}` 分层语义化 |
+| TTL | 会话 1h、LLM 缓存 1天（config 可调）|
+| 失效 | 上传项目文档 → `flush_prefix("mock_answer")` 清缓存 |
+| 兼容 | `protocol=2` 兼容 Redis 5.x（新 redis-py 默认 HELLO 3 会报错）|
+| 穿透防护 | 缓存空值/短 TTL，避免反复打 LLM |
+
+### 12.4 为什么 Redis 适合本项目
+
+- 面试对练高频 LLM 调用 → 语义缓存收益大（省成本/延迟）
+- 会话需跨重启/多实例 → Redis 集中存储
+- 轻量嵌入式启动（Windows 便携版免安装）→ 开发环境易用
+
+---
+
+## 十三、测试
 
 | 维度 | 当前值 |
 |------|--------|
@@ -291,7 +330,7 @@ Planner（动态调度）
 
 ---
 
-## 十三、Python 开发能力与技术栈
+## 十四、Python 开发能力与技术栈
 
 ### 13.1 语言与运行环境
 
