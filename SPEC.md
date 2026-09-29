@@ -58,7 +58,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 #### 3.3.1 简历如实提取 ✅ (已完成 v8)
 - [x] 解析层零LLM介入：PyMuPDF/docx 直接提取原始文本，不做概括
 - [x] 技能/项目/成果使用规则+正则提取，不使用LLM总结改写
-- [~] LLM仅用于：字段标准化映射（normalizer 已实现但**未接入上传链路**，见 5.1 说明）+ **智能位置匹配**（简历内容→表单字段的对应关系，如项目描述→匹配到"项目经历"栏，在 `/form/fill` 中实现）
+- [x] LLM仅用于：**智能位置匹配**（简历内容→表单字段的对应关系，如项目描述→匹配到"项目经历"栏，在 `/form/fill` 中实现）。字段标准化映射层（normalizer.py）因零调用方已于 v22 删除，见 5.1 说明
 - [x] 保留原始文本副本（SHA256 hash），用户可对比验证提取结果
 - [x] 每个提取字段标注来源（行号、原始文本片段、提取方法、置信度）
 
@@ -175,12 +175,12 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 | 生成简历中没有的内容 | 分类判断：这段内容是"技能"还是"项目"还是"成果" |
 | 压缩/摘要原始文本 | 表单分区感知：JD内容 → 识别哪些是技术要求、哪些是软技能 |
 
-> **实现现状（v18）**：上表「LLM 允许」的四项中，**字段标准化映射**已实现于
-> [src/rag/normalizer.py](src/rag/normalizer.py)，但**尚未接入上传链路**——上传走的是
-> `ResumeParser` 纯规则提取，`normalize_parsed_resume()` 目前没有任何调用方（孤立模块）。
-> 其余三项（智能位置匹配 / 分类判断 / 表单分区感知）在 [src/api/routes.py](src/api/routes.py)
-> 的 `/form/fill` 中经单次 LLM 调用实现。接入 normalizer 前需先确认是否需要该映射层，
-> 避免引入未经用户确认的简历内容改写。
+> **实现现状（v22）**：上表「LLM 允许」四项中，**字段标准化映射**原实现于
+> `src/rag/normalizer.py`，因始终未接入上传链路（孤立模块、零调用方）已删除
+> （v22 清理）。上传走 `ResumeParser` 纯规则提取——这符合 P0「如实提取」的
+> 主原则；未来若需要标准化层，需先在本节补充设计再实现（且只做名称映射，
+> 不触碰内容）。其余三项（智能位置匹配 / 分类判断 / 表单分区感知）在
+> [src/api/routes.py](src/api/routes.py) 的 `/form/fill` 中经单次 LLM 调用实现。
 
 - 保留原始文本副本，用户可对比验证
 - 每个提取字段标注来源（原文档位置）
@@ -253,6 +253,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 
 | 日期 | 版本 | 改动 |
 |------|------|------|
+| 9.29 | v22 | **死代码清理（共 456 行）**: 删除 src/features/mock_interview.py（MockInterviewEngine 零调用方——多轮对练由 routes 的 Redis session + _generate_mock_answer 实现，AI 生成问题由 /mock/suggest 实现）；删除 src/rag/normalizer.py（normalize_parsed_resume 零调用方，P0 字段标准化映射层从未接入上传链路，纯规则提取符合如实提取主原则，未来需要时先在本文件补设计）；rag/__init__.py 与 README 文件树同步。注：SessionMemory 与 LLMJudge 上轮已接线为活代码，不在清理范围 |
 | 9.29 | v21 | **架构宣传技术落实（不改架构骨架，全部接线）**: Planner 三输出全部接线（retrieval_top_k→三路检索、temperature→Writer 生成与流式、decomposition_depth→Router 拆解上限）；decomposed_queries 真正参与检索（Multi-Query 召回 + rerank_multi_query 融合）；Self-Query 接入 LLM 主路径（规则版为降级退路）；真并行修复（同步阻塞段包 asyncio.to_thread，事件循环不再被 torch/Milvus 卡住）；三层会话记忆接入（上传设画像/问答注入近3轮/答后 add_turn）；LLM 语义缓存做实（embedding 近邻 ≥0.92 命中，仅无上下文首轮）；LLMJudge 接入新端点 /interview/judge；DeepSeekClient 连接池复用（案例9根治）；新增 list_documents 确定性枚举，清剿全部 8 处空 query 刮库；correctness 评审加「引用回溯」锚定素材约束；退路评审覆盖率改比例制 |
 | 9.29 | v20 | **向量库迁移 Milvus Lite（本科论文学术选型）**: ChromaDB → Milvus Lite（pymilvus 嵌入式，本地单文件 data/milvus_resumatch.db，Windows 原生免 Docker，API 与 Milvus Standalone 完全兼容、SIGMOD 2021 论文可引用）；ChromaDB 保留为自动降级退路（pymilvus 不可用时无缝切换，16 处调用点经兼容层零改动）；测试改双后端参数化（28/28 通过，顺带修复 type 单/复数契约漂移与 fixture 清理缺 project_docs 两处既有测试缺陷）；numpy 钉 <2.0.0（pandas 2.1.1 为 numpy1.x ABI）；/system/info 暴露 vector_backend |
 | 9.29 | v19 | **链路一致性修复（不改架构）**: `/interview/stream` 补传 user_profile（此前不传导致 should_retrieve 跳过检索、Planner 削到单路检索——同问题两个入口答案质量不一致）、`/form/fill` 改读 ProfileStore（此前读恒空的废弃 SessionMemory + 空 query 刮库）、`project_docs` 接入多Agent检索链路（此前只写不读，档案页上传的项目资料从未进入面试回答）、多轮对练注入 history（此前追问上下文恒为空）、RERANKER_MODEL/集合数/端点计数等文档与配置漂移对齐、Docker 入口改 `src.api.main:app`、Vite 代理 8004→8000 |

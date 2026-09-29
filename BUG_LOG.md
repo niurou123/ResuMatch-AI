@@ -306,6 +306,10 @@ auto_decode(open('requirements.txt','rb').read())
 
 **根因**：后端 `/mock/next` 用硬编码问题（"请详细说说你在项目中遇到的最大技术挑战..."），完全忽略用户回答；`MockInterviewEngine` 存在但未被路由使用。
 
+> **后续注记（v22 清理）**：本案例描述的"改用 run_interview_workflow"实际落地为
+> `_generate_mock_answer` 单次 LLM 调用（对练场景取低延迟），`MockInterviewEngine`
+> 始终零调用方，已随 v22 死代码清理删除。
+
 **解决方案**：
 1. [routes.py](src/api/routes.py)：`/mock/next` 改为接受面试官 `question`，用 `run_interview_workflow`（多Agent工作流）基于简历生成 STAR 回答，返回 `ai_answer/question_type/review_total` 等
 2. [schemas.py](src/api/schemas.py)：`MockInterviewNextRequest` 增加 `question` 字段，Response 增加 `ai_answer` 等

@@ -104,7 +104,6 @@ interview-rag-system/
 │   │
 │   ├── rag/                    # RAG 管道层
 │   │   ├── parser.py            # 简历解析器 v2.0 (来源追踪+置信度)
-│   │   ├── normalizer.py        # LLM字段标准化映射 (不概括)
 │   │   ├── chunker.py           # Parent-Child 父子分块
 │   │   ├── embedder.py          # bge-small-zh 嵌入 (512维)
 │   │   ├── milvus_store.py      # Milvus Lite 主路径 + ChromaDB 降级退路（接口兼容）
@@ -115,14 +114,14 @@ interview-rag-system/
 │   │   └── knowledge_graph.py   # 技能知识图谱
 │   │
 │   ├── core/                   # 核心服务层
-│   │   ├── llm_client.py        # DeepSeek API 客户端
+│   │   ├── llm_client.py        # DeepSeek API 客户端（连接池复用）
 │   │   ├── prompts.py           # Jinja2 动态模板
-│   │   ├── memory.py            # 三层会话记忆
-│   │   └── judge.py             # LLM-as-Judge 评测
+│   │   ├── memory.py            # 三层会话记忆（上传设画像/问答注入/答后落账）
+│   │   ├── redis_store.py       # 会话持久化 + LLM 语义缓存（降级退路）
+│   │   └── judge.py             # LLM-as-Judge 评测（/interview/judge）
 │   │
 │   ├── features/               # 业务功能层
 │   │   ├── self_intro.py        # 自我介绍生成器
-│   │   ├── mock_interview.py    # 模拟面试引擎
 │   │   ├── jd_matcher.py        # JD匹配度分析 (技能级)
 │   │   ├── project_matcher.py   # 项目-JD匹配引擎 (三维度)
 │   │   └── profile_store.py     # 结构化档案/项目库持久化 (JSON)
