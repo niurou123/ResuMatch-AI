@@ -89,11 +89,11 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 - [x] 参考风格：Linear / Notion / Vercel 设计语言
 
 #### 3.2 网申填充
-- [ ] LLM-as-mapper模式 (只做映射，不做填充)
+- [x] LLM-as-mapper模式 (只做映射，不做填充) — v24 增强为严格「只映射不编造」：档案没有的字段留空，禁填默认值（民族/政治面貌等），映射值需能在档案中回溯，否则降级为 review 人工确认
 - [ ] 站点模板系统 (北森/Moka/智联/51job专用模板)
 - [ ] 表单分区感知 (教育/实习/项目/基本信息)
 - [ ] 下拉选项智能别名匹配 (30+别名组)
-- [ ] 缓存系统 (相同表单结构复用映射)
+- [x] 缓存系统 (相同表单结构复用映射) — v24 key=表单结构+档案指纹（llm_cache，档案变更自然失效）
 - [ ] 填充后视觉验证
 
 ### 🟢 P3 — 长期愿景
@@ -254,6 +254,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 
 | 日期 | 版本 | 改动 |
 |------|------|------|
+| 9.29 | v24 | **边界/安全/降级三线加固（不动架构）**: /form/fill 修复 LLM 边界违规（原 prompt 指示填默认值"民族→汉族"等编造行为——改为只映射不编造，档案没有的留空，映射值需能回溯否则降级 review）+ 500 裸抛改规则化降级 + 接入映射缓存（SPEC 3.2 缓存系统落地，key=表单结构+档案指纹）；memory.py 摘要压缩改线程池执行（原同步 new_event_loop 与共享 httpx 连接池冲突）；CORS 修复无效组合（allow_origins=* 与 allow_credentials=True 互斥——收敛白名单，无凭据 cookie）；简历上传文件名消毒（防路径穿越/同名覆盖，冲突追加随机后缀）。对应 BUG_LOG 案例 19/20 |
 | 9.29 | v23 | **Bug 记录规则升级为强制**：每次出现 bug 必须记 BUG_LOG（含低级错误精简格式），fix 提交 body 必须引用案例编号且与修复代码同提交入库。同步 CLAUDE.md 第 6 节、SPEC 头部使用规则、BUG_LOG 头部格式说明 |
 | 9.29 | v22 | **死代码清理（共 456 行）**: 删除 src/features/mock_interview.py（MockInterviewEngine 零调用方——多轮对练由 routes 的 Redis session + _generate_mock_answer 实现，AI 生成问题由 /mock/suggest 实现）；删除 src/rag/normalizer.py（normalize_parsed_resume 零调用方，P0 字段标准化映射层从未接入上传链路，纯规则提取符合如实提取主原则，未来需要时先在本文件补设计）；rag/__init__.py 与 README 文件树同步。注：SessionMemory 与 LLMJudge 上轮已接线为活代码，不在清理范围 |
 | 9.29 | v21 | **架构宣传技术落实（不改架构骨架，全部接线）**: Planner 三输出全部接线（retrieval_top_k→三路检索、temperature→Writer 生成与流式、decomposition_depth→Router 拆解上限）；decomposed_queries 真正参与检索（Multi-Query 召回 + rerank_multi_query 融合）；Self-Query 接入 LLM 主路径（规则版为降级退路）；真并行修复（同步阻塞段包 asyncio.to_thread，事件循环不再被 torch/Milvus 卡住）；三层会话记忆接入（上传设画像/问答注入近3轮/答后 add_turn）；LLM 语义缓存做实（embedding 近邻 ≥0.92 命中，仅无上下文首轮）；LLMJudge 接入新端点 /interview/judge；DeepSeekClient 连接池复用（案例9根治）；新增 list_documents 确定性枚举，清剿全部 8 处空 query 刮库；correctness 评审加「引用回溯」锚定素材约束；退路评审覆盖率改比例制 |

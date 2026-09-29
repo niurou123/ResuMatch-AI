@@ -129,14 +129,19 @@ class SessionMemory:
         return int(total_chars / 1.5)
 
     def _trigger_compression(self) -> None:
-        """触发 LLM 摘要压缩"""
+        """触发 LLM 摘要压缩（同步上下文安全）
+
+        注意：DeepSeekClient 现在共享长生命周期连接池（绑定在主事件循环上），
+        不能在本线程 new_event_loop() 直接驱动它——那会因「连接池归属另一个循环」
+        抛 RuntimeError。正确做法：把协程丢进独立线程并在线程内自建循环运行。
+        """
         if len(self.short_term) < 3:
             return
 
         # 构建压缩请求
         turns_text = "\n".join([
             f"Q{turn['question']}\nA: {turn['answer'][:300]}"
-            for i, turn in enumerate(self.short_term)
+            for turn in self.short_term
         ])
 
         prompt = f"""请将以下面试对话历史压缩为不超过{self.summary_max_chars}字的摘要。
@@ -152,17 +157,27 @@ class SessionMemory:
 
 请输出摘要（不超过{self.summary_max_chars}字）："""
 
-        try:
-            # 同步压缩（阻塞）
+        import concurrent.futures
+
+        def _compress_in_thread() -> str:
+            # 独立线程 + 专属事件循环：与主循环互不干扰
             import asyncio
             loop = asyncio.new_event_loop()
-            messages = [Message(role="user", content=prompt)]
-            result = loop.run_until_complete(
-                self.client.chat_sync(messages, temperature=0.3, max_tokens=300)
-            )
-            loop.close()
+            try:
+                return loop.run_until_complete(
+                    self.client.chat_sync(
+                        [Message(role="user", content=prompt)],
+                        temperature=0.3, max_tokens=300,
+                    )
+                )
+            finally:
+                loop.close()
 
-            if len(result) > self.summary_max_chars:
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                result = pool.submit(_compress_in_thread).result(timeout=60)
+
+            if result and len(result) > self.summary_max_chars:
                 result = result[:self.summary_max_chars] + "..."
 
             # 合并旧摘要和新摘要
@@ -175,7 +190,7 @@ class SessionMemory:
             self.short_term.clear()
 
         except Exception:
-            pass  # 压缩失败不影响主流程
+            pass  # 压缩失败不影响主流程（错误隔离）
 
     async def compress_async(self) -> str:
         """异步 LLM 摘要压缩"""

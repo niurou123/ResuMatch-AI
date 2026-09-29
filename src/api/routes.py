@@ -1,5 +1,6 @@
 """FastAPI 路由定义 - 多Agent架构 v3.0"""
 import os
+import re
 import uuid
 import shutil
 import asyncio
@@ -272,10 +273,18 @@ async def upload_resume(file: UploadFile = File(...)):
     if ext not in settings.get_supported_formats():
         raise HTTPException(400, f"不支持的格式: .{ext}")
 
-    # 保存文件
+    # 保存文件（文件名消毒：只留安全字符，防路径穿越/重名覆盖）
     upload_dir = Path(settings.RESUME_UPLOAD_PATH)
     upload_dir.mkdir(parents=True, exist_ok=True)
-    file_path = upload_dir / file.filename
+    safe_name = re.sub(r'[^\w.\-一-鿿]', '_', file.filename or "resume")
+    safe_name = safe_name.lstrip('.') or "resume"          # 防隐藏文件名
+    safe_name = safe_name[:120]                             # 防超长文件名
+    # 同名冲突时追加短随机后缀（第二次上传同名简历不覆盖旧文件）
+    dest = upload_dir / safe_name
+    if dest.exists():
+        stem, _, ext = safe_name.rpartition(".")
+        dest = upload_dir / f"{stem or 'resume'}_{uuid.uuid4().hex[:6]}.{ext}" if ext else upload_dir / f"{safe_name}_{uuid.uuid4().hex[:6]}"
+    file_path = dest
 
     with open(file_path, "wb") as f:
         content = await file.read()
@@ -1205,16 +1214,17 @@ async def analyze_project_match(request: ProjectMatchRequest):
 # ===== 智能表单填充 =====
 @router.post("/form/fill")
 async def smart_form_fill(req: Request):
-    """LLM驱动的智能表单匹配填充"""
+    """LLM-as-mapper：只做字段→值映射，不做填充、不编造"""
     from src.core.llm_client import get_client, Message
     import re
+    import hashlib
 
     body = await req.json()
     fields = body.get("fields", [])
     if not fields:
         return {"fill_plan": [], "total": 0}
 
-    # 优先使用结构化档案（data/profile.json，可靠），降级 ChromaDB 检索
+    # 优先使用结构化档案（data/profile.json，可靠），降级向量库枚举
     profile_data = ""
     try:
         from src.features.profile_store import ProfileStore
@@ -1238,17 +1248,29 @@ async def smart_form_fill(req: Request):
         except Exception:
             profile_data = "未上传简历"
 
-    if not fields:
-        return {"fill_plan": [], "total": 0}
-
-    # 格式化学段
+    # 格式化字段（保持稳定顺序，供缓存 key）
     fields_text = json.dumps([
         {"index": i, "label": f.get("label", ""), "tag": f.get("tag", ""),
          "type": f.get("type", ""), "options": f.get("options", []),
          "placeholder": f.get("placeholder", ""), "id": f.get("id", ""),
          "required": f.get("required", False)}
         for i, f in enumerate(fields)
-    ], ensure_ascii=False, indent=2)
+    ], ensure_ascii=False, indent=2, sort_keys=False)
+
+    # ===== 映射缓存（SPEC 3.2：相同表单结构复用映射）=====
+    # key = 表单结构 + 档案内容指纹。上传新简历 → ProfileStore 变 → key 变 → 自然失效
+    cache_payload = f"{hashlib.sha256(fields_text.encode('utf-8')).hexdigest()[:16]}|{hashlib.sha256(profile_data.encode('utf-8')).hexdigest()[:16]}"
+    cached = llm_cache.get("form_fill", cache_payload)
+    if cached:
+        try:
+            result = json.loads(cached)
+            return {
+                "fill_plan": result.get("plan", []), "total": len(result.get("plan", [])),
+                "auto_count": result.get("auto", 0), "review_count": result.get("review", 0),
+                "skip_count": result.get("skip", 0), "cached": True,
+            }
+        except json.JSONDecodeError:
+            pass  # 缓存损坏则重新生成
 
     prompt = f"""你是专业网申表单智能填充AI。请根据用户档案，为每个表单字段生成最合适的填写值。
 
@@ -1258,13 +1280,17 @@ async def smart_form_fill(req: Request):
 ## 表单字段（共{len(fields)}个）
 {fields_text[:6000]}
 
-## 要求
-对每个字段返回填写计划：
-- value: 要填入的值（优先使用档案中的数据；档案没有的，填入合理默认值如民族→汉族、政治面貌→共青团员；完全无法判断的留空）
-- confidence: 匹配置信度 0-1
-- fill_strategy: text/select/radio_click/datepicker
-- action: auto_fill(confidence>0.7) / review(0.4-0.7) / skip(<0.4)
-- reason: 简短填写理由
+## 要求（LLM 使用边界，必须遵守）
+1. **只做映射，不编造**：value 只能来自「用户档案」中的信息。档案没有的字段一律留空（value=""），
+   绝不填入合理默认值（如民族/政治面貌/婚否等档案没有的信息不得编造）
+2. **不推断缺失信息**：档案无教育时间则不填时间，无量化数字则不填数字
+3. **选项匹配**：字段有 options 时，value 必须严格取选项原文之一（选语义最接近的）；无合适选项留空
+4. 对每个字段返回填写计划：
+   - value: 来自档案的值（或留空）
+   - confidence: 匹配置信度 0-1
+   - fill_strategy: text/select/radio_click/datepicker
+   - action: auto_fill(confidence≥0.7) / review(0.4-0.7) / skip(<0.4 或 value 为空)
+   - reason: 简短填写理由（说明匹配到档案中的哪个信息，或为何留空）
 
 返回 JSON: {{"plan": [{{"index": 0, "value": "...", "confidence": 0.95, "fill_strategy": "text", "action": "auto_fill", "reason": "..."}}]}}"""
 
@@ -1281,9 +1307,23 @@ async def smart_form_fill(req: Request):
         result = json.loads(match.group(0)) if match else {"plan": []}
         fill_plan = result.get("plan", [])
 
+        # 后处理：强制执行「不编造」边界——value 不在档案文本中出现的映射降级为 review
+        profile_lower = profile_data
+        for p in fill_plan:
+            v = (p.get("value") or "").strip()
+            if v and len(v) >= 2 and v not in profile_lower:
+                p["action"] = "review"
+                p["reason"] = f"档案中未直接找到该值，请人工确认: {p.get('reason', '')[:60]}"
+
         auto = sum(1 for p in fill_plan if p.get("action") == "auto_fill")
         review = sum(1 for p in fill_plan if p.get("action") == "review")
         skip = len(fill_plan) - auto - review
+
+        # 写入映射缓存（值检查通过的有效映射才缓存）
+        if fill_plan:
+            llm_cache.set("form_fill", cache_payload, json.dumps({
+                "plan": fill_plan, "auto": auto, "review": review, "skip": skip,
+            }, ensure_ascii=False))
 
         return {
             "fill_plan": fill_plan, "total": len(fill_plan),
@@ -1291,7 +1331,13 @@ async def smart_form_fill(req: Request):
         }
 
     except Exception as e:
-        raise HTTPException(500, f"LLM匹配失败: {str(e)}")
+        # 退路：LLM 不可用不 500——返回空计划（前端已有本地规则匹配兜底）
+        import traceback
+        print(f"[WARN] form/fill LLM 降级: {traceback.format_exc()[-500:]}")
+        return {
+            "fill_plan": [], "total": 0, "auto_count": 0, "review_count": 0,
+            "skip_count": len(fields), "degraded": True, "message": "LLM 匹配暂不可用，请使用本地匹配",
+        }
 
 
 # ===== 系统信息 =====
