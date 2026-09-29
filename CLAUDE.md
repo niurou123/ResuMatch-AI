@@ -31,9 +31,9 @@ SPEC 第三节使用 P0-P3 优先级体系：
 - **后端**：FastAPI + LangGraph 多Agent工作流（v3.0）
 - **前端**：React (frontend/, Vite + TypeScript + Tailwind) + Chrome Extension (extension/) — Streamlit 已弃用
 - **LLM**：DeepSeek v4-pro，不要改用其他模型
-- **向量库**：ChromaDB + bge-small-zh (512维)
-- **多Agent模式**：Planner → Router → 3路并行检索(asycio.gather) → Fusion → Writer → 3路并行评审 → 多数表决
-- **数据源**：结构化档案/项目库 `data/profile.json`（ProfileStore），ChromaDB 仅作向量检索
+- **向量库**：Milvus Lite（pymilvus 嵌入式，`data/milvus_resumatch.db`；ChromaDB 为自动降级退路）+ bge-small-zh (512维)
+- **多Agent模式**：Planner → Router → 3路并行检索（asyncio.gather + to_thread 真并行）→ Fusion → Writer → 3路并行评审 → 多数表决
+- **数据源**：结构化档案/项目库 `data/profile.json`（ProfileStore），向量库（Milvus Lite 主 / ChromaDB 降级）仅作检索
 
 ### 4. 代码风格
 

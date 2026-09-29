@@ -111,23 +111,26 @@ function matchFieldLocal(f,profile){
     return b.s>=0.4?b.o:null;
   }
 
+  // LLM 边界（与后端 /form/fill 同一约束）：档案没有的字段不填默认值，
+  // 返回 null 走「review 或留空」——编造"合理值"违反如实提取原则
   const rules={
     '姓名':profile.name,'名字':profile.name,'中文名':profile.name,
     '性别':()=>matchOpt(profile.gender)||profile.gender,
     '手机':profile.phone,'电话':profile.phone,'手机号':profile.phone,'手机号码':profile.phone,'mobile':profile.phone,'tel':profile.phone,
     '邮箱':profile.email,'电子邮箱':profile.email,'email':profile.email,'mail':profile.email,
     '出生':()=>(profile.birthDate||'').replace(/-/g,''),'生日':()=>profile.birthDate||'','出生日期':()=>profile.birthDate||'','出生年月':()=>(profile.birthDate||'').replace(/-/g,''),
-    '证件号':profile.idNumber||'','身份证':profile.idNumber||'','证件类型':()=>matchOpt('身份证')||'身份证',
-    '民族':()=>matchOpt(profile.ethnicity||'汉族')||'汉族',
-    '政治面貌':()=>matchOpt(profile.politicalStatus||'共青团员')||'共青团员',
+    '证件号':profile.idNumber||'','身份证':profile.idNumber||'','证件类型':()=>profile.idType?matchOpt(profile.idType)||'身份证':null,
+    '民族':()=>profile.ethnicity?matchOpt(profile.ethnicity)||profile.ethnicity:null,
+    '政治面貌':()=>profile.politicalStatus?matchOpt(profile.politicalStatus)||profile.politicalStatus:null,
     '籍贯':profile.nativePlace||'','户籍':profile.nativePlace||'','户口':profile.nativePlace||'',
     '现居':profile.currentCity||'','所在城市':profile.currentCity||'','居住地':profile.currentCity||'',
     '微信':profile.wechat||'','微信号':profile.wechat||'',
     '毕业学校':edu.school||'','学校':edu.school||'','院校':edu.school||'','大学':edu.school||'','school':edu.school||'',
     '学院':edu.college||'','院系':edu.college||'',
     '专业':edu.major||'','所学专业':edu.major||'','毕业专业':edu.major||'','major':edu.major||'',
-    '学历':()=>matchOpt(edu.type||'本科')||'本科','最高学历':()=>matchOpt(edu.type||'本科')||'本科','学位':()=>matchOpt(edu.type||'本科')||'本科',
-    '培养方式':'全日制','学习形式':'全日制',
+    // 学历从教育记录推导；无教育记录不编造默认学历
+    '学历':()=>edu.type?matchOpt(edu.type)||edu.type:null,'最高学历':()=>edu.type?matchOpt(edu.type)||edu.type:null,'学位':()=>edu.type?matchOpt(edu.type)||edu.type:null,
+    '培养方式':()=>edu.studyMode||null,'学习形式':()=>edu.studyMode||null,
     '入学':(edu.startDate||'').replace(/-/g,''),'入学时间':(edu.startDate||'').replace(/-/g,''),
     '毕业时间':(edu.endDate||'').replace(/-/g,''),'预计毕业':(edu.endDate||'').replace(/-/g,''),
     'GPA':edu.gpa||'','gpa':edu.gpa||'','绩点':edu.gpa||'','平均成绩':edu.gpa||'',
@@ -144,7 +147,7 @@ function matchFieldLocal(f,profile){
     '自我评价':profile.selfEvaluation||'','自我介绍':profile.selfEvaluation||'','个人评价':profile.selfEvaluation||'',
     '意向城市':(profile.targetCities||[]).join('、'),'意向岗位':(profile.targetPositions||[]).join('、'),
     '期望薪资':profile.expectedSalary||'','到岗时间':profile.availableDate||'',
-    '语言':'否','掌握母语':'否','奖学金':'无',
+    '婚姻状况':()=>profile.maritalStatus?matchOpt(profile.maritalStatus)||profile.maritalStatus:null,
     '现居城市':profile.currentCity||'','家庭住址':profile.nativePlace||'',
   };
 
