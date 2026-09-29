@@ -2,6 +2,7 @@
 import os
 import uuid
 import shutil
+import asyncio
 from pathlib import Path
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, UploadFile, File, Request
@@ -13,6 +14,7 @@ from src.api.schemas import (
     ProfileDetailResponse, ProfileUpdateProjectRequest,
     ProfileUpdateSkillsRequest, ProfileMessageResponse,
     InterviewRequest, InterviewResponse,
+    JudgeRequest, JudgeResponse,
     MockInterviewStartRequest, MockInterviewStartResponse,
     MockInterviewNextRequest, MockInterviewNextResponse,
     MockSuggestRequest, MockSuggestResponse, MockProjectsResponse,
@@ -45,13 +47,63 @@ _session_memory = SessionMemory()
 from src.core.redis_store import session_store, llm_cache
 
 
-async def _generate_mock_answer(question: str, profile: dict, project: str = "") -> dict:
+def _load_user_profile() -> Dict[str, Any]:
+    """统一装载简历画像，供面试问答（/answer 与 /stream）共用。
+
+    两份数据缺一不可：
+    - ProfileStore（data/profile.json）：pre-planner 需要 skills / projects 结构化字段，
+      用于规划 active_retrievers 与 HyDE 画像摘要
+    - ChromaDB indexed_docs / collections：should_retrieve 判断「是否已上传简历」的依据
+
+    任一步骤失败都不影响另一份（错误隔离），最终可能返回空 dict（未上传简历）。
+    """
+    profile: Dict[str, Any] = {}
+
+    # 结构化档案
+    try:
+        from src.features.profile_store import ProfileStore
+        stored = ProfileStore.load()
+        if stored:
+            profile.update(stored)
+    except Exception:
+        pass
+
+    # 向量库索引状态
+    try:
+        from src.rag.vector_store import get_vector_store
+        vs = get_vector_store()
+        info = vs.get_collection_info()
+        if sum(info.values()) > 0:
+            # list_documents 是确定性枚举（query()）：空字符串 query 的向量
+            # 检索是伪随机且不稳定的，不能当"全部素材"用
+            all_docs = {}
+            for coll in ["skills", "projects", "achievements", "education"]:
+                for r in vs.list_documents(coll, limit=50):
+                    all_docs[r.get("id", "")] = {
+                        "content": r.get("content", ""),
+                        "collection": r.get("collection", ""),
+                        "metadata": r.get("metadata", {}),
+                    }
+            profile["indexed_docs"] = list(all_docs.values())
+            profile["collections"] = info
+    except Exception:
+        pass
+
+    if profile:
+        profile.setdefault("name", "候选人")
+    return profile
+
+
+async def _generate_mock_answer(
+    question: str, profile: dict, project: str = "", history: list = None
+) -> dict:
     """生成面试对练的 AI 候选人回答（单次 LLM 调用，快且稳）。
 
     与完整多Agent工作流不同，这里用一次 LLM 调用完成：
     - 基于简历真实素材生成 STAR 回答
     - 检索目标项目的 RAG 资料文档（如有），基于真实文档作答
     - 简历未覆盖的技术细节，基于通用框架知识推理补充（不编造简历没有的量化成果）
+    - 带上前几轮已完成的问答，使追问真正基于上下文（而非每轮独立作答）
 
     返回 {answer, question_type, citations}
     """
@@ -115,6 +167,27 @@ async def _generate_mock_answer(question: str, profile: dict, project: str = "")
         else:
             refs_section = ""
 
+        # ===== 多轮上下文：把已完成的轮次拼成对话历史 =====
+        # 只取已有回答的轮次（当前这轮的回答尚未生成，不应出现在 prompt 里），
+        # 最多保留最近 5 轮，避免长会话把 prompt 撑爆
+        history_text = ""
+        if history:
+            done = [
+                t for t in history
+                if isinstance(t, dict) and t.get("question") and t.get("answer")
+            ][-5:]
+            if done:
+                turns = []
+                for t in done:
+                    turns.append(f"面试官：{t['question']}")
+                    turns.append(f"我：{str(t['answer'])[:500]}")
+                history_text = "\n".join(turns)
+
+        if history_text:
+            history_section = f"\n## 前面几轮已完成的问答（追问需与此衔接，可指代前文）\n{history_text}\n"
+        else:
+            history_section = ""
+
         system_prompt = """你是专业的AI面试助手，为候选人生成面试回答。候选人简历素材可能不完整。
 
 ## 核心原则
@@ -133,7 +206,7 @@ async def _generate_mock_answer(question: str, profile: dict, project: str = "")
 
 ## 候选人项目经历
 {projects_text}
-{refs_section}
+{refs_section}{history_section}
 ## 面试官的问题
 {question}
 
@@ -145,11 +218,23 @@ async def _generate_mock_answer(question: str, profile: dict, project: str = "")
             Message(role="user", content=user_prompt),
         ]
 
-        # ===== LLM 语义缓存：相同问题+项目 命中直接返回（省成本/延迟） =====
+        # ===== LLM 缓存：精确 → 语义近邻 → 未命中生成 =====
+        # 精确：相同问题+项目+上下文 命中直接返回
+        # 语义：问题措辞不同但语义相同（余弦 ≥ 0.92）也命中——"语义缓存"的实义
+        # 注意 history_text 必须入 key——同一句话在不同轮次的追问下答案应当不同
         import hashlib
-        cache_payload = f"{question}|{target_project}|{skills_text[:200]}|{projects_text[:200]}|{project_refs[:200]}"
+        cache_payload = f"{question}|{target_project}|{skills_text[:200]}|{projects_text[:200]}|{project_refs[:200]}|{history_text[:400]}"
         cache_key = "mock_answer"
         cached = llm_cache.get(cache_key, cache_payload)
+        if not cached and not history_text:
+            # 语义命中只对"无上下文"的首轮问题安全：带 history 的追问
+            # 语义等价不等于答案等价（上下文不同）
+            try:
+                cached = await asyncio.to_thread(
+                    llm_cache.get_semantic, cache_key, question
+                )
+            except Exception:
+                cached = None
         if cached:
             return {"answer": cached, "question_type": "STAR", "citations": [], "cached": True}
 
@@ -276,6 +361,20 @@ async def upload_resume(file: UploadFile = File(...)):
             ProfileStore.save(profile)
         except Exception as e:
             print(f"[WARN] 项目库落盘失败: {e}")
+
+        # 三层会话记忆 Layer 3：上传简历即设置长期画像（此后 get_context 始终携带）
+        # 画像用「纯文本摘要」而非 JSON——这是 LLM 上下文，不是序列化格式
+        try:
+            skill_names = [s["name"] for s in profile.get("skills", [])[:15] if s.get("name")]
+            proj_names = [p["name"] for p in profile.get("projects", [])[:6] if p.get("name")]
+            _session_memory.set_profile(
+                f"姓名: {profile.get('name', '未知')}；"
+                f"技能: {', '.join(skill_names) or '无'}；"
+                f"项目: {', '.join(proj_names) or '无'}"
+            )
+            _session_memory.clear()  # 换简历 = 新会话，旧的对话历史/主题清空（画像保留）
+        except Exception:
+            pass
 
         # 提取统计（用于用户验证）
         stats = parsed.extraction_stats
@@ -473,7 +572,7 @@ async def list_project_docs(project_name: str):
     """列出项目的资料文档清单"""
     from src.rag.vector_store import get_vector_store
     vs = get_vector_store()
-    results = vs.search("", "project_docs", top_k=200, where={"project_name": project_name})
+    results = vs.list_documents("project_docs", limit=200, where={"project_name": project_name})
     filenames = []
     seen = set()
     for r in results:
@@ -513,25 +612,16 @@ async def interview_answer(request: InterviewRequest):
         from src.agents.graph import run_interview_workflow
 
         # 读取当前简历画像作为 user_profile
-        profile = {}
+        profile = _load_user_profile()
+
+        # 三层会话记忆：把最近几轮问答作为对话历史注入（多轮追问有上下文）
+        conversation_history = []
         try:
-            from src.rag.vector_store import get_vector_store
-            vs = get_vector_store()
-            info = vs.get_collection_info()
-            if sum(info.values()) > 0:
-                # 收集所有已索引的文档作为用户画像
-                all_docs = {}
-                for coll in ["skills", "projects", "achievements", "education"]:
-                    results = vs.search("", coll, top_k=50)
-                    for r in results:
-                        all_docs[r.get("id", "")] = {
-                            "content": r.get("content", ""),
-                            "collection": r.get("collection", ""),
-                            "metadata": r.get("metadata", {}),
-                        }
-                profile["indexed_docs"] = list(all_docs.values())
-                profile["name"] = "候选人"
-                profile["collections"] = info
+            for t in _session_memory.get_recent_history(3):
+                conversation_history.append({
+                    "question": t.get("question", ""),
+                    "answer": t.get("answer", ""),
+                })
         except Exception:
             pass
 
@@ -539,11 +629,19 @@ async def interview_answer(request: InterviewRequest):
             request.question,
             str(uuid.uuid4()),
             user_profile=profile,
+            conversation_history=conversation_history,
         )
+
+        # 答案落账到短期记忆（add_turn 内部触发主题追踪与 48K 压缩检查）
+        answer = state.get("final_answer", state.get("draft_answer", ""))
+        try:
+            _session_memory.add_turn(request.question, answer)
+        except Exception:
+            pass
 
         return InterviewResponse(
             question=request.question,
-            answer=state.get("final_answer", state.get("draft_answer", "")),
+            answer=answer,
             question_type=state.get("question_type", ""),
             citations=state.get("citations", []),
             review_scores=state.get("review_scores", {}),
@@ -562,17 +660,82 @@ async def interview_answer(request: InterviewRequest):
 @router.post("/interview/stream")
 async def interview_stream(request: InterviewRequest):
     """流式面试问答（SSE）"""
+    # 与 /interview/answer 一致：在进入事件生成器前先装载画像。
+    # 事件生成器内不能 await 阻塞操作（会拖慢首字节），且 user_profile 缺失会让
+    # should_retrieve 返回 skip、并让 Planner 把 active_retrievers 削到只剩 semantic。
+    user_profile = _load_user_profile()
+
+    # 三层会话记忆：注入最近几轮对话（多轮追问上下文）
+    conversation_history = []
+    try:
+        for t in _session_memory.get_recent_history(3):
+            conversation_history.append({
+                "question": t.get("question", ""),
+                "answer": t.get("answer", ""),
+            })
+    except Exception:
+        pass
+
+    # 记录问题（流式答案无法在生成中途 add_turn；完整答案在 done 事件后落账）
     async def event_generator():
+        final_answer_text = ""
         async for event in _run_interview_stream(
             query=request.question,
             session_id=str(uuid.uuid4()),
+            user_profile=user_profile,
+            conversation_history=conversation_history,
         ):
+            if event.get("type") == "done":
+                final_answer_text = (event.get("data") or {}).get("final_answer", "")
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+        # 答案落账到短期记忆（生成器 close 时也执行——finally 语义）
+        if final_answer_text:
+            try:
+                _session_memory.add_turn(request.question, final_answer_text)
+            except Exception:
+                pass
 
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post("/interview/judge", response_model=JudgeResponse)
+async def judge_interview_answer(request: JudgeRequest):
+    """LLM-as-Judge 独立评测：对任意（问题, 回答）对做 5 维打分。
+
+    与工作流内的 3 路评审互补——评审是生成回路的一部分（决定是否修订），
+    Judge 是事后评测基线（与生成解耦，同一 prompt 下跨版本对比回答质量）。
+    """
+    if not request.question.strip() or not request.answer.strip():
+        raise HTTPException(400, "问题和回答均不能为空")
+
+    from src.core.judge import LLMJudge
+
+    # 画像摘要供 Judge 验证真实性（回答是否与简历一致）
+    profile_summary = _session_memory.long_term_profile
+    if not profile_summary:
+        profile = _load_user_profile()
+        skills = [s.get("name", "") for s in profile.get("skills", [])[:12]]
+        projects = [p.get("name", "") for p in profile.get("projects", [])[:5]]
+        profile_summary = f"技能: {', '.join(skills) or '未知'}; 项目: {', '.join(projects) or '未知'}"
+
+    judge = LLMJudge()
+    result = await judge.evaluate(
+        request.question, request.answer, profile_summary=profile_summary
+    )
+
+    return JudgeResponse(
+        question=request.question,
+        scores=result.scores,
+        total=result.total,
+        strengths=result.strengths,
+        weaknesses=result.weaknesses,
+        needs_revision=result.needs_revision,
+        feedback=result.feedback,
     )
 
 
@@ -624,36 +787,39 @@ async def mock_interview_next(request: MockInterviewNextRequest):
 
     is_last = session["round"] >= session["max_rounds"]
 
-    # 用多Agent工作流生成 AI 候选人回答（基于简历素材，含项目归属约束）
-    ai_answer = ""
-    question_type = ""
-    citations = []
-    review_scores = {}
+    # 用单次 LLM 调用生成 AI 候选人回答（基于简历素材，含项目归属约束 + 项目文档检索）。
+    # 说明：这里刻意不走 run_interview_workflow 多Agent工作流——对练场景要求低延迟，
+    # 一次调用即可满足；因此评审类字段（review_scores/review_total/revision_count）
+    # 保持默认空值，不编造评分（前端也据此不展示评分）。
+    review_scores: Dict[str, float] = {}
     review_total = 0.0
     revision_count = 0
     try:
         import sys
         sys.setrecursionlimit(50000)
-        from src.agents.graph import run_interview_workflow
 
-        # 读取简历画像（技能/项目）
+        # 读取简历画像（结构化档案优先，ChromaDB 兜底）
         profile = {}
         try:
             from src.features.profile_store import ProfileStore
             stored = ProfileStore.load()
             if stored:
                 profile = stored
-            else:
+        except Exception:
+            pass
+
+        if not profile.get("skills") and not profile.get("projects"):
+            try:
                 from src.rag.vector_store import get_vector_store
                 vs = get_vector_store()
                 info = vs.get_collection_info()
                 if sum(info.values()) > 0:
                     skills, projects = [], []
-                    for r in vs.search("", "skills", top_k=30):
+                    for r in vs.list_documents("skills", limit=30):
                         n = (r.get("metadata") or {}).get("name", "")
                         if n:
                             skills.append({"name": n})
-                    for r in vs.search("", "projects", top_k=20):
+                    for r in vs.list_documents("projects", limit=20):
                         md = r.get("metadata") or {}
                         content = r.get("content", "") or ""
                         if md.get("name"):
@@ -664,19 +830,18 @@ async def mock_interview_next(request: MockInterviewNextRequest):
                                 "key_result": "",
                                 "description": content,
                             })
-                    profile["skills"] = skills
-                    profile["projects"] = projects
-        except Exception:
-            pass
+                    profile = {"skills": skills, "projects": projects}
+            except Exception:
+                pass
 
-        # 用专用单次 LLM 调用生成回答（快且稳，含技术推理退路 + 项目文档检索）
-        gen = await _generate_mock_answer(question, profile, project=request.project or "")
+        gen = await _generate_mock_answer(
+            question, profile,
+            project=request.project or "",
+            history=session.get("history", [])[:-1],  # 不含当前这轮（其 answer 尚未生成）
+        )
         ai_answer = gen.get("answer", "")
         question_type = gen.get("question_type", "")
         citations = gen.get("citations", [])
-        review_scores = {}
-        review_total = 0
-        revision_count = 0
 
         if not ai_answer:
             ai_answer = "抱歉，回答生成失败，请重试。"
@@ -685,9 +850,13 @@ async def mock_interview_next(request: MockInterviewNextRequest):
         print(f"[ERROR] mock_interview_next:\n{traceback.format_exc()}")
         ai_answer = f"生成回答时出错: {str(e)[:200]}"
 
-    # 更新会话历史
+    # 更新会话历史并回写。
+    # 注意拷贝语义：session_store.get() 每次返回的是**反序列化出的新对象**
+    # （Redis 走 json.loads，内存降级同为新引用），且 set() 是整条覆盖写。
+    # 因此这里改完必须重新 set，否则下一轮读到的仍是旧 history。
+    # 副作用：同一 session 的并发请求会互相覆盖（无乐观锁）——对练是单用户串行交互，可接受。
     session["history"][-1]["answer"] = ai_answer
-    session_store.set(request.session_id, session)  # 持久化会话（含 history）
+    session_store.set(request.session_id, session)
 
     return MockInterviewNextResponse(
         question=question,
@@ -715,7 +884,7 @@ async def mock_projects():
         if not projects:
             from src.rag.vector_store import get_vector_store
             vs = get_vector_store()
-            for r in vs.search("", "projects", top_k=30):
+            for r in vs.list_documents("projects", limit=30):
                 name = (r.get("metadata") or {}).get("name", "").strip()
                 if name and name not in projects:
                     projects.append(name)
@@ -741,8 +910,7 @@ async def mock_suggest_question(request: MockSuggestRequest):
         if sum(info.values()) > 0:
             parts = []
             for coll in ["skills", "projects", "achievements", "education"]:
-                results = vs.search("", coll, top_k=15)
-                for r in results:
+                for r in vs.list_documents(coll, limit=15):
                     content = (r.get("content") or "").strip()
                     if content and not content.startswith(f"{coll} #"):
                         parts.append(f"[{coll}] {content[:120]}")
@@ -865,12 +1033,11 @@ async def generate_intro(request: SelfIntroRequest):
     if sum(stats.values()) == 0:
         raise HTTPException(400, "请先上传简历")
 
-    # 从 ChromaDB 读取真实简历数据
+    # 从向量库读取真实简历数据（list_documents：确定性枚举，替代空 query 刮库）
     profile = {}
     all_docs = []
     for coll in ["skills", "projects", "achievements", "education"]:
-        results = vector_store.search("", coll, top_k=50)
-        for r in results:
+        for r in vector_store.list_documents(coll, limit=50):
             all_docs.append({
                 "content": r.get("content", ""),
                 "collection": r.get("collection", ""),
@@ -961,9 +1128,9 @@ async def analyze_jd_match(request: JDMatchRequest):
     if sum(stats.values()) == 0:
         raise HTTPException(400, "请先上传简历")
 
-    # 从 ChromaDB 获取所有技能
+    # 从向量库获取所有技能（list_documents：确定性枚举）
     all_skills = []
-    skill_results = vector_store.search("", "skills", top_k=50)
+    skill_results = vector_store.list_documents("skills", limit=50)
     for r in skill_results:
         name = r.get("metadata", {}).get("name", "")
         if name:
@@ -1047,21 +1214,28 @@ async def smart_form_fill(req: Request):
     if not fields:
         return {"fill_plan": [], "total": 0}
 
-    # 优先使用 chromaDB 中的简历数据
-    profile_data = _session_memory.long_term_profile
+    # 优先使用结构化档案（data/profile.json，可靠），降级 ChromaDB 检索
+    profile_data = ""
+    try:
+        from src.features.profile_store import ProfileStore
+        stored = ProfileStore.load()
+        if stored:
+            profile_data = json.dumps(stored, ensure_ascii=False, indent=2)
+    except Exception:
+        profile_data = ""
+
     if not profile_data or len(profile_data) < 20:
         try:
             vs = _get_vector_store()
             info = vs.get_collection_info()
             if sum(info.values()) > 0:
-                # 从 chromaDB 收集所有数据
+                # 确定性枚举全部素材（list_documents 是 query()，非向量检索）
                 all_docs = []
-                for coll in ["skills","projects","achievements","education"]:
-                    results = vs.search("", coll, top_k=20)
-                    for r in results:
+                for coll in ["skills", "projects", "achievements", "education"]:
+                    for r in vs.list_documents(coll, limit=20):
                         all_docs.append(f"[{r.get('collection','')}] {r.get('content','')}")
                 profile_data = "\n".join(all_docs) if all_docs else "未上传简历"
-        except:
+        except Exception:
             profile_data = "未上传简历"
 
     if not fields:
@@ -1124,11 +1298,15 @@ async def smart_form_fill(req: Request):
 @router.get("/system/info", response_model=SystemInfoResponse)
 async def system_info():
     vector_store = _get_vector_store()
+    from src.rag.milvus_store import get_vector_backend
     return SystemInfoResponse(
         app_name=settings.APP_NAME,
         version=settings.APP_VERSION,
         model=settings.DEEPSEEK_MODEL,
         embedding_model=settings.EMBEDDING_MODEL,
         collections=vector_store.get_collection_info(),
-        memory_stats=_session_memory.get_stats(),
+        memory_stats={
+            **_session_memory.get_stats(),
+            "vector_backend": get_vector_backend(),  # "milvus" | "chromadb"
+        },
     )

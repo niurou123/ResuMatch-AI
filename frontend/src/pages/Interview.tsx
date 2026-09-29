@@ -582,7 +582,8 @@ function MockInterview() {
                   <div className="card-header flex items-center gap-2">
                     <span>第 {h.round} 轮 · 面试官提问</span>
                     {h.questionType && <span className="tag-skill !m-0">{h.questionType}</span>}
-                    {h.reviewTotal != null && <span className="text-text-3 text-xs">评分 {h.reviewTotal}/25</span>}
+                    {/* 对练走单次 LLM 调用、不做评审，后端返回 0 即视为无评分 */}
+                    {h.reviewTotal ? <span className="text-text-3 text-xs">评分 {h.reviewTotal}/25</span> : null}
                   </div>
                   <p className="text-text-2 text-sm mb-3" style={{ borderLeft: '2px solid #6366f1', paddingLeft: '0.75rem' }}>
                     {h.question}

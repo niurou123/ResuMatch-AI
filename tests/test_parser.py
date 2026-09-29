@@ -94,14 +94,14 @@ class TestResumeParser:
         docs = parser.to_documents(sample_parsed_resume)
 
         assert len(docs) > 0
-        # 应该有技能、项目、成果、教育等类型的文档
+        # 应该有技能、项目、成果、教育等类型的文档（type 为复数形式，与集合名一致）
         types = set(doc.metadata.get("type") for doc in docs)
-        assert "skill" in types
-        assert "project" in types
-        assert "achievement" in types
+        assert "skills" in types
+        assert "projects" in types
+        assert "achievements" in types
 
         # 验证内容完整性
-        skill_docs = [d for d in docs if d.metadata["type"] == "skill"]
+        skill_docs = [d for d in docs if d.metadata["type"] == "skills"]
         assert any("Python" in d.content for d in skill_docs)
 
     def test_parse_nonexistent_file(self):

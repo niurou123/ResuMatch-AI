@@ -543,7 +543,7 @@ class ProjectJDMatchService:
         except Exception:
             pass
 
-        # 降级：ChromaDB 碎 chunk 聚合（尽力而为）
+        # 降级：向量库碎 chunk 聚合（尽力而为；list_documents 为确定性枚举）
         try:
             if vs is None:
                 from src.rag.vector_store import get_vector_store
@@ -551,7 +551,7 @@ class ProjectJDMatchService:
             info = vs.get_collection_info()
             if not info.get("projects", 0):
                 return []
-            results = vs.search("", "projects", top_k=100)
+            results = vs.list_documents("projects", limit=100)
         except Exception:
             return []
 

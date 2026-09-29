@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 os.environ.setdefault("DEEPSEEK_API_KEY", "sk-test-key")
 os.environ.setdefault("CHROMA_DB_PATH", "data/chroma_db_test")
+os.environ.setdefault("MILVUS_DB_PATH", "data/milvus_resumatch_test.db")
 os.environ.setdefault("DEBUG", "true")
 
 

@@ -1,56 +1,67 @@
-"""向量存储测试"""
+"""向量存储测试（Milvus Lite 主路径 + ChromaDB 降级路径，二者接口一致）"""
 import pytest
 import shutil
 from pathlib import Path
+from src.rag.milvus_store import MilvusVectorStore, _ChromaFallbackStore, get_vector_backend
 from src.rag.vector_store import ResumeVectorStore
 from src.rag.parser import Document
 
 
-@pytest.fixture
-def vector_store():
-    """创建测试用向量存储"""
-    test_path = "data/chroma_db_test"
-    store = ResumeVectorStore(persist_path=test_path)
+@pytest.fixture(params=["milvus", "chromadb"])
+def vector_store(request):
+    """参数化创建测试用向量存储（两种后端跑同一套用例，验证接口兼容）"""
+    if request.param == "milvus":
+        test_path = "data/milvus_test.db"
+        store = MilvusVectorStore(persist_path=test_path)
+    else:
+        test_path = "data/chroma_db_test"
+        store = _ChromaFallbackStore(persist_path=test_path)
     yield store
-    # 清理
+    # 清理：删除全部集合，再删磁盘文件，保证 fixture 幂等
     try:
-        store.client.delete_collection("skills")
-        store.client.delete_collection("projects")
-        store.client.delete_collection("achievements")
-        store.client.delete_collection("education")
+        store.reset()
     except Exception:
         pass
-    if Path(test_path).exists():
-        shutil.rmtree(test_path, ignore_errors=True)
+    for name in store.COLLECTIONS:
+        try:
+            store.client.delete_collection(name)
+        except Exception:
+            pass
+    p = Path(test_path)
+    if p.exists():
+        if p.is_dir():
+            shutil.rmtree(p, ignore_errors=True)
+        else:
+            p.unlink()
 
 
 @pytest.fixture
 def sample_documents():
-    """示例文档块"""
+    """示例文档块（metadata.type 用复数形式，与 parser.to_documents 的实际输出一致）"""
     return [
         Document(
             content="技能: Python (类别: programming)",
-            metadata={"type": "skill", "name": "Python", "category": "programming"},
+            metadata={"type": "skills", "name": "Python", "category": "programming"},
             chunk_id="skill_0",
         ),
         Document(
             content="技能: LangGraph (类别: ai)",
-            metadata={"type": "skill", "name": "LangGraph", "category": "ai"},
+            metadata={"type": "skills", "name": "LangGraph", "category": "ai"},
             chunk_id="skill_1",
         ),
         Document(
             content="项目: PaperPilot - 多Agent科研助手\n角色: 核心开发者\n技术栈: LangGraph, Python, ChromaDB",
-            metadata={"type": "project", "name": "PaperPilot", "role": "核心开发者"},
+            metadata={"type": "projects", "name": "PaperPilot", "role": "核心开发者"},
             chunk_id="project_0",
         ),
         Document(
             content="项目: ResuMatch AI - Agent面试助手\n技术栈: LangGraph, FastAPI, Streamlit",
-            metadata={"type": "project", "name": "ResuMatch AI"},
+            metadata={"type": "projects", "name": "ResuMatch AI"},
             chunk_id="project_1",
         ),
         Document(
             content="成果: 引用准确率从35.6%提升至100%",
-            metadata={"type": "achievement", "project_name": "PaperPilot"},
+            metadata={"type": "achievements", "project_name": "PaperPilot"},
             chunk_id="achievement_0",
         ),
         Document(
@@ -66,7 +77,7 @@ class TestResumeVectorStore:
 
     def test_init_creates_collections(self, vector_store):
         """测试初始化创建所有集合"""
-        for name in ResumeVectorStore.COLLECTIONS:
+        for name in MilvusVectorStore.COLLECTIONS:
             count = vector_store.count(name)
             assert count >= 0  # 集合存在且可查询
 

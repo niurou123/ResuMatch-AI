@@ -78,6 +78,24 @@ class InterviewResponse(BaseModel):
     error: Optional[str] = None
 
 
+# ===== LLM-as-Judge 评测 =====
+class JudgeRequest(BaseModel):
+    """LLM 评测请求：对（问题, 回答）对打分，用于建立回答质量基线"""
+    question: str
+    answer: str
+
+
+class JudgeResponse(BaseModel):
+    """LLM 评测响应（5维评分，每项 1-5 分，满分 25）"""
+    question: str
+    scores: Dict[str, float] = {}
+    total: float = 0.0
+    strengths: List[str] = []
+    weaknesses: List[str] = []
+    needs_revision: bool = False
+    feedback: str = ""
+
+
 class StreamEvent(BaseModel):
     """流式事件"""
     type: str  # chunk, review, revision_start, done, error

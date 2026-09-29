@@ -114,10 +114,11 @@ export const mockStart = (focusAreas: string[], difficulty: string) =>
     difficulty,
   } as MockStartRequest);
 
-export const mockNext = (sessionId: string, answer: string) =>
+export const mockNext = (sessionId: string, question: string, project = '') =>
   api.post<MockNextResponse>('/api/v1/mock/next', {
     session_id: sessionId,
-    answer,
+    question,
+    project,
   } as MockNextRequest);
 
 // ===== 自我介绍 =====

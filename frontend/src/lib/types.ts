@@ -138,7 +138,9 @@ export interface MockStartResponse {
 
 export interface MockNextRequest {
   session_id: string;
-  answer: string;
+  question: string; // 面试官的问题
+  answer?: string;  // 兼容旧字段
+  project?: string; // 目标项目（可选，指定则优先检索该项目 RAG 文档）
 }
 
 export interface MockNextResponse {
@@ -147,6 +149,12 @@ export interface MockNextResponse {
   previous_feedback?: Record<string, unknown>;
   is_last: boolean;
   session_summary?: string;
+  ai_answer: string;        // AI 候选人基于简历的 STAR 回答
+  question_type: string;    // 问题类型（技术/项目/行为/通用）
+  citations: Record<string, unknown>[];
+  review_scores: Record<string, number>;
+  review_total: number;     // 对练走单次 LLM 调用、不做评审，故为 0
+  revision_count: number;
 }
 
 // ===== 自我介绍相关 =====
