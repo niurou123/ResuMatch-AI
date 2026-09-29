@@ -1248,12 +1248,14 @@ async def smart_form_fill(req: Request):
         except Exception:
             profile_data = "未上传简历"
 
-    # 格式化字段（保持稳定顺序，供缓存 key）
+    # 格式化字段（保持稳定顺序，供缓存 key；section/section_index 为
+    # 扩展扫描时的表单分区标注——教育/项目多段经历对应档案第 N 条）
     fields_text = json.dumps([
         {"index": i, "label": f.get("label", ""), "tag": f.get("tag", ""),
          "type": f.get("type", ""), "options": f.get("options", []),
          "placeholder": f.get("placeholder", ""), "id": f.get("id", ""),
-         "required": f.get("required", False)}
+         "required": f.get("required", False),
+         "section": f.get("section", ""), "section_index": f.get("section_index", 0)}
         for i, f in enumerate(fields)
     ], ensure_ascii=False, indent=2, sort_keys=False)
 
@@ -1285,7 +1287,11 @@ async def smart_form_fill(req: Request):
    绝不填入合理默认值（如民族/政治面貌/婚否等档案没有的信息不得编造）
 2. **不推断缺失信息**：档案无教育时间则不填时间，无量化数字则不填数字
 3. **选项匹配**：字段有 options 时，value 必须严格取选项原文之一（选语义最接近的）；无合适选项留空
-4. 对每个字段返回填写计划：
+4. **分区与多段经历**：字段带 section（education/internship/project/campus 等）与
+   section_index（0=第一段）。同一分区内同名字段出现多次 = 多段经历——第 2 个
+   "学校名称"应取档案第 2 条教育的学校，不要全部填第一段的值；档案只有 1 段而
+   表单有第 2 段时，第 2 段留空（不复制第一段）
+5. 对每个字段返回填写计划：
    - value: 来自档案的值（或留空）
    - confidence: 匹配置信度 0-1
    - fill_strategy: text/select/radio_click/datepicker
@@ -1307,13 +1313,45 @@ async def smart_form_fill(req: Request):
         result = json.loads(match.group(0)) if match else {"plan": []}
         fill_plan = result.get("plan", [])
 
-        # 后处理：强制执行「不编造」边界——value 不在档案文本中出现的映射降级为 review
+        # 后处理第一道防线：强制执行「不编造」边界——
+        # value 不在档案文本中出现的映射降级为 review
         profile_lower = profile_data
         for p in fill_plan:
             v = (p.get("value") or "").strip()
             if v and len(v) >= 2 and v not in profile_lower:
                 p["action"] = "review"
                 p["reason"] = f"档案中未直接找到该值，请人工确认: {p.get('reason', '')[:60]}"
+
+        # 后处理第二道防线：多段经历防复制——档案该分区只有 1 条经历时，
+        # 第 2 段以后的映射值若与第 1 段同名字段相同，是 LLM 复制第一段的
+        # 典型错误（档案没有第二段，正确行为是留空），强制降级 review
+        sectioned_counts = {}
+        try:
+            stored_profile = json.loads(profile_data) if profile_data.startswith("{") else {}
+        except json.JSONDecodeError:
+            stored_profile = {}
+        for p in fill_plan:
+            idx = p.get("index")
+            if not isinstance(idx, int) or not (0 <= idx < len(fields)):
+                continue
+            f = fields[idx]
+            sec = f.get("section") or ""
+            seg = f.get("section_index") or 0
+            if sec in ("education", "internship", "project", "campus") and seg > 0:
+                key = f"{sec}"
+                if key not in sectioned_counts:
+                    # 档案内该分区经历条数
+                    if sec == "education":
+                        n = len(stored_profile.get("education", []) or [])
+                    else:
+                        exps = stored_profile.get("work_experience", []) or stored_profile.get("projects", []) or []
+                        n = len(exps) if sec != "campus" else 0
+                    sectioned_counts[key] = n
+                if sectioned_counts[key] <= seg:  # 档案没有第 seg 段
+                    v = (p.get("value") or "").strip()
+                    if v:
+                        p["action"] = "review"
+                        p["reason"] = f"档案仅{sectioned_counts[key]}段该经历，第{seg + 1}段为 LLM 推测复制，请人工确认"
 
         auto = sum(1 for p in fill_plan if p.get("action") == "auto_fill")
         review = sum(1 for p in fill_plan if p.get("action") == "review")

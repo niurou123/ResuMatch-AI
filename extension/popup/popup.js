@@ -22,24 +22,32 @@ $('#scan').onclick=()=>{
     chrome.scripting.executeScript({target:{tabId:tabs[0].id},func:scanPage}).then(async([r])=>{
       btn.textContent='重新扫描';btn.disabled=false;
       fields=r.result.fields||[];
-      // Dedup
-      const seen=new Set();fields=fields.filter(f=>{const k=f.label+f.tag+f.type;if(seen.has(k))return false;seen.add(k);return true;});
+      // Dedup：按元素 id（data-rm-id 唯一）。不能按 label——多段教育/项目经历
+      // 的同名字段（第2个"学校名称"）是合法的独立字段，按 label 去重会把它们删掉
+      const seen=new Set();fields=fields.filter(f=>{if(seen.has(f.id))return false;seen.add(f.id);return true;});
       const d=await chrome.storage.local.get(['profile']);profile=d.profile;
 
-      // Local match
+      // Local match（分区感知：同分区同名字段按出现序号对应档案第 N 条经历）
       let auto=0,review=0;
+      const occurrence={}; // "section|label" → 已出现次数
       fields.forEach(f=>{
-        const v=matchFieldLocal(f,profile);
+        const key=(f.section||'')+'|'+(f.label||'');
+        const idx=occurrence[key]||0;occurrence[key]=idx+1;
+        const v=matchFieldLocal(f,profile,idx);
         if(v){f.ai_value=v.value;f.ai_action=v.action;f.ai_strategy=v.strategy;}
         else{f.ai_value='';f.ai_action='skip';}
         if(f.ai_action==='auto_fill')auto++;else if(f.ai_action==='review')review++;
       });
 
-      // LLM fallback
+      // LLM fallback（带分区信息：教育/项目多段经历是网申表单常态，LLM 需要知道
+      // 字段属于哪个分区、是第几段，才能对应档案里第 N 条经历）
       const unmatched=fields.filter(f=>f.ai_action==='skip');
       if(unmatched.length>0&&profile){
         try{
-          const fr=await fetch(API+'/form/fill',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:unmatched})});
+          const payload=unmatched.map((f,i)=>({index:i,label:f.label,tag:f.tag,type:f.type,
+            options:f.options||[],placeholder:f.placeholder,required:!!f.required,
+            section:f.section||'',section_index:f.sectionIndex||0}));
+          const fr=await fetch(API+'/form/fill',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:payload})});
           const plan=await fr.json();
           (plan.fill_plan||[]).forEach(p=>{const idx=fields.indexOf(unmatched[p.index]);if(idx>=0){fields[idx].ai_value=p.value;fields[idx].ai_action=p.action||'auto_fill';fields[idx].ai_strategy=p.fill_strategy||'text';if(p.action==='auto_fill')auto++;}});
         }catch(e){console.log('LLM fallback:',e);}
@@ -91,13 +99,25 @@ $('#upload').onclick=()=>{
   window.close();
 };
 
-// ===== Local matching =====
-function matchFieldLocal(f,profile){
+// ===== Local matching（分区感知）=====
+// occurrenceIdx：同 (section|label) 字段的第几次出现（0 起）——多段教育/项目
+// 的第2个"学校名称"对应档案 educations[1].school，而非又取 educations[0]
+function matchFieldLocal(f,profile,occurrenceIdx=0){
   if(!profile)return null;
   const label=(f.label||'').replace(/[*：:\s（）()【】\[\]]/g,'').replace(/请输入|请选择|请填写|必填|选填|（必填）|（选填）/g,'');
-  const edu=(profile.educations||[])[0]||{};
-  const intern=(profile.experiences||[]).find(x=>x.type==='实习')||{};
-  const proj=(profile.experiences||[]).find(x=>x.type==='项目')||{};
+  const section=f.section||'';
+  // 分区 → 经历数组的路由；basic/skill/award 不属于经历段
+  const sectionedList={
+    education:(profile.educations||[]),
+    internship:(profile.experiences||[]).filter(x=>x&&x.type==='实习'),
+    project:(profile.experiences||[]).filter(x=>x&&x.type==='项目'),
+    campus:(profile.campus||[]),
+  };
+  const sectionEdu=sectionedList[section]?sectionedList[section]:null;
+  // 无分区时保持旧行为：取第一条教育/第一段实习/第一个项目
+  const edu=(section==='education'&&sectionEdu)?(sectionEdu[occurrenceIdx]||sectionEdu[0]||{}):((profile.educations||[])[0]||{});
+  const intern=(section==='internship'&&sectionEdu)?(sectionEdu[occurrenceIdx]||sectionEdu[0]||{}):((profile.experiences||[]).find(x=>x.type==='实习')||{});
+  const proj=(section==='project'&&sectionEdu)?(sectionEdu[occurrenceIdx]||sectionEdu[0]||{}):((profile.experiences||[]).find(x=>x.type==='项目')||{});
   const opts=f.options||[];
 
   function matchOpt(val){
@@ -183,6 +203,55 @@ function scanPage(){
   }
   function radioContainer(el){let p=el.parentElement;for(let i=0;i<6&&p;i++){if(p.querySelectorAll('input[type="radio"]').length>=2)return p;p=p.parentElement;}return el.parentElement;}
 
+  // ===== 分区检测（表单分区感知）=====
+  // 网申表单（北森/Moka/智联）普遍是分节长表单：一个"教育经历"节里
+  // 含 N 段教育的同名字段（第2个"学校名称"）。只靠 label 无法区分它们
+  // 属于哪段经历——按「分区标题 → 字段」的文档序回溯，为每个字段标注
+  // (section, sectionIndex)。sectionIndex 同分区内出现序，对应档案第 N 条。
+  const SECTION_PATTERNS=[
+    {key:'education',test:/教育(经历|背景)|学历信息|教育信息/},
+    {key:'internship',test:/实习(经历|信息)|工作(经历|信息)|职业经历|就业经历/},
+    {key:'project',test:/项目(经历|经验|信息)/},
+    {key:'campus',test:/校园(经历|活动)|社会(实践|活动)|学生工作/},
+    {key:'basic',test:/基本(信息|资料)|个人信息|求职(意向|偏好|意向)|联系方式/},
+    {key:'skill',test:/技能(特长|信息)|专业能力|语言能力|证书/},
+    {key:'award',test:/获奖|荣誉|证书与认证|补充信息|其他/},
+  ];
+  // 采集候选分区标题：标题类元素 + 面包屑式"第N段/项"标记
+  const headings=[];
+  document.querySelectorAll('h1,h2,h3,h4,h5,h6,legend,.ant-form-item-label>label:only-child,.section-title,[class*="title"],[class*="section"][class*="head"],b,summary').forEach(h=>{
+    const t=(h.textContent||'').trim();if(!t||t.length>40)return;
+    for(const sp of SECTION_PATTERNS){
+      if(sp.test.test(t)){headings.push({el:h,section:sp.key,text:t});break;}
+    }
+  });
+  // 序号标记（如"教育经历 2/3"、"第二段"、"项目二"）用于计数分段
+  function segIndex(el){
+    // 就近查找前面的序号提示：兼容 "01/02" 序号条、"第N段"标记、tab 序号
+    let p=el;
+    for(let i=0;i<10&&p;i++){
+      const prev=p.previousElementSibling;
+      if(prev){
+        const t=(prev.textContent||'').slice(0,30);
+        const m=t.match(/第\s*([一二三四五六七八九十\d]+)\s*(段|项|个|次)/)||t.match(/^([一二三四五六七八九十\d]+)[\/\.\s]/);
+        if(m)return m[1];
+      }
+      p=p.parentElement;
+    }
+    return 0;
+  }
+  function sectionOf(el){
+    // 文档序回溯：找 el 之前（含祖先）最近的分区标题
+    if(!headings.length)return{section:'',sectionIndex:0};
+    const pos=e=>e.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING; // e 在 el 之前
+    let best=null;
+    for(const h of headings){
+      const isBefore=h.el===el||h.el.contains(el)||pos(h.el);
+      if(isBefore){if(!best||best.el.compareDocumentPosition(h.el)&Node.DOCUMENT_POSITION_FOLLOWING)best=h;}
+    }
+    return best?{section:best.section,sectionIndex:0}:{section:'',sectionIndex:0};
+  }
+
   const fields=[],seen=new Set();
   document.querySelectorAll('input[type="radio"]').forEach(el=>{
     if(seen.has(el))return;
@@ -195,9 +264,10 @@ function scanPage(){
     let label='';const fi=c.closest('.ant-form-item,.el-form-item,.form-item,[class*=form-item]');
     if(fi){const lb=fi.querySelector('.ant-form-item-label label,.el-form-item__label,label,.label');if(lb)label=clean(lb.textContent);}
     if(!label){for(const r of g){const l=findLabel(r);if(l&&l!=='字段'){label=l;break;}}}
+    const sec=sectionOf(el);
     const id='rg_'+Math.random().toString(36).slice(2,8);
     g.forEach(r=>{r.setAttribute('data-rm-id',id);seen.add(r);});
-    fields.push({id,label:label||'单选项',tag:'radio',type:'radio',options:opts,required:false});
+    fields.push({id,label:label||'单选项',tag:'radio',type:'radio',options:opts,required:false,section:sec.section,sectionIndex:sec.sectionIndex});
   });
   document.querySelectorAll('input:not([type="hidden"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]), select, textarea, [contenteditable="true"]').forEach((el,i)=>{
     if(seen.has(el))return;
@@ -207,7 +277,8 @@ function scanPage(){
     if(['hidden','submit','button','reset','image','file'].includes(t))return;
     if((el.getAttribute('name')||'').toLowerCase().includes('captcha'))return;
     const id='f'+i;el.setAttribute('data-rm-id',id);seen.add(el);
-    const f={id,label:findLabel(el)||('字段_'+i),tag:el.tagName.toLowerCase(),type:t,placeholder:el.getAttribute('placeholder')||'',required:el.hasAttribute('required'),options:[]};
+    const sec=sectionOf(el);
+    const f={id,label:findLabel(el)||('字段_'+i),tag:el.tagName.toLowerCase(),type:t,placeholder:el.getAttribute('placeholder')||'',required:el.hasAttribute('required'),options:[],section:sec.section,sectionIndex:sec.sectionIndex};
     if(el.tagName==='SELECT')f.options=Array.from(el.options).map(o=>o.textContent.trim()).filter(x=>x&&x!=='请选择'&&x!=='--请选择--');
     fields.push(f);
   });
