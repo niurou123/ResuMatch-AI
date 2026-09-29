@@ -7,6 +7,7 @@
 > - 路线图优先级（P0 > P1 > P2 > P3）是硬约束，不得跳级
 > - 当前优先级任务未完成前，不启动更低优先级的新功能
 > - 架构变更必须同步更新本文档
+> - **每次出现 bug 必须记录 [BUG_LOG.md](BUG_LOG.md)，并与修复代码同一提交入库**（完整规则见 [CLAUDE.md](CLAUDE.md) 第 6 节：含低级错误的精简格式与 fix 提交引用约束）
 > - 用户想法（第五节）是需求来源，第五节优先级高于第三节
 
 ---
@@ -253,6 +254,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 
 | 日期 | 版本 | 改动 |
 |------|------|------|
+| 9.29 | v23 | **Bug 记录规则升级为强制**：每次出现 bug 必须记 BUG_LOG（含低级错误精简格式），fix 提交 body 必须引用案例编号且与修复代码同提交入库。同步 CLAUDE.md 第 6 节、SPEC 头部使用规则、BUG_LOG 头部格式说明 |
 | 9.29 | v22 | **死代码清理（共 456 行）**: 删除 src/features/mock_interview.py（MockInterviewEngine 零调用方——多轮对练由 routes 的 Redis session + _generate_mock_answer 实现，AI 生成问题由 /mock/suggest 实现）；删除 src/rag/normalizer.py（normalize_parsed_resume 零调用方，P0 字段标准化映射层从未接入上传链路，纯规则提取符合如实提取主原则，未来需要时先在本文件补设计）；rag/__init__.py 与 README 文件树同步。注：SessionMemory 与 LLMJudge 上轮已接线为活代码，不在清理范围 |
 | 9.29 | v21 | **架构宣传技术落实（不改架构骨架，全部接线）**: Planner 三输出全部接线（retrieval_top_k→三路检索、temperature→Writer 生成与流式、decomposition_depth→Router 拆解上限）；decomposed_queries 真正参与检索（Multi-Query 召回 + rerank_multi_query 融合）；Self-Query 接入 LLM 主路径（规则版为降级退路）；真并行修复（同步阻塞段包 asyncio.to_thread，事件循环不再被 torch/Milvus 卡住）；三层会话记忆接入（上传设画像/问答注入近3轮/答后 add_turn）；LLM 语义缓存做实（embedding 近邻 ≥0.92 命中，仅无上下文首轮）；LLMJudge 接入新端点 /interview/judge；DeepSeekClient 连接池复用（案例9根治）；新增 list_documents 确定性枚举，清剿全部 8 处空 query 刮库；correctness 评审加「引用回溯」锚定素材约束；退路评审覆盖率改比例制 |
 | 9.29 | v20 | **向量库迁移 Milvus Lite（本科论文学术选型）**: ChromaDB → Milvus Lite（pymilvus 嵌入式，本地单文件 data/milvus_resumatch.db，Windows 原生免 Docker，API 与 Milvus Standalone 完全兼容、SIGMOD 2021 论文可引用）；ChromaDB 保留为自动降级退路（pymilvus 不可用时无缝切换，16 处调用点经兼容层零改动）；测试改双后端参数化（28/28 通过，顺带修复 type 单/复数契约漂移与 fixture 清理缺 project_docs 两处既有测试缺陷）；numpy 钉 <2.0.0（pandas 2.1.1 为 numpy1.x ABI）；/system/info 暴露 vector_backend |
