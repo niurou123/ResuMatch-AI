@@ -54,6 +54,14 @@ STAR_USER_TEMPLATE = Template("""## 候选人背景
 ## 面试问题
 {{ query }}
 
+{% if conversation_history %}
+## 之前的对话（本轮回答需与前文衔接，可指代前文提到过的内容）
+{% for turn in conversation_history[-3:] %}
+面试官：{{ turn.question }}
+我：{{ turn.answer[:300] }}
+{% endfor %}
+{% endif %}
+
 ## 回答要求
 请按照 STAR 格式生成回答：
 
@@ -170,6 +178,11 @@ def _infer_project_name(ctx: Dict[str, Any]) -> str:
     content = str(ctx.get("content", "") or "")
     source_text = str(md.get("source_text", "") or "")
 
+    # 0. project_docs 素材自带归属（按项目上传的资料文档），最可靠，优先采用
+    doc_project = str(md.get("project_name", "") or "")
+    if doc_project:
+        return doc_project
+
     # 项目关键词表：别名 → 项目名（内容命中优先）
     project_keywords = [
         ("视觉康复", ["视觉康复", "随访", "医疗", "康复", "多端协同"]),
@@ -218,6 +231,7 @@ def build_star_prompt(state: Dict[str, Any]) -> tuple[str, str]:
         reranked_context=annotated_context,
         retrieved_projects=state.get("retrieved_projects", []),
         revision_feedback=state.get("revision_feedback", ""),
+        conversation_history=state.get("conversation_history", []),
     )
     return system, user
 

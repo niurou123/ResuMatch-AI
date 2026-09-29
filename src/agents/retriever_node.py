@@ -1,11 +1,16 @@
 """
-多Agent并行检索 - 3路独立Agent + 并行编排
+多Agent并行检索 - 3路独立Agent + 并行编排（v2 落实版）
 
-Agent 1: keyword_agent - 关键词精确匹配 (Self-Query + ChromaDB metadata过滤)
-Agent 2: semantic_agent - 语义向量检索 (HyDE + Bi-Encoder + Cross-Encoder精排)
+Agent 1: keyword_agent - 关键词精确匹配 (Self-Query LLM 结构化过滤，规则版为退路)
+Agent 2: semantic_agent - 语义向量检索 (HyDE + Bi-Encoder + Cross-Encoder精排 + Multi-Query)
 Agent 3: knowledge_graph_agent - 知识图谱推理 (Skill Graph类别展开)
 
-parallel_retrieval_node: 使用 asyncio.gather 真正并行调度3个Agent
+落实项（相对 v1）：
+- Planner 的 retrieval_top_k 真正传入检索（此前写入 state 无人读取）
+- decomposed_queries 真正参与检索：多查询召回 + rerank_multi_query 融合（RAG Fusion）
+- Self-Query 用 LLM 版 build_query（规则版 build_simple 为降级退路）
+- 同步核心（ChromaDB/Milvus 查询、embedding 编码、torch 推理）包
+  asyncio.to_thread —— asyncio.gather 对同步段无效，此前"并行"只是协程级
 """
 import asyncio
 import time
@@ -18,30 +23,66 @@ from src.rag.reranker import get_reranker
 from src.rag.knowledge_graph import SkillGraph
 
 
+def _effective_top_k(state: AgentState) -> int:
+    """读取 Planner 决策的检索深度（动态调度的实际接线点）。
+
+    Planner 按 question_type + difficulty 计算 retrieval_top_k（3-20），
+    各检索 Agent 用它作为单路召回上限。此前该值只写进 state 无人消费，
+    前端 DAG 展示的"Top-K"与实际检索量脱节。
+    """
+    try:
+        top_k = state.get("planner_decisions", {}).get("retrieval_top_k")
+        if top_k:
+            return max(3, min(30, int(top_k)))
+    except (TypeError, ValueError):
+        pass
+    return 10  # 兜底默认
+
+
 # ============ Agent 1: 关键词检索 ============
 async def keyword_agent(state: AgentState) -> AgentState:
     """
     Agent 1: 关键词专家
-    策略：Self-Query 结构化查询 → ChromaDB metadata 过滤
+    策略：Self-Query 结构化查询 → 向量库 metadata 过滤
     优势：精确匹配技术栈、项目名、技能名
+
+    Self-Query 主路径走 LLM（build_query，将自然语言翻译为
+    结构化过滤 + 查询词 + 扩展词）；LLM 不可用/解析失败时
+    降级到规则版 build_simple（错误隔离 + 退路机制）。
     """
     query = state.get("query", "")
     if not query.strip(): return state
 
     try:
         self_query = SelfQueryRetriever()
-        structured = self_query.build_simple(query)
+        try:
+            structured = await asyncio.wait_for(
+                self_query.build_query(query), timeout=15.0
+            )
+        except Exception:
+            # 退路：LLM Self-Query 失败（超时/格式错/网络）→ 规则化结构查询
+            structured = self_query.build_simple(query)
         state["self_query_filter"] = structured
 
-        vs = get_vector_store()
-        results = []
-        for coll in structured.get("target_collections", ["skills","projects","achievements"]):
-            where = structured.get("filters", {}).get(coll)
-            r = vs.search(query, coll, top_k=10, where=where)
-            results.extend(r)
+        top_k = _effective_top_k(state)
+        enhanced_query = query
+        expand_terms = structured.get("expand_terms", [])
+        if expand_terms:
+            enhanced_query = f"{query} {' '.join(expand_terms[:3])}"
 
+        vs = get_vector_store()
+        # 检索核心是同步阻塞（Milvus/Chroma 查询 + embedding 编码），放线程池
+        def _run():
+            results = []
+            for coll in structured.get("target_collections", ["skills","projects","achievements"]):
+                where = structured.get("filters", {}).get(coll)
+                r = vs.search(enhanced_query, coll, top_k=top_k, where=where)
+                results.extend(r)
+            return results
+
+        results = await asyncio.to_thread(_run)
         state["keyword_results"] = _deduplicate(results)
-    except Exception as e:
+    except Exception:
         state["keyword_results"] = []
 
     return state
@@ -51,7 +92,9 @@ async def keyword_agent(state: AgentState) -> AgentState:
 async def semantic_agent(state: AgentState) -> AgentState:
     """
     Agent 2: 语义专家
-    策略：HyDE假设文档 + Bi-Encoder向量检索 + Cross-Encoder精排
+    策略：HyDE 假设文档 + Bi-Encoder 向量检索 + Cross-Encoder 精排
+    增强：Multi-Query（decomposed_queries 真正参与检索，每个子查询独立召回，
+    Cross-Encoder 对多查询取每文档最大分 —— RAG Fusion 思路）
     优势：理解隐含语义（"最大挑战"→简历中的"优化"相关内容）
     """
     query = state.get("query", "")
@@ -59,6 +102,7 @@ async def semantic_agent(state: AgentState) -> AgentState:
     if not query.strip(): return state
 
     try:
+        top_k = _effective_top_k(state)
         hyde = HyDERetriever()
         hypothetical = ""
         # 快速模式（面试对练）：跳过 HyDE 的 LLM 调用（~9s），直接用 query 检索，优先速度
@@ -74,29 +118,48 @@ async def semantic_agent(state: AgentState) -> AgentState:
                 pass
         state["hypothetical_answer"] = hypothetical
 
+        # Multi-Query：Router 拆解的子查询（含原始查询）逐个检索
+        # 原始查询放最前（权重自然最高：Cross-Encoder 取 max，原查询必算）
+        sub_queries = [query]
+        for dq in state.get("decomposed_queries", [])[:3]:
+            dq = (dq or "").strip()
+            if dq and dq != query:
+                sub_queries.append(dq)
+
         vs = get_vector_store()
-        all_results = []
-        for coll in ["skills","projects","achievements","education"]:
-            r = vs.search(query, coll, top_k=10)
-            all_results.extend(r)
+        def _run():
+            all_results = []
+            # project_docs：档案页按项目上传的资料文档，与简历素材一同参与检索
+            for q in sub_queries:
+                for coll in ["skills","projects","achievements","education","project_docs"]:
+                    r = vs.search(q, coll, top_k=top_k)
+                    all_results.extend(r)
 
-        # HyDE 检索
-        if hypothetical:
-            from src.rag.embedder import get_embedder
-            emb = get_embedder().encode_single(hypothetical)
-            for coll in ["skills","projects","achievements"]:
-                hr = vs.search_by_embedding(emb, coll, top_k=8)
-                all_results.extend(hr)
+            # HyDE 检索（用假设文档的向量，通常比原始问题更接近答案文本分布）
+            if hypothetical:
+                from src.rag.embedder import get_embedder
+                emb = get_embedder().encode_single(hypothetical)
+                for coll in ["skills","projects","achievements"]:
+                    hr = vs.search_by_embedding(emb, coll, top_k=8)
+                    all_results.extend(hr)
 
-        # Cross-Encoder 精排
-        if len(all_results) > 10:
-            try:
-                reranker = get_reranker()
-                all_results = reranker.rerank(query, all_results, top_k=10)
-            except: pass
+            all_results = _deduplicate(all_results)
 
-        state["semantic_results"] = _deduplicate(all_results)[:10]
-    except Exception as e:
+            # Cross-Encoder 精排：多查询取每文档最高分（RAG Fusion 语义）
+            if len(all_results) > 10:
+                try:
+                    reranker = get_reranker()
+                    if len(sub_queries) > 1:
+                        all_results = reranker.rerank_multi_query(sub_queries, all_results, top_k=10)
+                    else:
+                        all_results = reranker.rerank(query, all_results, top_k=10)
+                except Exception:
+                    pass
+            return all_results
+
+        all_results = await asyncio.to_thread(_run)
+        state["semantic_results"] = all_results[:10]
+    except Exception:
         state["semantic_results"] = []
 
     return state
@@ -107,31 +170,35 @@ async def knowledge_graph_agent(state: AgentState) -> AgentState:
     """
     Agent 3: 知识图谱专家
     策略：Skill Graph 类别推理 + 关联技能展开
-    优势：理解"向量数据库"→[FAISS, ChromaDB]→[PaperPilot项目]
+    优势：理解"向量数据库"→[FAISS, ChromaDB, Milvus]→[PaperPilot项目]
     """
     query = state.get("query", "")
     if not query.strip(): return state
 
     try:
+        top_k = _effective_top_k(state)
         graph = SkillGraph()
-        expansions = graph.expand_query(query)
+        expansions = await asyncio.to_thread(graph.expand_query, query)
         state["knowledge_expansions"] = expansions
 
         vs = get_vector_store()
-        graph_results = []
-        # 用展开后的术语检索
-        for term in expansions[:5]:
+        def _run():
+            graph_results = []
+            # 用展开后的术语检索
+            for term in expansions[:5]:
+                for coll in ["skills","projects","achievements"]:
+                    r = vs.search(term, coll, top_k=5)
+                    graph_results.extend(r)
+
+            # 也检索原始查询
             for coll in ["skills","projects","achievements"]:
-                r = vs.search(term, coll, top_k=5)
+                r = vs.search(query, coll, top_k=5)
                 graph_results.extend(r)
+            return graph_results
 
-        # 也检索原始查询
-        for coll in ["skills","projects","achievements"]:
-            r = vs.search(query, coll, top_k=5)
-            graph_results.extend(r)
-
+        graph_results = await asyncio.to_thread(_run)
         state["graph_results"] = _deduplicate(graph_results)[:10]
-    except Exception as e:
+    except Exception:
         state["graph_results"] = []
 
     return state
@@ -196,6 +263,7 @@ async def fusion_node(state: AgentState) -> AgentState:
     state["retrieved_projects"] = [r for r in all_results if r.get("collection") == "projects"][:5]
     state["retrieved_achievements"] = [r for r in all_results if r.get("collection") == "achievements"][:5]
     state["retrieved_education"] = [r for r in all_results if r.get("collection") == "education"][:3]
+    state["retrieved_project_docs"] = [r for r in all_results if r.get("collection") == "project_docs"][:3]
 
     return state
 
@@ -228,12 +296,13 @@ def _boost_targeted_project(state: AgentState, results: list) -> list:
     if not targeted:
         return results
 
-    # 找出属于该项目的素材（source_text / content 含项目别名）
+    # 找出属于该项目的素材（source_text / name / content 含项目别名）
     target_aliases = dict(project_keywords).get(targeted, [targeted])
     project_results = []
     for r in results:
         md = r.get("metadata", {}) or {}
-        haystack = f"{md.get('source_text','')} {md.get('name','')} {r.get('content','')}"
+        # project_docs 用 metadata.project_name 标注归属，其余集合靠 name/source_text/content
+        haystack = f"{md.get('source_text','')} {md.get('name','')} {md.get('project_name','')} {r.get('content','')}"
         if any(a in haystack for a in target_aliases):
             project_results.append(r)
 
@@ -248,9 +317,9 @@ def _boost_targeted_project(state: AgentState, results: list) -> list:
     # 非目标项目的素材降权（防止张冠李戴：明确提到A项目时，弱化B项目素材）
     non_target_ids = []
     for r in results:
-        if r.get("id") not in boosted_ids and r.get("collection") in ("projects", "achievements"):
+        if r.get("id") not in boosted_ids and r.get("collection") in ("projects", "achievements", "project_docs"):
             md = r.get("metadata", {}) or {}
-            haystack = f"{md.get('source_text','')} {md.get('name','')} {r.get('content','')}"
+            haystack = f"{md.get('source_text','')} {md.get('name','')} {md.get('project_name','')} {r.get('content','')}"
             # 属于"已知项目"（能识别出归属）但非目标项目 → 降权
             is_known_other_project = False
             for other_proj, other_aliases in project_keywords:
@@ -271,18 +340,18 @@ def _boost_targeted_project(state: AgentState, results: list) -> list:
         non_target_ids = set(non_target_ids)
         results = [r for r in results if r.get("id") not in non_target_ids]
 
-    # 若项目素材过少（<2条），尝试从 ChromaDB 补充召回该项目的成果/项目素材
+    # 若项目素材过少（<2条），尝试从向量库补充召回该项目的成果/项目素材
     if len(project_results) < 2:
         try:
             from src.rag.vector_store import get_vector_store
             vs = get_vector_store()
             extra = []
-            for coll in ["projects", "achievements"]:
+            for coll in ["projects", "achievements", "project_docs"]:
                 for alias in target_aliases:
                     r = vs.search(alias, coll, top_k=5)
                     for item in r:
                         md = item.get("metadata", {}) or {}
-                        haystack = f"{md.get('source_text','')} {md.get('name','')} {item.get('content','')}"
+                        haystack = f"{md.get('source_text','')} {md.get('name','')} {md.get('project_name','')} {item.get('content','')}"
                         if any(a in haystack for a in target_aliases):
                             item["sources"] = ["project_targeted"]
                             item["vote_count"] = 3
@@ -308,7 +377,8 @@ async def parallel_retrieval_node(state: AgentState) -> AgentState:
 
     优势：
     - 3个Agent完全并发执行，总耗时 = max(单Agent耗时) 而非 sum
-    - Planner决策控制哪些Agent被激活
+      （Agent 内部的同步阻塞段已包 asyncio.to_thread，事件循环不再被卡）
+    - Planner决策控制哪些Agent被激活、检索深度（retrieval_top_k 已接线）
     - 错误隔离：单个Agent失败不影响其他
     """
     decisions = state.get("planner_decisions", {})
@@ -346,21 +416,21 @@ async def parallel_retrieval_node(state: AgentState) -> AgentState:
     start_time = time.time()
     agent_results = await asyncio.gather(*timed_tasks, return_exceptions=True)
     total_elapsed = time.time() - start_time
- 
+
     agent_timing = {}
     for r in agent_results:
         if isinstance(r, Exception):
             continue
         name, status, elapsed_ms, err = r
         agent_timing[name] = {"status": status, "elapsed_ms": elapsed_ms, "error": err}
- 
+
     # 记录融合统计
     total_docs = (
         len(state.get("keyword_results", [])) +
         len(state.get("semantic_results", [])) +
         len(state.get("graph_results", []))
     )
- 
+
     state["fusion_stats"] = {
         "active_agents": task_names,
         "parallel_elapsed_ms": round(total_elapsed * 1000, 1),

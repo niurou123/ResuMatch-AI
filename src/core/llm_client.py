@@ -22,43 +22,67 @@ class ChatResponse:
 
 
 class DeepSeekClient:
-    """DeepSeek API 异步客户端"""
+    """DeepSeek API 异步客户端
+
+    连接池说明（BUG_LOG 案例 9 的根治）：
+    早期实现每次请求都 `async with httpx.AsyncClient()` 新建连接，
+    既有 TCP/TLS 握手开销，也出现过"新 client 实例导致响应异常变短"的线上问题。
+    现在持有长生命周期 AsyncClient（连接池 limits + keep-alive），
+    全局单例 get_client() 全程复用。
+    """
 
     def __init__(self, api_key: str = None, base_url: str = None):
         self.api_key = api_key or settings.DEEPSEEK_API_KEY
         self.base_url = base_url or settings.DEEPSEEK_BASE_URL
         self.model = settings.DEEPSEEK_MODEL
         self.timeout = settings.DEEPSEEK_TIMEOUT
+        # 长生命周期连接池：复用 TCP/TLS 连接；上限按多 Agent 并发场景取 20
+        self._http = httpx.AsyncClient(
+            timeout=self.timeout,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        )
+
+    async def aclose(self) -> None:
+        """释放连接池（进程退出时调用；全局单例通常无需手动调）"""
+        await self._http.aclose()
 
     async def _request(
         self, endpoint: str, data: Dict[str, Any], stream: bool = False
     ) -> Union[Dict[str, Any], AsyncGenerator]:
-        """发送请求到 DeepSeek API"""
+        """发送请求到 DeepSeek API（复用全局连接池）"""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
         url = f"{self.base_url}/{endpoint}"
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            if stream:
-                async with client.stream("POST", url, json=data, headers=headers) as resp:
-                    if resp.status_code != 200:
-                        raise Exception(f"API Error: {resp.status_code}")
-                    async def stream_gen():
-                        async for line in resp.aiter_lines():
-                            if line.startswith("data: "):
-                                try:
-                                    chunk = json.loads(line[6:])
-                                    yield chunk
-                                except json.JSONDecodeError:
-                                    continue
-                    return stream_gen()
-            else:
-                response = await client.post(url, json=data, headers=headers)
-                if response.status_code != 200:
-                    raise Exception(f"API Error: {response.status_code} - {response.text}")
-                return response.json()
+        if stream:
+            # 流式：context manager 管理 response 生命周期，生成器内消费
+            resp = await self._http.send(
+                self._http.build_request("POST", url, json=data, headers=headers),
+                stream=True,
+            )
+            if resp.status_code != 200:
+                await resp.aread()
+                raise Exception(f"API Error: {resp.status_code} - {resp.text}")
+
+            async def stream_gen():
+                try:
+                    async for line in resp.aiter_lines():
+                        if line.startswith("data: "):
+                            try:
+                                chunk = json.loads(line[6:])
+                                yield chunk
+                            except json.JSONDecodeError:
+                                continue
+                finally:
+                    await resp.aclose()
+            return stream_gen()
+        else:
+            response = await self._http.post(url, json=data, headers=headers)
+            if response.status_code != 200:
+                raise Exception(f"API Error: {response.status_code} - {response.text}")
+            return response.json()
 
     async def chat(
         self, messages: List[Message], temperature: float = None,

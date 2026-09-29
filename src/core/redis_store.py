@@ -122,15 +122,34 @@ class RedisSessionStore:
 
 
 class LLMCache:
-    """LLM 回答缓存（精确 + 语义）"""
+    """LLM 回答缓存（精确哈希 + 语义近邻）
+
+    语义缓存（semantic caching）：对 query 做 embedding，在已缓存的
+    query 向量中找余弦相似度 ≥ 阈值的最近邻——"技能栈是什么"和
+    "你会哪些技术"视为同一问题命中同一答案。此前只有 sha256 精确
+    匹配，query 差一个字就 miss，"语义缓存"名不副实。
+
+    实现：query 向量存 Redis（内存降级时存进程内存），向量数量为
+    缓存条目数（几十到几百），近邻搜索用 numpy 暴力算——O(n·d)，
+    百级规模 <1ms，无需专门 ANN 索引。
+    """
 
     # 降级用内存缓存
     _fallback: Dict[str, str] = {}
+
+    # 语义缓存索引：prefix → {payload_key: query_text}
+    # （存 query 文本而非向量：嵌入器延迟计算，避免模块级依赖 rag 层）
+    _sem_index: Dict[str, Dict[str, str]] = {}
+
+    # 语义命中阈值（余弦相似度）——过高形同虚设，过低误命中不同问题
+    SEMANTIC_THRESHOLD: float = 0.92
 
     @staticmethod
     def _key(prefix: str, payload: str) -> str:
         h = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
         return f"cache:{prefix}:{h}"
+
+    # ===== 精确缓存 =====
 
     @classmethod
     def get(cls, prefix: str, payload: str) -> Optional[str]:
@@ -147,7 +166,7 @@ class LLMCache:
 
     @classmethod
     def set(cls, prefix: str, payload: str, value: str, ttl: int = None) -> None:
-        """写入缓存（TTL）"""
+        """写入缓存（TTL）；payload 同时登记进语义索引"""
         if not settings.REDIS_CACHE_ENABLED:
             return
         ttl = ttl or settings.REDIS_TTL_CACHE
@@ -156,14 +175,75 @@ class LLMCache:
         if client:
             try:
                 client.set(key, value, ex=ttl)
+                # 语义索引同步登记（value 不进索引，按 key 取值）
+                cls._register_semantic(prefix, key, payload)
                 return
             except Exception:
                 pass
         cls._fallback[key] = value
+        cls._register_semantic(prefix, key, payload)
+
+    # ===== 语义缓存 =====
+
+    @classmethod
+    def _register_semantic(cls, prefix: str, key: str, payload: str) -> None:
+        """把 payload 登记进语义索引（取 payload 前半段作为代表 query）"""
+        try:
+            # payload 形如 "question|project|skills...|..."——首段就是问题文本
+            query_text = payload.split("|")[0].strip()
+            if len(query_text) >= 6:  # 过短的 query 语义区分度不足，不进索引
+                cls._sem_index.setdefault(prefix, {})[key] = query_text
+        except Exception:
+            pass
+
+    @classmethod
+    def get_semantic(cls, prefix: str, query: str) -> Optional[str]:
+        """语义读取：query 与已缓存问题做向量近邻匹配，≥阈值返回缓存答案。
+
+        失败即返回 None（调用方走精确 get 或重新生成）——语义缓存是
+        增益路径，不能成为故障点（错误隔离）。
+        """
+        if not settings.REDIS_CACHE_ENABLED:
+            return None
+        query = (query or "").strip()
+        if len(query) < 6:
+            return None
+
+        index = cls._sem_index.get(prefix, {})
+        if not index:
+            return None
+
+        try:
+            import numpy as np
+            from src.rag.embedder import get_embedder
+
+            candidates = list(index.items())
+            texts = [q for _, q in candidates]
+            # 编码归一化后点积即余弦相似度
+            q_vec = get_embedder().encode_single(query)
+            cand_vecs = get_embedder().encode(texts)
+            sims = cand_vecs @ q_vec
+
+            best = int(np.argmax(sims))
+            if float(sims[best]) >= cls.SEMANTIC_THRESHOLD:
+                key = candidates[best][0]
+                # 取出对应缓存值（Redis 优先，降级内存）
+                client = _get_client()
+                if client:
+                    try:
+                        val = client.get(key)
+                        if val:
+                            return val
+                    except Exception:
+                        pass
+                return cls._fallback.get(key)
+        except Exception:
+            return None
+        return None
 
     @classmethod
     def flush_prefix(cls, prefix: str) -> None:
-        """失效某前缀的缓存（如数据更新后）"""
+        """失效某前缀的缓存（如数据更新后）；语义索引同步清空"""
         client = _get_client()
         if client:
             try:
@@ -175,6 +255,7 @@ class LLMCache:
             cls._fallback = {
                 k: v for k, v in cls._fallback.items() if not k.startswith(f"cache:{prefix}:")
             }
+        cls._sem_index.pop(prefix, None)
 
 
 # 全局实例

@@ -27,8 +27,15 @@ REVIEWER_CORRECTNESS_PROMPT = """你是一个严格的**正确性评审官**。�
 3. **引用真实性**: 回答中的数字、成果是否来自素材而非编造？
 4. **技术表述**: 技术术语使用是否准确？有没有概念混淆？
 
+## 引用回溯（锚定素材，防止 LLM 互评循环论证）
+**逐条核对回答中的事实性断言**（数字、技术名、项目名、成果）：
+- 能在「简历素材」中找到出处（原文出现或直接蕴含）→ 视为可验证
+- 素材中找不到出处 → 视为**不可验证**，在 critical_issues 中列出该断言，
+  citation_truthfulness 评分应 ≤ 2
+- 回答中多个量化数字，一个都回溯不到素材 → needs_revision 必须为 true
+
 ## 评分标准（每项1-5分）
-- 5: 完全准确，结构严谨
+- 5: 完全准确，结构严谨，所有断言可回溯
 - 3: 基本正确，有小瑕疵
 - 1: 存在事实错误或结构严重缺失
 
@@ -36,7 +43,7 @@ REVIEWER_CORRECTNESS_PROMPT = """你是一个严格的**正确性评审官**。�
 {
     "needs_revision": true/false,
     "scores": {"factual_accuracy": 4, "star_structure": 5, "citation_truthfulness": 4, "technical_precision": 3},
-    "critical_issues": ["具体的事实错误或结构缺陷"],
+    "critical_issues": ["具体的事实错误或结构缺陷，含无法回溯的断言原文"],
     "feedback": "如果needs_revision=true，提供具体修改建议；否则为空字符串",
     "confidence": 0.85
 }"""
@@ -421,11 +428,16 @@ def _fallback_completeness_review(state: AgentState) -> Dict[str, Any]:
     answer = state.get("draft_answer", "")
     query = state.get("query", "")
 
-    # 检查问题关键词是否在回答中
-    query_keywords = [w for w in re.split(r'[，,。\s]+', query) if len(w) >= 2]
-    covered = sum(1 for kw in query_keywords if kw in answer)
-
-    coverage = min(5, max(1, covered))
+    # 检查问题关键词是否在回答中（覆盖比例 = 命中词数 / 问题词总数，而非命中数本身）
+    import re as _re
+    query_keywords = [w for w in _re.split(r'[，,。\s]+', query) if len(w) >= 2]
+    if query_keywords:
+        covered = sum(1 for kw in query_keywords if kw in answer)
+        coverage_ratio = covered / len(query_keywords)
+        # 比例映射到 1-5 分：<0.2→1, <0.4→2, <0.6→3, <0.8→4, ≥0.8→5
+        coverage = min(5, max(1, int(coverage_ratio * 5) + 1))
+    else:
+        coverage = 3  # 问题无有效关键词，无法判断，给中性分
     needs_revision = coverage < 3
 
     return {

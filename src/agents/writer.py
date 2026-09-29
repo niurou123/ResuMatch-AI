@@ -46,8 +46,15 @@ async def star_writer_node(state: AgentState) -> AgentState:
             Message(role="user", content=user_prompt),
         ]
 
+        # Planner 决策的 temperature（按问题类型动态调度：技术深问 0.3 保严谨，
+        # 行为面 0.6 保自然）——此前忽略，全部用默认 0.7
+        try:
+            temp = float(state.get("planner_decisions", {}).get("temperature", 0.7))
+        except (TypeError, ValueError):
+            temp = 0.7
+
         # 使用同步调用
-        full_answer = await client.chat_sync(messages)
+        full_answer = await client.chat_sync(messages, temperature=temp)
 
         # ===== Agent通信：自我检查不确定声明 =====
         # 快速模式（面试对练）：跳过 Agent 间通信/二次精修，仅生成一次，优先速度
@@ -121,7 +128,13 @@ async def star_writer_stream(state: AgentState) -> AsyncGenerator[str, None]:
             Message(role="user", content=user_prompt),
         ]
 
-        async for chunk in client.chat_stream(messages):
+        # 流式同样尊重 Planner temperature（与 chat_sync 路径口径一致）
+        try:
+            temp = float(state.get("planner_decisions", {}).get("temperature", 0.7))
+        except (TypeError, ValueError):
+            temp = 0.7
+
+        async for chunk in client.chat_stream(messages, temperature=temp):
             yield chunk
 
     except Exception as e:

@@ -186,6 +186,7 @@ async def run_interview_workflow(
     session_id: str = "default",
     user_profile: dict = None,
     fast: bool = False,
+    conversation_history: list = None,
 ) -> AgentState:
     """
     运行完整的面试工作流
@@ -195,6 +196,8 @@ async def run_interview_workflow(
         session_id: 会话ID（用于对话历史追踪）
         user_profile: 用户画像（如果已预先加载）
         fast: 快速模式（跳过并行评审与修订回环，适合面试对练/实时预览场景）
+        conversation_history: 近几轮问答（[{question, answer}]，注入 Writer prompt，
+            让多轮追问基于上下文作答——三层会话记忆的 Layer 1）
 
     Returns:
         包含最终回答和评审结果的 AgentState
@@ -205,6 +208,9 @@ async def run_interview_workflow(
     if user_profile:
         initial["user_profile"] = user_profile
         initial["profile_initialized"] = True
+
+    if conversation_history:
+        initial["conversation_history"] = conversation_history
 
     # 快速模式：跳过评审 + 修订回环，直接 writer → END
     if fast:
@@ -224,6 +230,7 @@ async def run_interview_stream(
     query: str,
     session_id: str = "default",
     user_profile: dict = None,
+    conversation_history: list = None,
 ):
     """
     流式运行面试工作流（SSE模式）
@@ -239,6 +246,9 @@ async def run_interview_stream(
     if user_profile:
         initial["user_profile"] = user_profile
         initial["profile_initialized"] = True
+
+    if conversation_history:
+        initial["conversation_history"] = conversation_history
 
     config = {"configurable": {"thread_id": session_id}}
 

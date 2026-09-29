@@ -57,6 +57,9 @@ async def question_router_node(state: AgentState) -> AgentState:
 
     规则化分类，0s LLM 延迟。
     使用关键词 + 正则匹配进行分类。
+
+    decomposed_queries 会真正参与检索（multi-query 检索），
+    拆解上限由 Planner 的 decomposition_depth 决策控制（动态调度的一部分）。
     """
     query = state.get("query", "")
 
@@ -69,8 +72,15 @@ async def question_router_node(state: AgentState) -> AgentState:
     question_type = _classify(query)
     difficulty = _estimate_difficulty(query)
 
-    # 复杂问题拆解
-    decomposed = _decompose_query(query, question_type)
+    # 复杂问题拆解（上限受 Planner decomposition_depth 控制）
+    max_subqueries = 1
+    try:
+        depth = int(state.get("planner_decisions", {}).get("decomposition_depth", 2) or 0)
+        # depth 0 = 不拆解（只保留原始查询）；每 +1 允许多一个子查询
+        max_subqueries = max(1, depth)
+    except (TypeError, ValueError):
+        max_subqueries = 1
+    decomposed = _decompose_query(query, question_type)[:1 + max_subqueries]
 
     state["question_type"] = question_type
     state["difficulty"] = difficulty
