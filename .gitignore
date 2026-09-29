@@ -1,64 +1,83 @@
-# 环境
+# ============================================================
+# ResuMatch AI .gitignore
+# 分组说明：
+#   环境/密钥 → Python 产物 → 虚拟环境 → 数据与运行时产物 →
+#   模型 → 日志 → 前端/扩展构建产物 → IDE/编辑器 → 系统杂项
+# 原则：只忽略「可再生产物」和「隐私/本地数据」；
+#       源码、文档、配置模板（.env.example）一律入库
+# ============================================================
+
+# ---------- 环境 / 密钥（本地配置，绝不入库）----------
 .env
 .env.local
-venv/
-env/
-*.egg-info/
+.env.*.local
 
-# Python
+# ---------- Python 编译产物 ----------
 __pycache__/
 *.py[cod]
+*$py.class
 *.so
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
 
-# IDE
-.vscode/
-.idea/
-*.swp
-.DS_Store
-
-# ChromaDB 向量数据（大文件）
+# ---------- 数据 / 运行时产物 ----------
+# 向量库（Milvus 主路径 / ChromaDB 降级路径），可由重新上传简历重建
 data/chroma_db/
-
-# 用户简历（隐私）
+data/milvus_resumatch.db
+data/milvus_resumatch.db/
+# 用户简历与档案（隐私）
 data/resumes/
+data/profile.json
+data/questions.json
+# 测试/冒烟临时库
+data/chroma_db_test/
+data/milvus_test.db
+data/milvus_test.db/
+data/milvus_smoke.db
+data/milvus_e2e.db
 
-# 模型
+# ---------- 模型权重（HF 缓存在用户目录，本地 models/ 不入库）----------
 models/
 *.bin
 *.safetensors
 *.pt
+*.onnx
 
-# 日志
+# ---------- 日志 ----------
 logs/
 *.log
 
-# 缓存
-.pytest_cache/
-.mypy_cache/
-htmlcov/
-.cache/
+# ---------- 前端 / 扩展构建产物 ----------
+frontend/node_modules/
+frontend/dist/
+frontend/*.local
+extension/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json.bak
 
-# 临时
+# ---------- 系统杂项 / 截图（演示截图例外：frontend/public 放行）----------
 *.tmp
 *.cache
-
-# Playwright
-.playwright-mcp/
-
-# Test data
-data/chroma_db_test/
-
-# 开发杂项（不提交）
-=2.6.0
-=4.48.0
-python
-app_python_backup.py
-vibe-*.txt
+.DS_Store
+Thumbs.db
 *.png
-*.docx
 !frontend/public/**/*.png
+*.docx
 
-# 数据（隐私/运行时产物，不提交）
-data/profile.json
-data/chroma_db_test/
-data/questions.json
+# ---------- 本地开发草稿（不提交）----------
+vibe-*.txt
+notes-local.md

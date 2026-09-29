@@ -74,7 +74,17 @@ SPEC 第三节使用 P0-P3 优先级体系：
 
 **不要记录**：低级错误（拼写/缩进/单行 bug）、纯环境问题、已被 git 历史记录的一次性修复。用户说"低级错误不用记"——这类直接修，不写文档。
 
-### 7. 禁止事项
+### 7. Git 提交规范
+
+**提交信息遵循 Conventional Commits**（完整规则见 [CONTRIBUTING.md](CONTRIBUTING.md)，模板见 [COMMIT_TEMPLATE.md](COMMIT_TEMPLATE.md)）：
+
+- 格式：`<type>(<scope>): <subject>`，如 `feat(rag): HyDE 接入假设文档缓存`、`fix(api): /interview/stream 补传 user_profile`
+- type：`feat` / `fix` / `docs` / `refactor` / `perf` / `test` / `build` / `chore` / `revert`
+- scope 固定集合：`agents` / `rag` / `api` / `core` / `features` / `frontend` / `extension` / `vector` / `deps` / `docker` / `git`
+- 一次提交 = 一个意图：功能、文档同步、依赖变更分开提交；body 引用「BUG_LOG 案例 N」或「SPEC vX」
+- 尾注格式（用户要求时按需附加）：`🤖 Generated with [Claude Code](https://claude.com/claude-code)` + `Co-Authored-By: Claude <noreply@anthropic.com>`
+
+### 8. 禁止事项
 
 - 不要在没有更新 SPEC.md 的情况下做大的架构改动
 - 不要绕过 SPEC 中的优先级体系

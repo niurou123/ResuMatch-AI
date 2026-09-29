@@ -1,0 +1,35 @@
+# 换行符统一：文本文件入库一律 LF，检出由各端处理
+# Windows 本地建议 `git config core.autocrlf input`（或 false + 编辑器用 LF）
+* text=auto eol=lf
+
+# Windows 专用脚本保持 CRLF（bat 对 LF 兼容性差）
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 源码/配置显式声明（防止个别工具误判二进制）
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+*.example text eol=lf
+*.gitignore text eol=lf
+
+# 二进制（禁止换行符转换）
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.db binary
+*.bin binary
+*.safetensors binary
+*.pt binary
