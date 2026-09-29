@@ -34,14 +34,14 @@ popup.js: 扫描+本地匹配+填充        │  src/agents/: LangGraph多Agent�
                                     │    → 3路并行Reviewer(正确性/完整性/优势)
 sidebar.js: 简历上传+档案编辑       │    → 多数表决 → END/Revise回环
 content.js: 表单扫描+填充执行        │  src/rag/: RAG管道 (6项增强技术)
-background.js: 消息路由              │  src/api/: 10个端点
+background.js: 消息路由              │  src/api/: 22个端点（20条路径）
 ```
 
 **当前模型配置**：
 - LLM：`deepseek-v4-pro`（DeepSeek API）
 - 嵌入模型：`BAAI/bge-small-zh`（512维）
-- Cross-Encoder 精排：`cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`
-- 向量库：ChromaDB 多集合存储（skills/projects/achievements/education）
+- Cross-Encoder 精排：`BAAI/bge-reranker-base`
+- 向量库：Milvus Lite（pymilvus 嵌入式，`data/milvus_resumatch.db`；ChromaDB 为自动降级退路）多集合存储（skills/projects/achievements/education/project_docs）
 
 ---
 
@@ -58,7 +58,7 @@ background.js: 消息路由              │  src/api/: 10个端点
 #### 3.3.1 简历如实提取 ✅ (已完成 v8)
 - [x] 解析层零LLM介入：PyMuPDF/docx 直接提取原始文本，不做概括
 - [x] 技能/项目/成果使用规则+正则提取，不使用LLM总结改写
-- [x] LLM仅用于：字段标准化映射 + **智能位置匹配**（简历内容→表单字段的对应关系，如项目描述→匹配到"项目经历"栏）
+- [~] LLM仅用于：字段标准化映射（normalizer 已实现但**未接入上传链路**，见 5.1 说明）+ **智能位置匹配**（简历内容→表单字段的对应关系，如项目描述→匹配到"项目经历"栏，在 `/form/fill` 中实现）
 - [x] 保留原始文本副本（SHA256 hash），用户可对比验证提取结果
 - [x] 每个提取字段标注来源（行号、原始文本片段、提取方法、置信度）
 
@@ -116,7 +116,7 @@ background.js: 消息路由              │  src/api/: 10个端点
 | 前端 | React (Vite + TypeScript + Tailwind CSS) — frontend/；Chrome Extension MV3 (vanilla JS) — extension/；Streamlit 已弃用 |
 | 后端 | Python, FastAPI, LangGraph |
 | LLM | DeepSeek v4-pro |
-| 向量库 | ChromaDB, bge-small-zh (512维) |
+| 向量库 | Milvus Lite（pymilvus 嵌入式，ChromaDB 为自动降级退路），bge-small-zh (512维) |
 | 解析 | PyMuPDF, python-docx, mammoth |
 | 测试 | pytest |
 
@@ -132,20 +132,20 @@ background.js: 消息路由              │  src/api/: 10个端点
 
 1. **多Agent工作流引擎**：设计 6 节点 LangGraph 工作流 + 条件修订边 —— Planner（动态调度）→ Router（规则化分类，0s延迟）→ 3路并行检索（keyword / semantic / graph，asyncio.gather 并发）→ Fusion 投票融合 → STAR Writer（引用约束 + Agent 间通信）→ 3路并行评审（正确性 / 完整性 / 优势，多数表决），支持 N 轮修订回环。
 
-2. **6项RAG增强技术**：HyDE 假设文档嵌入（Recall@5 ↑15-25%）、Self-Query 结构化检索（LLM → ChromaDB metadata 过滤）、Cross-Encoder 精排（Bi-Encoder → Cross-Encoder，精度 ↑10-20%）、Parent-Child 父子分块、Skill Graph 知识图谱（80+ 技术分类）、LLM-as-Judge 评测基线。ChromaDB 五集合存储，bge-small-zh 嵌入（512维）。
+2. **6项RAG增强技术**：HyDE 假设文档嵌入（Recall@5 ↑15-25%）、Self-Query 结构化检索（LLM → Milvus metadata 过滤）、Cross-Encoder 精排（Bi-Encoder → Cross-Encoder，精度 ↑10-20%）、Parent-Child 父子分块、Skill Graph 知识图谱（80+ 技术分类）、LLM-as-Judge 评测基线。Milvus 五集合存储，bge-small-zh 嵌入（512维）。
 
 3. **项目-JD 智能匹配引擎**：JD 需求自动提取（技术栈/软技能/年限）+ 项目库三维度匹配（技术交集/年限/复杂度）+ 排序打分 + 生成针对性简历内容增强（保留原有技能，补充 JD 要求技能）。简历智能蒸馏：纯规则分区识别 + 结构化提取（零 LLM 介入），字段提取准确率 95%+，每字段标注来源与置信度。
 
 4. **Chrome 插件全栈开发（Manifest V3）**：Background 消息路由 + Content Script 表单扫描填充 + Popup / Sidebar UI，支持 ATS 自动检测（北森 / Moka / 智联 / Ant Design）、React / Vue 受控组件兼容填充、50+ 字段映射规则 + 三级匹配引擎，字段覆盖率 85%+。
 
-5. **档案管理 + 项目RAG文档库**：档案页手动完善项目细节（动态分点列表）；按项目上传资料文档（md/txt/docx/pdf）分块存 ChromaDB project_docs，面试回答自动检索该项目文档基于真实资料作答。面试对练支持多轮追问 + AI 生成问题 + 语音输入（Web Speech API 中文识别）。
+5. **档案管理 + 项目RAG文档库**：档案页手动完善项目细节（动态分点列表）；按项目上传资料文档（md/txt/docx/pdf）分块存 Milvus project_docs，面试回答自动检索该项目文档基于真实资料作答。面试对练支持多轮追问 + AI 生成问题 + 语音输入（Web Speech API 中文识别）。
 
-6. **工程与稳定性**：React + Chrome 插件双前端，14+ API 端点（含 SSE 流式），端到端测试覆盖全链路。Redis 会话持久化 + LLM 语义缓存 + 降级退路；三层会话记忆 + LLM 摘要压缩（>48K tokens → ≤500 字）；错误隔离 + 退路机制（LLM 不可用时规则化降级）。
+6. **工程与稳定性**：React + Chrome 插件双前端，22 API 端点（20条路径，含 SSE 流式与 LLM-as-Judge 评测），端到端测试覆盖全链路。Redis 会话持久化 + LLM 语义缓存（embedding 近邻命中）+ 降级退路；三层会话记忆 + LLM 摘要压缩（>48K tokens → ≤500 字）；错误隔离 + 退路机制（LLM 不可用时规则化降级）。
 
 ---
 
 **作品集**：https://github.com/niurou123  
-**技术栈**：Python, FastAPI, LangGraph, ChromaDB, Redis, DeepSeek, Sentence-Transformers, bge-small-zh, PyMuPDF, React, TypeScript, Tailwind CSS, Web Speech API, Chrome Extension Manifest V3, Docker
+**技术栈**：Python, FastAPI, LangGraph, Milvus (pymilvus), Redis, DeepSeek, Sentence-Transformers, bge-small-zh, PyMuPDF, React, TypeScript, Tailwind CSS, Web Speech API, Chrome Extension Manifest V3, Docker
 
 ---
 
@@ -174,6 +174,13 @@ background.js: 消息路由              │  src/api/: 10个端点
 | 编造/推断缺失信息 | **智能位置匹配**：识别简历内容属于哪个表单字段（如：项目描述 → 匹配到"项目经历"栏） |
 | 生成简历中没有的内容 | 分类判断：这段内容是"技能"还是"项目"还是"成果" |
 | 压缩/摘要原始文本 | 表单分区感知：JD内容 → 识别哪些是技术要求、哪些是软技能 |
+
+> **实现现状（v18）**：上表「LLM 允许」的四项中，**字段标准化映射**已实现于
+> [src/rag/normalizer.py](src/rag/normalizer.py)，但**尚未接入上传链路**——上传走的是
+> `ResumeParser` 纯规则提取，`normalize_parsed_resume()` 目前没有任何调用方（孤立模块）。
+> 其余三项（智能位置匹配 / 分类判断 / 表单分区感知）在 [src/api/routes.py](src/api/routes.py)
+> 的 `/form/fill` 中经单次 LLM 调用实现。接入 normalizer 前需先确认是否需要该映射层，
+> 避免引入未经用户确认的简历内容改写。
 
 - 保留原始文本副本，用户可对比验证
 - 每个提取字段标注来源（原文档位置）
@@ -212,7 +219,7 @@ background.js: 消息路由              │  src/api/: 10个端点
 - 参考来源：AI-Resume-Form-Filling-Assistant + 北森/Moka/智联/51job/牛客
 
 **需求5：前端面试Agent功能可视化**
-- 目标：将多Agent工作流的内部运行过程在前端（Streamlit）可视化呈现，消除"黑盒感"
+- 目标：将多Agent工作流的内部运行过程在前端（React）可视化呈现，消除"黑盒感"
 - Agent流程展示：
   - Planner阶段：展示问题类型识别结果（行为面试/技术问题/项目深挖/情景题）及调度策略
   - Router阶段：展示检索路由决策（选择了哪些检索通道、权重分配）
@@ -236,7 +243,7 @@ background.js: 消息路由              │  src/api/: 10个端点
   - LLM不可用时退化为规则化回答（前端明确标注"规则模式"）
   - 检索无结果时展示"知识库覆盖不足"提示而非编造内容
 - 前端技术要求：
-  - 使用 Streamlit 原生组件（expander/progress/status/spinner/columns）实现，不引入额外前端框架
+  - 使用 React (Vite + TypeScript + Tailwind) 原生能力实现（折叠面板/进度条/状态指示等），不引入额外前端框架
   - 工作流状态通过 Server-Sent Events (SSE) 或轮询方式从后端获取实时更新
   - 与现有深色渐变主题（v9 UI品质升级）视觉统一
 
@@ -246,6 +253,9 @@ background.js: 消息路由              │  src/api/: 10个端点
 
 | 日期 | 版本 | 改动 |
 |------|------|------|
+| 9.29 | v21 | **架构宣传技术落实（不改架构骨架，全部接线）**: Planner 三输出全部接线（retrieval_top_k→三路检索、temperature→Writer 生成与流式、decomposition_depth→Router 拆解上限）；decomposed_queries 真正参与检索（Multi-Query 召回 + rerank_multi_query 融合）；Self-Query 接入 LLM 主路径（规则版为降级退路）；真并行修复（同步阻塞段包 asyncio.to_thread，事件循环不再被 torch/Milvus 卡住）；三层会话记忆接入（上传设画像/问答注入近3轮/答后 add_turn）；LLM 语义缓存做实（embedding 近邻 ≥0.92 命中，仅无上下文首轮）；LLMJudge 接入新端点 /interview/judge；DeepSeekClient 连接池复用（案例9根治）；新增 list_documents 确定性枚举，清剿全部 8 处空 query 刮库；correctness 评审加「引用回溯」锚定素材约束；退路评审覆盖率改比例制 |
+| 9.29 | v20 | **向量库迁移 Milvus Lite（本科论文学术选型）**: ChromaDB → Milvus Lite（pymilvus 嵌入式，本地单文件 data/milvus_resumatch.db，Windows 原生免 Docker，API 与 Milvus Standalone 完全兼容、SIGMOD 2021 论文可引用）；ChromaDB 保留为自动降级退路（pymilvus 不可用时无缝切换，16 处调用点经兼容层零改动）；测试改双后端参数化（28/28 通过，顺带修复 type 单/复数契约漂移与 fixture 清理缺 project_docs 两处既有测试缺陷）；numpy 钉 <2.0.0（pandas 2.1.1 为 numpy1.x ABI）；/system/info 暴露 vector_backend |
+| 9.29 | v19 | **链路一致性修复（不改架构）**: `/interview/stream` 补传 user_profile（此前不传导致 should_retrieve 跳过检索、Planner 削到单路检索——同问题两个入口答案质量不一致）、`/form/fill` 改读 ProfileStore（此前读恒空的废弃 SessionMemory + 空 query 刮库）、`project_docs` 接入多Agent检索链路（此前只写不读，档案页上传的项目资料从未进入面试回答）、多轮对练注入 history（此前追问上下文恒为空）、RERANKER_MODEL/集合数/端点计数等文档与配置漂移对齐、Docker 入口改 `src.api.main:app`、Vite 代理 8004→8000 |
 | 8.1 | v17 | **前端迁移 React + 项目库落地**: 前端全部迁移至 React (frontend/，Streamlit 弃用)、结构化档案/项目库持久化 (ProfileStore, data/profile.json)、项目-JD 匹配改读项目库（修复 ChromaDB 碎 chunk 数据源缺陷）、React JD匹配页双 tab（技能/项目）、修复 bge-small-zh 嵌入模型缓存不完整导致上传失败 |
 | 8.4 | v18 | **档案管理 + 项目RAG文档库 + Redis + 面试增强**: 档案页手动完善项目细节（动态分点列表）、项目级RAG文档库（按项目上传资料，面试回答检索）、面试对练增强（AI生成问题/语音输入/多轮追问）、Redis会话持久化+LLM语义缓存（降级退路）、技术选型文档完整对比 |
 | 8.1 | v16 | **项目-JD智能匹配引擎 (需求2 完成)**: JD需求自动提取（技术栈/软技能/经验年限/职责，纯规则化）+ 项目库三维度匹配（技术交集/经验年限/复杂度，SkillGraph语义归类）+ 针对性STAR回答/简历描述生成（基于项目库真实数据，不虚构）+ /match/projects 端点 + React JD匹配页双标签页（技能匹配/项目匹配） |

@@ -90,7 +90,6 @@ npm run dev
 interview-rag-system/
 ├── CLAUDE.md                   # AI 开发指南（最高优先级）
 ├── SPEC.md                     # 功能规格文档（项目大脑）
-├── app.py                      # ⚠️ DEPRECATED — Streamlit 前端（已迁移至 frontend/ React）
 │
 ├── src/
 │   ├── agents/                 # LangGraph 多Agent工作流 (v3.0)
@@ -108,7 +107,8 @@ interview-rag-system/
 │   │   ├── normalizer.py        # LLM字段标准化映射 (不概括)
 │   │   ├── chunker.py           # Parent-Child 父子分块
 │   │   ├── embedder.py          # bge-small-zh 嵌入 (512维)
-│   │   ├── vector_store.py      # ChromaDB 4集合管理
+│   │   ├── milvus_store.py      # Milvus Lite 主路径 + ChromaDB 降级退路（接口兼容）
+│   │   ├── vector_store.py      # 统一入口兼容层（保持旧导入路径）
 │   │   ├── self_query.py        # Self-Query 结构化查询
 │   │   ├── hyde.py              # HyDE 假设文档检索
 │   │   ├── reranker.py          # Cross-Encoder 精排
@@ -129,7 +129,7 @@ interview-rag-system/
 │   │
 │   └── api/                    # FastAPI 层
 │       ├── main.py              # 应用入口 + CORS
-│       ├── routes.py            # 10+ API端点
+│       ├── routes.py            # 22个 API端点
 │       └── schemas.py           # Pydantic 请求/响应模型
 │
 ├── frontend/                   # React 前端 (Vite + TypeScript + Tailwind)
@@ -155,11 +155,12 @@ interview-rag-system/
 ├── tests/                      # 测试套件
 │   ├── conftest.py
 │   ├── test_parser.py           # 10项解析器测试
-│   └── test_vector_store.py     # 8项向量存储测试
+│   └── test_vector_store.py     # 向量存储测试（Milvus/ChromaDB 双后端参数化）
 │
 ├── data/
 │   ├── resumes/                 # 简历文件
-│   └── chroma_db/               # ChromaDB 持久化
+│   ├── milvus_resumatch.db     # Milvus Lite 持久化（主）
+│   └── chroma_db/               # ChromaDB 持久化（降级退路）
 │
 ├── requirements.txt
 └── .env
@@ -175,6 +176,7 @@ GET  /api/v1/resume/profile       # 获取简历画像
 
 POST /api/v1/interview/answer     # 单次面试问答
 POST /api/v1/interview/stream     # 流式问答 (SSE)
+POST /api/v1/interview/judge      # LLM-as-Judge 独立评测（5维打分）
 
 POST /api/v1/mock/start           # 开始面试对练 (你当面试官)
 POST /api/v1/mock/next            # 面试官提问 → AI 候选人 STAR 回答
@@ -199,7 +201,7 @@ GET  /api/v1/system/info          # 系统信息
 | 前端 | React (Vite + TypeScript + Tailwind) — frontend/, Chrome Extension MV3 |
 | 后端 | Python, FastAPI, LangGraph |
 | LLM | DeepSeek v4-pro |
-| 向量库 | ChromaDB, bge-small-zh (512维) |
+| 向量库 | Milvus Lite (pymilvus 嵌入式，ChromaDB 为自动降级退路)，bge-small-zh (512维) |
 | 解析 | PyMuPDF, python-docx, mammoth |
 | 精排 | bge-reranker-base (Cross-Encoder) |
 | 测试 | pytest |

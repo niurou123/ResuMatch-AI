@@ -68,7 +68,7 @@
 ### 2.2 性能优化
 
 - **线程锁**：`threading.Lock` 防止多线程并发重复加载（冷启动 10-20s）
-- **启动预热**：`main.py` lifespan 启动时预热嵌入+精排模型，首请求秒回
+- **启动预热**：`src/api/main.py` lifespan 启动时预热嵌入+精排模型，首请求秒回
 
 ### 2.2 横向对比：为什么选 bge-small-zh
 
@@ -100,27 +100,34 @@
 
 | 维度 | 当前值 |
 |------|--------|
-| 方案 | ChromaDB（`chromadb>=0.5.0`） |
-| 持久化 | `data/chroma_db` |
+| 方案 | **Milvus Lite**（pymilvus 嵌入式，`milvus-lite` 内核）；ChromaDB 为自动降级退路 |
+| 学术出处 | Milvus: A Purpose-Built Vector Data Management System (SIGMOD 2021) |
+| 持久化 | `data/milvus_resumatch.db`（本地单文件；降级时 `data/chroma_db`） |
 | 集合 | skills / projects / achievements / education / project_docs（五集合） |
-| 度量 | 余弦相似度（`hnsw:space=cosine`） |
-| 代码位置 | [src/rag/vector_store.py](src/rag/vector_store.py) |
+| 度量 | COSINE（返回相似度，越大越好；ChromaDB 侧为距离转 1-distance） |
+| 索引 | FLAT 精确检索（milvus-lite 内核即 FLAT；数据量百级，无需 HNSW） |
+| 代码位置 | [src/rag/milvus_store.py](src/rag/milvus_store.py)（兼容层 [src/rag/vector_store.py](src/rag/vector_store.py)） |
 
-**注意**：ChromaDB 存储的是被父子分块切碎的 child chunk，**项目-JD 匹配读取结构化档案（data/profile.json）而非 ChromaDB**（更可靠）。
+**选型说明**：
+- Milvus Lite 与 Milvus Standalone API 完全兼容 → 论文可写"本地嵌入式开发、可平滑迁移分布式部署"
+- milvus-lite 仅 pip 安装、Windows 原生免 Docker；FLAT 在百级向量上即精确检索（100% 召回、毫秒级）
+- pymilvus 不可用时（未安装/初始化失败）自动降级 ChromaDB，接口完全兼容，调用方零改动（退路机制）
 
-### 4.1 横向对比：为什么选 ChromaDB
+**注意**：向量库存储的是被父子分块切碎的 child chunk，**项目-JD 匹配读取结构化档案（data/profile.json）而非向量库**（更可靠）。
 
-| 维度 | **ChromaDB（选用）** | FAISS | Milvus | Qdrant | Weaviate | Elasticsearch |
-|------|---------------------|-------|--------|--------|----------|---------------|
-| **部署** | 轻量嵌入式 | 库 | 服务 | 服务 | 服务 | 服务 |
-| **本地单机** | ✅ 零运维 | ✅ | 较重 | 可 | 可 | 较重 |
-| **持久化** | 内置 | 需自管 | 内置 | 内置 | 内置 | 内置 |
-| **metadata 过滤** | ✅ 原生 | 弱 | ✅ | ✅ | ✅ | ✅ |
-| **异步/同步** | 同步 | 同步 | 客户端 | 客户端 | 客户端 | 客户端 |
-| **学习成本** | ⭐ 低 | 中 | 高 | 中 | 高 | 高 |
-| **本项目简历小规模数据** | ⭐ 最合适 | 过重 | 过重 | 过重 | 过重 | 过重 |
+### 4.1 横向对比：为什么选 Milvus Lite
 
-**选择理由**：本项目简历数据量小（几十到几百条向量），ChromaDB **嵌入式零部署、原生 metadata 过滤、API 简单**，完全够用且易维护。FAISS 需自管持久化和过滤；Milvus/Qdrant 等服务型方案对本项目属于过度设计。
+| 维度 | **Milvus Lite（选用）** | ChromaDB（降级退路） | FAISS | Milvus Standalone | Qdrant | Elasticsearch |
+|------|------------------------|---------------------|-------|-------------------|--------|---------------|
+| **部署** | pip 嵌入式（本地单文件） | pip 嵌入式 | 库 | 服务（Windows 需 WSL2+Docker） | 服务 | 服务 |
+| **本地单机 Windows** | ✅ 原生免 Docker | ✅ | ✅ | ❌ 需 Docker | 可 | 较重 |
+| **持久化** | 内置（milvus.db 文件） | 内置 | 需自管 | 内置 | 内置 | 内置 |
+| **metadata 过滤** | ✅（JSON 字段等值） | ✅ 原生 | 弱 | ✅ | ✅ | ✅ |
+| **学术出处** | SIGMOD 2021 论文 | 无 | 无 | 同 Lite | 无 | 无 |
+| **生产可迁移** | ✅ API 与 Standalone/分布式完全一致 | ❌ 自成一系 | ❌ | — | — | — |
+| **本项目简历小规模数据** | ⭐ 最合适 | 合适 | 过重 | 过重 | 过重 | 过重 |
+
+**选择理由**：本项目简历数据量小（几十到几百条向量），嵌入式方案零部署零运维完全够用。在嵌入式可选项中选 Milvus Lite 而非 ChromaDB 的三点：① 有 SIGMOD 2021 论文出处，学术选型可引用；② API 与生产级 Milvus 完全一致，论文可写"开发用 Lite、可平滑迁移分布式"；③ FLAT 精确检索在小数据量上即最优解。ChromaDB 保留为自动降级退路（pymilvus 不可用时无缝切换，接口兼容、调用方零改动），符合退路机制原则。
 
 ---
 
@@ -129,11 +136,11 @@
 | 维度 | 当前值 |
 |------|--------|
 | 框架 | FastAPI `0.104.1` |
-| 端口 | 8000（前端连 8004） |
-| 工作流 | LangGraph（`langgraph>=0.2.0`）多 Agent 协作 |
+| 端口 | 8000（前端 Vite 代理 / Chrome 扩展同指向 8000） |
+| 工作流 | LangGraph（`langgraph>=0.2.0,<1.0.0`）多 Agent 协作 |
 | 状态管理 | `AgentState`（Pydantic）+ `MemorySaver` 检查点 |
 | 并发 | asyncio.gather 并行检索 + 并行评审 |
-| API 端点 | 14+ 个（简历/面试/模拟面试/档案/JD匹配/系统） |
+| API 端点 | 22 个（20条路径 — 简历/面试/评测/模拟对练/档案/项目文档/JD匹配/系统） |
 | 代码位置 | [src/api/routes.py](src/api/routes.py) |
 
 ### 5.1 横向对比：为什么选 FastAPI
@@ -162,7 +169,7 @@
 | 数据请求 | @tanstack/react-query + fetch（SSE 流式自研） |
 | 页面 | 简历上传 / 档案 / 面试模拟 / 自我介绍 / JD 匹配 |
 | 代码位置 | [frontend/src/](frontend/src/) |
-| 状态 | Streamlit 已弃用（app.py 仅历史保留） |
+| 状态 | Streamlit 已弃用（app.py / Dockerfile.streamlit 已移除） |
 
 ### 前端特性
 
@@ -346,9 +353,9 @@ Planner（动态调度）
 
 | 库/框架 | 版本 | 用途 |
 |---------|------|------|
-| **FastAPI** | 0.104.1 | Web 框架，14+ RESTful 端点 + SSE 流式 |
-| **LangGraph** | ≥0.2.0 | 多 Agent 有状态工作流（MemorySaver 检查点） |
-| **ChromaDB** | ≥0.5.0 | 向量数据库（5 集合，含 project_docs） |
+| **FastAPI** | 0.104.1 | Web 框架，22 个 RESTful 端点（20条路径） + SSE 流式 |
+| **LangGraph** | ≥0.2.0,<1.0.0 | 多 Agent 有状态工作流（MemorySaver 检查点）；上限 <1.0 因 1.x 要求 langchain-core≥1.4.7（跨大版本） |
+| **Milvus Lite (pymilvus)** | ≥2.6.0,<3.0.0 | 向量数据库主路径（5 集合，含 project_docs）；ChromaDB ≥0.5.0 为自动降级退路 |
 | **sentence-transformers** | ≥3.0.0 | 嵌入模型加载（bge-small-zh + reranker） |
 | **PyMuPDF / python-docx / mammoth** | — | 简历 PDF/DOCX 解析（含 XML 回退） |
 | **httpx** | — | 异步 LLM API 客户端（流式 + 超时控制） |
