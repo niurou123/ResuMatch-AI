@@ -26,10 +26,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # 创建必要的目录
-RUN mkdir -p data/questions data/embeddings models logs
+RUN mkdir -p data/chroma_db data/resumes logs
 
 # 暴露端口
 EXPOSE 8000
 
 # 启动命令
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# 应用入口是 src/api/main.py 里的 app 对象（仓库根目录没有 main.py）
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -5,6 +5,265 @@
 
 ---
 
+## 2026-09-29
+
+### 案例 18：「asyncio.gather 并行检索」是假并行——协程切换救不了同步阻塞
+
+**现象**：SPEC/README 宣称"3路并行检索，总耗时 = max(单路) 而非 sum"。实际观测（fusion_stats 的 agent_timing）：三路耗时接近**累加**而非取最大，且检索期间整个 FastAPI 服务对其他请求无响应（事件循环被卡死）。
+
+**根因**（asyncio 并发模型 + Python GIL 的两层错位）：
+
+1. `asyncio.gather` 只调度**协程**。协程只在 `await` 点让出控制权——三个 agent 函数虽然标了 `async`，但内部全是**同步调用**：`vs.search()`（Milvus/Chroma 查询）、`embedder.encode()`（torch 推理）、`graph.expand_query()`（纯 CPU 正则）。同步段一旦开始执行，事件循环无法打断，只能等它跑完。
+2. 结果：三路"并行"实际是**串行**——A 跑完才轮到 B。`parallel_elapsed_ms ≈ sum(agent_timing)`。
+3. 更糟的是 torch 推理直接跑在**主事件循环线程**上：一次 embedding 批推理（几十 ms 到秒级）期间，所有并发 HTTP 请求、SSE 心跳全部冻结。
+
+**为什么一直没被发现**：单请求场景下"串行跑完"与"并行跑完"最终结果相同，只是慢；只有 (a) 看 agent_timing 数字、(b) 并发压测、(c) SSE 流式时才暴露。宣传语与实现的偏差属于**静默性能缺陷**。
+
+**解决方案**（[src/agents/retriever_node.py](src/agents/retriever_node.py)）：
+1. 三个 agent 的同步核心（检索循环、embedding、精排、图谱展开）整体包 `asyncio.to_thread(...)`——丢进线程池，事件循环立刻解放
+2. to_thread 默认线程池并发三路真正并行（torch 推理在 Python 层释放 GIL，线程级并行有效）
+3. 语义缓存 embedding 查询（routes 侧）同样包 to_thread
+
+**验证**：fusion_stats 的 `parallel_elapsed_ms` 从 ≈ sum(agent_timing) 降为 ≈ max(agent_timing)；检索期间并发请求不再冻结。
+
+**教训**：`async def` + `asyncio.gather` **不等于**并行。凡内部含同步阻塞（DB 查询、模型推理、requests）的"async"函数，要么 `to_thread`/`run_in_executor`，要么换原生异步客户端——否则 gather 只是排队。
+
+---
+
+### 案例 17：安装 milvus-lite 连环破坏 pandas（numpy 2.x ABI 断裂）
+
+**现象**：`pip install pymilvus milvus-lite` 成功，但随即任何 `import pandas` 全灭：
+
+```
+ValueError: numpy.dtype size changed, may indicate binary incompatibility. Expected 96 from C header, got 88
+```
+
+连带症状：安装中途还出现过两次 `JSONDecodeError: Unterminated string`（PyPI 元数据下载中断）和 `THESE PACKAGES DO NOT MATCH THE HASHES`（缓存损坏），均为同一网络/缓存不稳链条的表象。
+
+**根因**（依赖链，非表面错误）：
+1. milvus-lite 3.x → pyarrow/faiss-cpu 新版 → **numpy 2.4.6** 被拉入
+2. 环境里的 pandas 2.1.1 是 **numpy 1.x ABI** 编译的 C 扩展 → 二进制不兼容
+3. 项目 requirements.txt 原本钉死 `numpy==1.24.3`，但直接 pip install 单独装包时**绕过了 requirements 的联合解析**，pip 选了满足新包的 numpy 2.x，旧包的 ABI 约束无法表达
+
+**解决方案**：
+1. 立即修复：`pip install --no-cache-dir "numpy>=1.26,<2.0.0"`（pandas 2.1.1 与 1.26.x ABI 兼容）
+2. 根治（[requirements.txt](requirements.txt)）：`numpy==1.24.3` → `numpy>=1.24.3,<2.0.0` 并加注释说明 pandas 2.1.1 的 ABI 约束，防止下次整装时再次被 milvus-lite 拉到 2.x
+3. 教训：往已锁版本的环境里**单独追加**新依赖时，必须回查既有 C 扩展包的 ABI 兼容窗口，requirements 的约束要在同一次解析里生效
+
+**验证**：`import numpy, pandas, pymilvus, milvus_lite` 全部通过；全量测试 28/28。
+
+---
+
+### 案例 16：Milvus COSINE 与 ChromaDB 的 distance 语义相反（迁移即翻车点）
+
+**现象**：Milvus Lite 迁移后首轮冒烟测试，检索结果排序看起来正常但数值可疑——直接照搬 ChromaDB 的 `score = 1.0 - distance` 公式后，**所有素材分数塌到接近 0 且次序含义颠倒**（最相关的素材反而拿最低分）。
+
+**根因**（度量语义差异，跨库迁移的经典坑）：
+- ChromaDB `hnsw:space=cosine` 返回的是**余弦距离**（0=相同，2=相反）→ 相似度 = 1 - distance
+- Milvus `metric_type=COSINE` 返回的是**余弦相似度本身**（1=相同，-1=相反，越大越好）→ 透传即可
+- 两个库的"distance"字段含义相反，套同一个转换公式等于把排序镜像
+
+上层 `fusion_node` 按 `(vote_count, score)` 排序、`_boost_targeted_project` 做 ±0.3/−0.5 加权——score 语义一反，整个融合层全废且**不报错**（静默质量劣化，最危险的一类）。
+
+**解决方案**（[src/rag/milvus_store.py](src/rag/milvus_store.py)）：
+1. Milvus 路径 `score` 直接透传（裁剪到 [-1,1] 防越界）
+2. ChromaDB 降级路径维持 `1 - distance`
+3. 模块头注释显式写明两库口径差异，防止后人"统一"公式
+
+**验证**：冒烟测试断言 top-1 命中 PaperPilot（score 0.884）且分数单调递减；两后端同一查询分数同序。
+
+---
+
+### 案例 15：9 个向量存储测试长期失败——type 单复数契约漂移 + fixture 不幂等
+
+**现象**：`pytest tests/` 稳定 9 failed / 10 passed 已数轮迭代，失败集中在 test_vector_store（8个）和 test_parser::test_to_documents（1个）。因"测试一直红着"被当作背景噪音，无人定位。
+
+**根因**（两层，均在测试侧，实现从未错）：
+1. **type 契约漂移**：parser `to_documents()` 实际产出 `metadata.type` 为复数（`"skills"/"projects"/"achievements"`，与集合名对齐），测试 fixture/断言用的却是旧单数（`"skill"/"project"/"achievement"`）。`index_documents` 按 type 分桶 → 单数 type 全部落入 grouped 的空桶 → **一个都没写进去** → count=0、search 空、后续全红
+2. **fixture 清理缺集合**：teardown 只删 4 个集合（skills/projects/achievements/education），漏了 `project_docs`——首个用例残留的 project_docs 计数污染后续用例的 `get_collection_info` 断言
+
+**解决方案**：
+1. [tests/test_vector_store.py](tests/test_vector_store.py)：fixture 的 type 改复数（对齐 parser 真实输出）；teardown 改 `store.reset()` + 全集合清理
+2. [tests/test_parser.py](tests/test_parser.py)：`test_to_documents` 断言改复数
+3. 迁移顺带把 fixture 升级为 **Milvus/ChromaDB 双后端参数化**——同一套用例在两个后端各跑一遍，接口兼容性从此有回归防线（本次就靠它抓出了 ChromaDB `n_results=0` 抛 TypeError 的空集合边界，已加卫语句修复）
+
+**验证**：修复前 9 failed / 10 passed → 修复后 **28 passed / 0 failed**（14 用例 × 2 后端 + parser 10 用例）。
+
+---
+
+## 2026-09-29
+
+### 案例 14：多轮对练的会话历史每轮被覆盖（追问上下文恒为空）
+
+**现象**：面试对练第 2 轮起，AI 回答质量明显弱于第 1 轮——不记得前面问过什么，追问失去连贯性。`session["history"]` 看似在写入，但下一轮读到的永远是上一轮的那一条。
+
+**根因**（数据流层面的拷贝语义）：
+
+[redis_store.py](src/core/redis_store.py) 的 `RedisSessionStore.get()` 每次调用都**反序列化出一个全新的 dict**（Redis 路径 `json.loads(raw)`，内存降级路径同样返回引用副本的语义），而 `set()` 是整条 JSON 覆盖写。调用链：
+
+```
+routes.py  mock_interview_next:
+  session = session_store.get(id)      # ← 新对象 A（含 history）
+  session["round"] += 1
+  session["history"].append({...})     # ← 只写进 A
+  await _generate_mock_answer(...)     # ← 中间有 await，期间 A 未被持久化
+  session["history"][-1]["answer"] = ai_answer
+  session_store.set(id, session)       # ← 写回，A 落盘
+```
+
+表面看 `set` 在最后，逻辑闭合。**但真正的缺陷是：生成回答的 `_generate_mock_answer()` 只把当前 `question` 写进 prompt，从不读取 `session["history"]`。** 所以无论 history 写得多完整，回答这一侧都拿不到上下文——同一份 history 只被 `/mock/suggest`（AI 生成追问）读取过，回答侧从未使用。history 对「回答」而言只是被存下来给前端展示，多轮对练的"追问"实际上是 N 次互相独立的单轮问答。
+
+次要缺陷：`session_store.get()` 返回的是**值拷贝**，若在 `get()` 与 `set()` 之间存在并发请求（同一 session 的两个 `/mock/next`），后写入者会整条覆盖前者——`set` 是覆盖写而非合并写，没有乐观锁。
+
+**解决方案**（[src/api/routes.py](src/api/routes.py)）：
+
+1. `_generate_mock_answer()` 新增 `history` 参数，把 `history` 中**已完成**的轮次（问题 + AI 回答，各截断 500 字，最多最近 5 轮）拼成「前面几轮的问答」注入 prompt——这是本案例的实质修复
+2. `/mock/next` 传入 `session["history"][:-1]`（排除当前这轮，其 `answer` 尚未生成，不应出现在 prompt 里）
+3. **LLM 缓存 key 补入 `history_text`**——否则同一句话在不同轮次下会命中同一个缓存条目、返回脱离上下文的旧答案（这是修完第 1 点后立刻会踩的坑）
+4. 会话读改写路径加注释说明「`get` 返回新对象，改后必须 `set` 回写」，避免后续再踩拷贝语义
+
+**验证**：模拟 3 轮连续追问（同一 session_id），第 2/3 轮 prompt 中确认包含前序问答；AI 回答能正确指代前文。缓存侧验证：同一问题在第 1 轮与第 3 轮分别调用，`cache_payload` 不同、未命中同一缓存条目。
+
+---
+
+### 案例 13：`/interview/stream` 完全不检索——同一次提问两条链路结果不一致
+
+**现象**：React 面试页（「面试模拟」单次问答）走 `POST /api/v1/interview/stream`，回答明显比 `/interview/answer` 空洞——不引用简历素材、不体现具体项目，像是一般性泛泛而谈。同一个问题换个入口问，答案质量差一截。
+
+**根因**（入口参数缺失引发的连锁降级）：
+
+[graph.py:44](src/agents/graph.py#L44) 的 `should_retrieve()` 判断依据是 `state["user_profile"]` 里有没有 `indexed_docs` / `collections`：
+
+```python
+if profile.get("indexed_docs") or profile.get("collections"):
+    return "retrieve"
+```
+
+而两个入口装载画像的方式不一致：
+
+| 端点 | 是否传 `user_profile` | 后果 |
+|---|---|---|
+| `/interview/answer` | ✅ 读了 ChromaDB 拼出 `indexed_docs` | 正常检索 |
+| `/interview/stream` | ❌ **根本没传** | 见下 |
+
+`user_profile` 为空触发了**三层连锁降级**（每一层单独看都"合理"，叠加起来就是检索全废）：
+
+1. **`should_retrieve` 落到问题类型兜底**——问"介绍一下你的项目"时 `qtype=project_followup` 侥幸返回 "retrieve"；问"你最大的优势是什么"（`general`）直接返回 **"skip"**，检索完全跳过
+2. **Planner 画像微调失效**——[planner.py:133](src/agents/planner.py#L133) 的 `skills_count`/`projects_count` 全为 0，[第 95 行](src/agents/planner.py#L95) 的分支把握把 `active_retrievers` 削成 `["semantic"]`，关键是**后续"有数据就补回 keyword/graph"的两个兜底也一并失效**（因为它们同样以 `skills_count > 0` 为条件）
+3. **semantic 路的画像增强失效**——[retriever_node.py:69](src/agents/retriever_node.py#L69) 的 HyDE 摘要依赖 `user_profile["name"]`，空画像时 `summary=""`，HyDE 假设文档质量下降
+
+**解决方案**（[src/api/routes.py](src/api/routes.py)）：
+
+1. 抽出 `_load_user_profile()` 统一装载画像——**同时**取 ProfileStore 的结构化字段（供 Planner 计数 + HyDE 摘要）与 ChromaDB 的 `indexed_docs`/`collections`（供 `should_retrieve` 判断），两份数据缺一不可，之前 `/answer` 只装了后者
+2. `/interview/answer` 改调该函数（行为对齐，去掉重复代码）
+3. `/interview/stream` 在**进入事件生成器之前**装载画像并传入——不能放进生成器内 `await`，那会拖慢 SSE 首字节并破坏流式体验
+4. 装载过程分两段独立 try/except（错误隔离），任一份取不到不影响另一份，最终可能返回空 dict（未上传简历时的合法状态）
+
+**验证**：同一问题分别打两个端点，planner 日志中 `skills_count`/`projects_count` 均非 0、`active_retrievers` 为三路；`should_retrieve` 返回 "retrieve"；SSE 事件流中出现 `parallel_retrieval` 节点且 `total_docs > 0`。
+
+---
+
+### 案例 12：`project_docs` 集合只写不读——档案页上传的项目资料从未进入面试回答
+
+**现象**：在档案页按项目上传了资料文档（md/txt/docx/pdf），接口返回成功、ChromaDB `project_docs` 集合计数正常增长，但面试回答中**从不引用这些资料**，仍只基于简历里的技能/项目行作答。
+
+**根因**（写入路径与读取路径的集合列表不同步）：
+
+- **写入**：[routes.py](src/api/routes.py) `POST /project/{project_name}/docs` → 分块存入 `project_docs` 集合，metadata 带 `project_name` ✅
+- **读取**：[retriever_node.py:79](src/agents/retriever_node.py#L79) 三路检索的集合列表硬编码为 `["skills","projects","achievements","education"]`——**没有 `project_docs`**；fusion 的 `retrieved_*` 分类同样没有它
+
+`project_docs` 只在 `_generate_mock_answer`（面试对练的单次 LLM 路径）里被检索过，**多 Agent 工作流（`/interview/answer`、`/interview/stream`）从来没读过它**。而 SPEC 第 5 节项目简历明确写了「面试回答自动检索该项目文档基于真实资料作答」——该承诺只在一条链路上成立。
+
+次要问题：[prompts.py](src/core/prompts.py) 的 `_infer_project_name()` 项目归属推断只看 content / `metadata.name` / `source_text`，而 `project_docs` 的归属字段叫 `project_name`——两者都对不上，即便把素材捞进上下文，也会丢归属标注（案例 5 的张冠李戴风险）。
+
+**解决方案**：
+
+1. [retriever_node.py](src/agents/retriever_node.py) `semantic_agent` 检索集合加入 `project_docs`，与其余素材一同参与投票/精排/融合
+2. `fusion_node` 新增 `retrieved_project_docs` 分类
+3. 三处归属匹配的 haystack 补上 `metadata.project_name`：`_boost_targeted_project` 的目标项目识别、非目标项目剔除、项目素材补充召回
+4. [prompts.py](src/core/prompts.py) `_infer_project_name()` 新增**最高优先级分支**——`project_docs` 自带 `project_name`，是最可靠的归属来源，直接采用，不再走关键词猜测
+
+**验证**：上传该项目资料文档后提问相关问题，`reranked_context` 中出现 `collection=project_docs` 的素材且带正确 `[项目: xxx]` 标注；回答引用了文档中简历未记载的细节。
+
+---
+
+## 2026-09-28
+
+### 案例 11：全量依赖无法安装（连锁版本冲突 + 上限缺失 + 弃用包残留）
+
+**现象**：解决案例 10 的编码问题后，`pip install -r requirements.txt` 报 `ResolutionImpossible`：
+
+```
+ERROR: Cannot install anyio>=4.0.0 and fastapi==0.104.1 because these package versions have conflicting dependencies.
+    The user requested anyio>=4.0.0
+    fastapi 0.104.1 depends on anyio<4.0.0 and >=3.7.1
+```
+
+**根因**（三层，pip 一次只暴露一层，需逐层解开）：
+
+1. **`anyio` 与 fastapi 硬互斥**（requirements.txt:59）：fastapi 0.104.1 经 starlette 0.27 要求 `anyio<4.0.0`，而文件里显式写了 `anyio>=4.0.0`——两个区间交集为空，任何解法都无解。且**项目源码从不 `import anyio`**（仅 fastapi/starlette 内部使用），这条声明是无人使用的多余约束。
+2. **`pydantic` 钉死导致 langchain 线不可用**（requirements.txt:7）：`pydantic==2.5.0`，但 `langchain-core` 0.3.x 全系要求 `pydantic>=2.7.4`。注意 pip 的报错只显示了 `anyio`，**pydantic 冲突是解开第一层后才会浮出的第二层**。
+3. **`langgraph` 无上限跨大版本**（requirements.txt:11）：`langgraph>=0.2.0` 无上界，pip 会解析到 **1.2.12**——1.x 要求 `langchain-core>=1.4.7`，与项目验证过的 0.2–0.6 线（`StateGraph` / `MemorySaver` / `add_messages`）不在同一代，存在 API 断裂风险。
+
+附带问题：`streamlit==1.28.1` 残留在依赖清单中，但 CLAUDE.md 与 SPEC.md 均记载「Streamlit 已弃用」（前端已迁移 React），该依赖会平白拉入 8.4MB wheel 及其依赖树。
+
+**解决方案**（[requirements.txt](requirements.txt)）：
+1. `pydantic==2.5.0` → `>=2.7.4,<3.0.0`（先验证代码用法：仅 `BaseSettings` / `model_config` / 一个 `class Config:`，pydantic v2 各版本均兼容）
+2. `langgraph>=0.2.0` → `>=0.2.0,<1.0.0`（加注释说明上限理由）
+3. `anyio>=4.0.0` → `>=3.7.1,<4.0.0`（收敛到 fastapi 允许区间）
+4. 删除 `streamlit==1.28.1`，并清理弃用痕迹：删除 `app.py` / `Dockerfile.streamlit`，移除 `.env.example` 的 `STREAMLIT_HOST/PORT`（[README.md](README.md)、[SPEC.md](SPEC.md)、[TECH_STACK_ANALYSIS.md](TECH_STACK_ANALYSIS.md) 的现存需求表述同步改为 React；历史变更日志保留原文）
+
+**验证**（实际装机结果）：
+
+| 包 | 装后版本 | 预期 |
+|---|---|---|
+| langgraph | 0.2.35 | ✅ 落在 0.x |
+| langchain-core | 0.3.86 | ✅ |
+| pydantic | 2.13.5 | ✅ 已脱离 2.5.0 |
+| anyio | 3.7.1 | ✅ 回到 3.x |
+| fastapi | 0.104.1 | ✅ 未动 |
+
+导入自检通过（`langgraph.graph.StateGraph` / `checkpoint.memory.MemorySaver` / `graph.message.add_messages` 全部可用，证明未跨大版本）。附带两条告警非错误：`LangChainPendingDeprecationWarning`（langgraph 内部）、`fitz` API 弃用提示（PyMuPDF 旧名，仍可用）。
+
+**教训**：requirements.txt 中「显式声明但代码未使用」的包（anyio）和「无上界的核心框架」（langgraph）是依赖地狱的两个典型来源——前者制造无解冲突，后者让 CI 与本地静默漂移到不同大版本。
+
+---
+
+## 2026-09-28
+
+### 案例 10：`pip install -r requirements.txt` 报 UnicodeDecodeError（GBK 解码失败）
+
+**现象**：在中文 Windows 上执行 `pip install -r requirements.txt`，未下载任何包即崩溃：
+
+```
+UnicodeDecodeError: 'gbk' codec can't decode byte 0x96 in position 1059: illegal multibyte sequence
+  File ".../pip/_internal/utils/encoding.py", line 34, in auto_decode
+      return data.decode(
+```
+
+**根因**：`requirements.txt` 含中文注释（`# Redis (会话持久化 + LLM缓存)`），文件实际是合法 UTF-8，但**既无 BOM、也无 PEP 263 编码声明**。pip 的 `auto_decode()`（[encoding.py:20-36](.venv/Lib/site-packages/pip/_internal/utils/encoding.py#L20-L36)）解码顺序为：
+
+1. 匹配 BOM（`BOMS` 表）→ 无
+2. 扫前两行找 `coding[:=]\s*([-\w.]+)` 声明 → 无
+3. 回退 `locale.getpreferredencoding(False)` → 中文 Windows 上是 **GBK**
+
+GBK 解码 UTF-8 的中文字节即抛 `UnicodeDecodeError`。**与依赖版本、镜像源、网络均无关**，是纯编码链路问题——同一文件在 Linux/CI（locale 为 UTF-8）下不会复现。
+
+**解决方案**（[requirements.txt](requirements.txt)）：首行加入 PEP 263 声明 `# -*- coding: utf-8 -*-`，使 pip 在第 2 步命中 UTF-8 分支，不再回退 GBK。
+
+**验证**：直接调用 pip 自身的解码函数复现修复前后：
+
+```python
+from pip._internal.utils.encoding import auto_decode
+auto_decode(open('requirements.txt','rb').read())
+# 修复前：UnicodeDecodeError: 'gbk' codec ... position 1059
+# 修复后：OK，解析出 74 行
+```
+
+**备份方案**（若其他带中文的配置文件（如 `-r` 引用的文件）遇到同类问题）：将文件改写为带 BOM 的 UTF-8，命中第 1 步分支。
+
+---
+
 ## 2026-08-03
 
 ### 案例 9：JD 匹配简历增强 `resume_content` 偶发为空/极短

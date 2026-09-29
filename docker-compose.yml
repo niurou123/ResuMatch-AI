@@ -10,14 +10,17 @@ services:
     ports:
       - "8000:8000"
     environment:
+      # DeepSeek API Key 走宿主 .env（docker compose 自动读取同目录 .env）
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - DEVICE=cuda
-      - NUM_GPUS=auto
+      # Redis 走 compose 网络内的服务名，而非宿主 localhost
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./data:/app/data
-      - ./models:/app/models
       - ./logs:/app/logs
-    command: python main.py
+    command: python -m src.api.main
+    depends_on:
+      - redis
     deploy:
       resources:
         reservations:
@@ -28,7 +31,8 @@ services:
     networks:
       - interview-rag
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # 路由前缀是 /api/v1，根路径没有 /health
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
