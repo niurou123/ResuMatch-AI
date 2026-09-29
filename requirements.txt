@@ -1,16 +1,22 @@
+# -*- coding: utf-8 -*-
 # ResuMatch AI - Dependencies
 
 # Core framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
+pydantic>=2.7.4,<3.0.0
+pydantic-settings>=2.1.0
 
 # LangGraph workflow
-langgraph>=0.2.0
+# 上限 <1.0.0：1.x 为跨大版本（langgraph 1.2.12 要求 langchain-core>=1.4.7），
+# 本项目仅验证过 0.2-0.6 线的 StateGraph / MemorySaver / add_messages API，故锁在 1.0 以下
+langgraph>=0.2.0,<1.0.0
 langchain-core>=0.3.0
 
-# ChromaDB
+# Vector store: Milvus Lite (主) + ChromaDB (自动降级退路)
+# 上限 <3.0.0：pymilvus 3.x 为跨大版本；milvus-lite 镜像源已无 2.4.x，最低可用 3.x
+pymilvus>=2.6.0,<3.0.0
+milvus-lite>=3.1.0,<4.0.0
 chromadb>=0.5.0
 
 # Document parsing
@@ -28,7 +34,9 @@ jieba==0.42.1
 nltk==3.8.1
 
 # Data processing
-numpy==1.24.3
+# 上限 <2.0.0：pandas 2.1.1 是 numpy1.x ABI 编译的，numpy 2.x 会报
+# "numpy.dtype size changed"（pymilvus/milvus-lite 会试图拉 numpy 2.x，需钉住）
+numpy>=1.24.3,<2.0.0
 pandas==2.1.1
 
 # Deep learning (for embeddings)
@@ -51,11 +59,9 @@ httpx==0.25.1
 aiofiles>=24.0.0
 python-multipart==0.0.6
 
-# Frontend
-streamlit==1.28.1
-
 # Async
-anyio>=4.0.0
+# 上限 <4.0.0：fastapi==0.104.1（经 starlette 0.27）要求 anyio<4.0.0，与 anyio 4.x 互斥
+anyio>=3.7.1,<4.0.0
 
 # Dev
 pytest>=8.0.0

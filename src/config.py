@@ -23,8 +23,11 @@ class Settings(BaseSettings):
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
     DEEPSEEK_TIMEOUT: int = 60
 
-    # ===== ChromaDB 配置 =====
+    # ===== 向量库配置 =====
+    # 主路径：Milvus Lite（pymilvus 嵌入式，本地单文件）；ChromaDB 为自动降级退路
+    MILVUS_DB_PATH: str = "data/milvus_resumatch.db"
     CHROMA_DB_PATH: str = "data/chroma_db"
+    # 简历四集合（project_docs 是档案页上传的项目资料文档，由 vector_store.COLLECTIONS 管理）
     CHROMA_COLLECTIONS: str = "skills,projects,achievements,education"
 
     # ===== 嵌入模型配置 =====
