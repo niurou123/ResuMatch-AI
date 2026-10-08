@@ -1,7 +1,7 @@
 // ResuMatch Popup — 学习 AI-Resume-Form-Filling-Assistant
 (function(){
 'use strict';
-const API='http://localhost:8000/api/v1';
+const API='http://localhost:8721/api/v1';
 let fields=[],profile=null;
 const $=s=>document.querySelector(s);
 

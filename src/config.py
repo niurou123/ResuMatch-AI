@@ -15,7 +15,8 @@ class Settings(BaseSettings):
 
     # ===== API 配置 =====
     API_HOST: str = "0.0.0.0"
-    API_PORT: int = 8000
+    # 避开 8000 等常见端口（本地易与其他 dev server 冲突）
+    API_PORT: int = 8721
 
     # ===== DeepSeek API =====
     DEEPSEEK_API_KEY: str = ""

@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     container_name: interview-rag-api
     ports:
-      - "8000:8000"
+      - "8721:8721"
     environment:
       # DeepSeek API Key 走宿主 .env（docker compose 自动读取同目录 .env）
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
@@ -32,7 +32,7 @@ services:
       - interview-rag
     healthcheck:
       # 路由前缀是 /api/v1，根路径没有 /health
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8721/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -47,7 +47,7 @@ services:
     ports:
       - "3000:80"
     environment:
-      - API_URL=http://api:8000
+      - API_URL=http://api:8721
     depends_on:
       api:
         condition: service_healthy

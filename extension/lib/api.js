@@ -2,7 +2,7 @@
 // IIFE 模式，挂载到 window.ResuMatchAPI
 (function() {
 'use strict';
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = 'http://localhost:8721/api/v1';
 
 const api = {
   // 健康检查

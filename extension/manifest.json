@@ -34,7 +34,7 @@
   ],
   "host_permissions": [
     "<all_urls>",
-    "http://localhost:8000/*"
+    "http://localhost:8721/*"
   ],
   "web_accessible_resources": [
     {

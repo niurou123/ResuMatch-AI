@@ -13,8 +13,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        // 后端默认 API_PORT=8000（src/config.py），extension popup/manifest 同为 8000
-        target: 'http://localhost:8000',
+        // 后端默认 API_PORT=8721（src/config.py），extension 同指向
+        target: 'http://localhost:8721',
         changeOrigin: true,
       },
     },

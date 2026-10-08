@@ -29,8 +29,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 RUN mkdir -p data/chroma_db data/resumes logs
 
 # 暴露端口
-EXPOSE 8000
+EXPOSE 8721
 
 # 启动命令
 # 应用入口是 src/api/main.py 里的 app 对象（仓库根目录没有 main.py）
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8721"]

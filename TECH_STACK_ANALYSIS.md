@@ -136,7 +136,7 @@
 | 维度 | 当前值 |
 |------|--------|
 | 框架 | FastAPI `0.104.1` |
-| 端口 | 8000（前端 Vite 代理 / Chrome 扩展同指向 8000） |
+| 端口 | 8721（前端 Vite 代理 / Chrome 扩展同指向；避开 8000 常见端口冲突） |
 | 工作流 | LangGraph（`langgraph>=0.2.0,<1.0.0`）多 Agent 协作 |
 | 状态管理 | `AgentState`（Pydantic）+ `MemorySaver` 检查点 |
 | 并发 | asyncio.gather 并行检索 + 并行评审 |

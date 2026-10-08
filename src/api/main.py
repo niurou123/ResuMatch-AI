@@ -56,7 +56,7 @@ _ALLOWED_ORIGINS = [
     "http://localhost:5173",     # Vite dev server
     "http://127.0.0.1:5173",
     "http://localhost:3000",     # 前端 Docker (Nginx)
-    "http://localhost:8000",     # 本机直连后端页面
+    "http://localhost:8721",     # 本机直连后端页面
     # Chrome 扩展无需在此列：MV3 host_permissions 已豁免 CORS（popup/sidebar
     # 的 fetch 走扩展权限，浏览器不校验 Access-Control-Allow-Origin）
 ]
