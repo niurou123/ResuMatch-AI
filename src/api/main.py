@@ -4,6 +4,14 @@ import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.setrecursionlimit(10000)  # ChromaDB + Pydantic 复杂嵌套需要更高限制
 
+# 离线模式必须在任何 HF 相关 import 之前设置：
+# 不设时 sentence-transformers 会对每个配置文件连 huggingface.co 探测，
+# 国内网络不通则每文件 5 轮重试退避（十几分钟级启动延迟）。
+# 模型均已在本地缓存（bge-small-zh / bge-reranker-base），无需在线。
+import os as _os
+_os.environ.setdefault("HF_HUB_OFFLINE", "1")
+_os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 from dotenv import load_dotenv
 load_dotenv()
 

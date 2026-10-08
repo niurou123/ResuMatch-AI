@@ -81,7 +81,14 @@ class DeepSeekClient:
         else:
             response = await self._http.post(url, json=data, headers=headers)
             if response.status_code != 200:
-                raise Exception(f"API Error: {response.status_code} - {response.text}")
+                # 常见故障归一化：402 余额不足要显式指出（否则上游表现为
+                # "空答案+低分+空转修订"，极难定位）；401 是 key 无效
+                hint = ""
+                if response.status_code == 402:
+                    hint = "（DeepSeek 账户余额不足，请充值）"
+                elif response.status_code == 401:
+                    hint = "（API Key 无效或未配置）"
+                raise Exception(f"API Error: {response.status_code} - {response.text[:200]}{hint}")
             return response.json()
 
     async def chat(
@@ -100,14 +107,30 @@ class DeepSeekClient:
             "top_p": settings.TOP_P,
             "stream": stream,
         }
+        # 推理模型（deepseek-v4-pro 线）：思维链与正式答案共享 max_tokens 预算。
+        # 思维链通常消耗数百到数千 token——预算不放大时 content 会被截成空串
+        # （finish_reason=length，全部 token 被 reasoning 吃掉）。
+        # 这里按 3 倍放大预算并显式关闭思维链输出（业务场景只需正式答案）。
+        if self.model and ("v4" in self.model or "reasoner" in self.model):
+            data["max_tokens"] = mt * 3
+            data["reasoning"] = {"effort": "low"}  # 最短思维链（若网关支持）
 
         if stream:
             return await self._request("chat/completions", data, stream=True)
         else:
             response = await self._request("chat/completions", data, stream=False)
             try:
+                msg = response["choices"][0]["message"]
+                content = msg.get("content") or ""
+                # 推理模型兜底：content 为空但 reasoning_content 有值时，
+                # 说明预算被思维链耗尽——把思维链里的可用文本作为降级返回
+                # （好过返回空串让上层误判为生成失败）
+                if not content.strip():
+                    reasoning = msg.get("reasoning_content") or ""
+                    if reasoning.strip():
+                        content = reasoning.strip()
                 return ChatResponse(
-                    content=response["choices"][0]["message"]["content"],
+                    content=content,
                     usage=response.get("usage", {}),
                     model=response.get("model", self.model),
                 )

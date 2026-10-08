@@ -14,7 +14,41 @@
 
 ---
 
-## 2026-09-30
+## 2026-10-08
+
+### 案例 24：HF 在线探测拖垮启动——reranker 缺少 embedder 已有的离线防御（同类第三例）
+
+**现象**：后端重启后迟迟不就绪（>10 分钟）。日志刷屏 `WinError 10060 ... requesting HEAD https://huggingface.co/BAAI/bge-reranker-base/...`，每个不存在的配置文件（modules.json/processor_config.json/adapter_config.json/preprocessor_config.json…）都要在线探测 5 轮退避重试。模型权重本身 1 秒就加载完了。
+
+**根因**：`embedder.py` 在案例 2 就吃过这个亏，加了 `HF_HUB_OFFLINE=1` + 本地路径查找的双重防御——**但防御只写在 embedder 内部**，reranker（CrossEncoder 直连 model_name）没有。bge-reranker-base 缓存曾探测失败留下 `.no_exist` 标记，后续每次加载仍会对十几个候选配置文件逐个在线探测；国内网络不通时每文件 5 轮×数秒退避，启动延迟分钟级到十分钟级。
+
+**同类问题已三次**（案例 2 embedder、案例 21 扩展默认值、本案例 reranker）——**防御性配置只加在当前出问题的那个调用点，同类的其他调用点全部漏掉**。
+
+**解决方案**：
+1. [src/api/main.py](src/api/main.py) 入口处统一设置 `HF_HUB_OFFLINE=1` + `TRANSFORMERS_OFFLINE=1`（进程级，先于一切 HF import）——从"每模块各自防御"升级为"全局默认离线，需要在线时单点显式开启"
+2. 需要下载时用 `HF_ENDPOINT=https://hf-mirror.com` 镜像单独跑下载脚本（本次 bge-reranker-base 1.1GB 即此方式落地）
+
+**验证**：重启后模型加载到就绪 <30 秒（此前 >10 分钟）；离线加载 CrossEncoder 冒烟打分正常（相关句 1.0 / 无关句 0.0）。
+
+---
+
+### 案例 23：deepseek-v4-pro 是推理模型——content 全空、评审全 1 分、修订空转 3 轮
+
+**现象**：接入真实 API key 后，`/interview/answer` 返回**空答案**、`review_total: 5.0/25`、`revision_count: 3`（修订回环空转）。服务日志无任何 ERROR。直接测 LLM 连通却"正常"。
+
+**根因**（两层叠加，误导性极强）：
+1. **表层**：`deepseek-v4-pro` 为推理（reasoning）模型：输出先写 `reasoning_content`（思维链），正式答案才写 `content`，**两者共享 max_tokens 预算**。`llm_client` 只读 `content`——小预算时（如 `max_tokens=20` 的连通性测试）思维链吃光全部预算，`finish_reason=length`、`content=""`。直接测"回复两个字"恰好命中此路径，看起来"连不通"，实则连得通
+2. **深层**：连通性测试通过后（那次思维链恰好短），真实调用又暴露**账户 402 余额不足**——`chat_sync` 抛异常被 writer 降级捕获，写入错误文案进入评审，评审打 1 分触发修订，修订继续 402，回环 3 轮后返回"空答案+低分"。**上游资金问题的表象被架构的降级/修订机制层层遮蔽**，从现象到根因隔了 4 层
+
+**解决方案**（[src/core/llm_client.py](src/core/llm_client.py)）：
+1. 推理模型识别（model 含 "v4"/"reasoner"）：max_tokens ×3 放大预算；附带 `reasoning: {"effort":"low"}` 请求（网关不支持时自动忽略）
+2. 兜底：content 空但 reasoning_content 非空时返回思维链文本（好过空串让上层误判生成失败）
+3. **错误显性化**：402 → "DeepSeek 账户余额不足，请充值"；401 → "API Key 无效"——资金/凭证类故障必须一眼可辨，不能让它伪装成生成质量问题
+4. 账户充值属用户操作（本项目代码侧已到位）
+
+**验证**：修复后正常任务返回完整答案（"RAG（检索增强生成）是……"56 字精确一句话）；小预算场景走思维链兜底不再空串；402 场景错误信息直指余额。
+
+---
 
 ### 案例 22：扫描去重按 label 拼接键——多段经历的同名字段被静默丢弃
 

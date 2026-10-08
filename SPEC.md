@@ -254,6 +254,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 
 | 日期 | 版本 | 改动 |
 |------|------|------|
+| 10.08 | v27 | **真实环境联调三连修**: ①HF 离线探测拖垮启动（reranker 缺 embedder 已有防御，同类第三例）→ main.py 入口统一 HF_HUB_OFFLINE/TRANSFORMERS_OFFLINE（防御从模块级升为进程级，下载走 hf-mirror 镜像）②deepseek-v4-pro 推理模型适配（content/reasoning_content 共享 max_tokens 预算 → 预算×3 + 思维链兜底）③402/401 错误显性化（余额/凭证故障不再伪装成生成质量问题）。bge-reranker-base 1.1GB 经 hf-mirror 落地本地。对应 BUG_LOG 案例 23/24 |
 | 9.30 | v26 | **表单分区感知（SPEC 3.2 第三项落地）**: 扫描侧分区检测（7 类分区标题正则 + 文档序回溯，标注 section/section_index）；匹配侧按分区路由经历数组、同名字段按序号取档案第 N 条（第2个"学校名称"→educations[1].school）；LLM 兜底带分区信息 + 第二道后处理防线（档案无第 N 段时 LLM 复制值强制 review）；顺带修复扫描去重按 label 误删多段同名字段的静默丢字段缺陷（改按 data-rm-id）。对应 BUG_LOG 案例 22 |
 | 9.30 | v25 | **扩展侧 LLM 边界对齐 + 别名组扩充**: popup 本地匹配修复编造默认值（民族→汉族/政治面貌→共青团员/学历→本科/语言→否——与后端案例19同根因，档案没有的字段改为不填，走 review/留空）；SELECT_ALIASES 26→44+ 组（学历层次/学历要求/到岗时间/语言水平/雅思托福/经验档位/婚姻细分/行业）；CLAUDE.md 架构约束与 SPEC v20 对齐（Milvus Lite + 真并行表述，修 asycio 拼写）。对应 BUG_LOG 案例 21 |
 | 9.29 | v24 | **边界/安全/降级三线加固（不动架构）**: /form/fill 修复 LLM 边界违规（原 prompt 指示填默认值"民族→汉族"等编造行为——改为只映射不编造，档案没有的留空，映射值需能回溯否则降级 review）+ 500 裸抛改规则化降级 + 接入映射缓存（SPEC 3.2 缓存系统落地，key=表单结构+档案指纹）；memory.py 摘要压缩改线程池执行（原同步 new_event_loop 与共享 httpx 连接池冲突）；CORS 修复无效组合（allow_origins=* 与 allow_credentials=True 互斥——收敛白名单，无凭据 cookie）；简历上传文件名消毒（防路径穿越/同名覆盖，冲突追加随机后缀）。对应 BUG_LOG 案例 19/20 |
