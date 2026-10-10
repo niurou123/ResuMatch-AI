@@ -293,9 +293,38 @@ function scanPage(){
 
 function fillPage(data){
   const R=[];
-  if(!document.getElementById('rm-css')){const s=document.createElement('style');s.id='rm-css';s.textContent='[data-rm-status="success"]{outline:2px solid #22c55e!important}[data-rm-status="error"]{outline:2px solid #ef4444!important}';document.head.appendChild(s);}
+  // 样式：成功绿/失败红 outline + 失败悬浮标签 + 统计徽章；成功 15s 后淡出（transition），
+  // 失败保持——视觉验证的核心：填完不用回 popup，页面本身一眼可见成败分布
+  if(!document.getElementById('rm-css')){
+    const s=document.createElement('style');s.id='rm-css';
+    s.textContent=
+      '[data-rm-status="success"]{outline:2px solid #22c55e!important;transition:outline-color 1s ease 15s;outline-offset:1px}'+
+      '[data-rm-status="error"]{outline:2px solid #ef4444!important;outline-offset:1px}'+
+      '.rm-err-tag{position:absolute;z-index:2147483647;background:#ef4444;color:#fff;font:11px/1.4 sans-serif;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3)}'+
+      '#rm-result-badge{position:fixed;right:16px;bottom:16px;z-index:2147483647;font:13px/1.5 sans-serif;color:#fff;padding:10px 14px;border-radius:8px;background:rgba(15,23,42,.95);box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:280px}'+
+      '#rm-result-badge .rm-badge-title{font-weight:600;margin-bottom:4px}'+
+      '#rm-result-badge .rm-badge-item{cursor:pointer;padding:1px 0;color:#c7d2fe}'+
+      '#rm-result-badge .rm-badge-item:hover{color:#fff;text-decoration:underline}';
+    document.head.appendChild(s);
+  }
+  // 清理上次填充的视觉痕迹（错误标签/徽章/淡出的 outline）
+  document.querySelectorAll('.rm-err-tag').forEach(t=>t.remove());
+  const oldBadge=document.getElementById('rm-result-badge');if(oldBadge)oldBadge.remove();
+  document.querySelectorAll('[data-rm-status]').forEach(el=>el.removeAttribute('data-rm-status'));
+
   const isv=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;
   const tsv=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')?.set;
+
+  // 失败项标签：挂在字段上方（视觉验证——不用回 popup 就知道失败原因）
+  function errTag(el,msg){
+    const r=el.getBoundingClientRect();
+    const tag=document.createElement('div');tag.className='rm-err-tag';
+    tag.textContent='✕ '+msg;
+    tag.style.left=Math.max(0,r.left)+'px';
+    tag.style.top=Math.max(0,r.top-20)+'px';
+    tag.style.position='fixed';
+    document.body.appendChild(tag);
+  }
 
   data.forEach(({id,value,strategy,tag,type,options})=>{
     if(!value)return;
@@ -311,6 +340,7 @@ function fillPage(data){
         }
         if(!matched){for(const el of els){if(value[0]&&(el.value||'').includes(value[0])||value.includes(el.value||''[0])){el.click();el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));matched=true;break;}}}
         els[0].setAttribute('data-rm-status',matched?'success':'error');
+        if(!matched)errTag(els[0],'单选无匹配: '+value);
         R.push({label:els[0].getAttribute('data-rm-id'),status:matched?'success':'failed',value});return;
       }
       if(tag==='select'||strategy==='select'||strategy==='custom_select'){
@@ -321,7 +351,7 @@ function fillPage(data){
           if(!found)found=opts.find(o=>o.textContent.includes(value)||(value&&value.includes(o.textContent.trim())));
           if(!found&&value){let b=null,bs=0;opts.forEach(o=>{if(!o.value||o.value==='-1')return;const sc=[...value].filter(c=>o.textContent.includes(c)).length/value.length;if(sc>bs&&sc>=0.3){bs=sc;b=o;}});found=b;}
           if(found){el.value=found.value;el.dispatchEvent(new Event('change',{bubbles:true}));el.setAttribute('data-rm-status','success');R.push({label:id,status:'success',value:found.textContent.trim()});}
-          else{el.setAttribute('data-rm-status','error');R.push({label:id,status:'failed',value,error:'无匹配'});}
+          else{el.setAttribute('data-rm-status','error');errTag(el,'下拉无匹配: '+value);R.push({label:id,status:'failed',value,error:'无匹配'});}
         }else{
           el.click();setTimeout(()=>{},200);
           if(isv)isv.call(el,value);else el.value=value;
@@ -347,8 +377,36 @@ function fillPage(data){
         el.dispatchEvent(new Event('blur',{bubbles:true}));
       }
       el.setAttribute('data-rm-status','success');R.push({label:id,status:'success',value});
-    }catch(e){R.push({label:id,status:'failed',error:e.message});}
+    }catch(e){
+      const failEls=document.querySelectorAll('[data-rm-id="'+id+'"]');
+      if(failEls.length){failEls[0].setAttribute('data-rm-status','error');errTag(failEls[0],String(e.message||'异常').slice(0,40));}
+      R.push({label:id,status:'failed',error:e.message});
+    }
   });
+
+  // ===== 结果统计徽章（填充后视觉验证）=====
+  // 页面右下角常驻 30 秒：成败统计 + 失败项点击定位。用户不必回 popup 即可
+  // 验证填充结果；点击失败项滚动到该字段（红 outline 保持到下次填充）
+  try{
+    const ok=R.filter(x=>x.status==='success').length;
+    const fails=R.filter(x=>x.status!=='success');
+    const badge=document.createElement('div');badge.id='rm-result-badge';
+    const titleColor=ok===R.length?'#22c55e':(fails.length===R.length?'#ef4444':'#f59e0b');
+    badge.innerHTML='<div class="rm-badge-title" style="color:'+titleColor+'">'+
+      'ResuMatch 填充 '+ok+'/'+R.length+'</div>'+
+      (fails.length?'<div style="color:#94a3b8;font-size:11px;margin-bottom:2px">点击失败项定位字段：</div>'+
+        fails.slice(0,6).map(f=>'<div class="rm-badge-item" data-rm-loc="'+String(f.label||'').replace(/"/g,'')+'">✕ '+String(f.label||'?').slice(0,18)+(f.error?' — '+String(f.error).slice(0,20):'')+'</div>').join(''):'');
+    document.body.appendChild(badge);
+    badge.querySelectorAll('.rm-badge-item').forEach(item=>{
+      item.onclick=()=>{
+        const loc=item.getAttribute('data-rm-loc');
+        const target=document.querySelector('[data-rm-id="'+loc+'"]');
+        if(target){target.scrollIntoView({behavior:'smooth',block:'center'});if(target.focus)target.focus();}
+      };
+    });
+    setTimeout(()=>{const b=document.getElementById('rm-result-badge');if(b)b.remove();},30000);
+  }catch(e){/* 徽章失败不影响填充结果本身 */}
+
   return R;
 }
 })();
