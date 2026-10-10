@@ -55,13 +55,17 @@ async def keyword_agent(state: AgentState) -> AgentState:
 
     try:
         self_query = SelfQueryRetriever()
-        try:
-            structured = await asyncio.wait_for(
-                self_query.build_query(query), timeout=15.0
-            )
-        except Exception:
-            # 退路：LLM Self-Query 失败（超时/格式错/网络）→ 规则化结构查询
-            structured = self_query.build_simple(query)
+        # 上游已构建结构化查询（评测预注入 / 复用 Router 结果）则直接采用，
+        # 不再调 LLM——Self-Query 是「可选增强」不是必经步骤
+        structured = state.get("self_query_filter")
+        if not isinstance(structured, dict) or not structured.get("query"):
+            try:
+                structured = await asyncio.wait_for(
+                    self_query.build_query(query), timeout=15.0
+                )
+            except Exception:
+                # 退路：LLM Self-Query 失败（超时/格式错/网络）→ 规则化结构查询
+                structured = self_query.build_simple(query)
         state["self_query_filter"] = structured
 
         top_k = _effective_top_k(state)
