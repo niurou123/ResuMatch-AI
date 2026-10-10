@@ -52,6 +52,23 @@ class ProfileUpdateSkillsRequest(BaseModel):
     skills: list = []
 
 
+class ProfileUpdateBasicRequest(BaseModel):
+    """更新基本信息（只覆盖传入的非空字段；null/空串=不改）"""
+    name: str = ""
+    email: str = ""
+    phone: str = ""
+
+
+class ProfileUpdateEducationRequest(BaseModel):
+    """整体替换教育经历列表"""
+    education: list = []   # [{school, degree, major, time}]
+
+
+class ProfileUpdateAchievementsRequest(BaseModel):
+    """整体替换成果列表"""
+    achievements: list = []  # [{description}]
+
+
 class ProfileMessageResponse(BaseModel):
     """档案操作响应"""
     success: bool = True

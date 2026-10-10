@@ -139,7 +139,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 
 4. **Chrome 插件全栈开发（Manifest V3）**：Background 消息路由 + Content Script 表单扫描填充 + Popup / Sidebar UI，支持 ATS 自动检测（北森 / Moka / 智联 / Ant Design）、React / Vue 受控组件兼容填充、50+ 字段映射规则 + 三级匹配引擎，字段覆盖率 85%+。
 
-5. **档案管理 + 项目RAG文档库**：档案页手动完善项目细节（动态分点列表）；按项目上传资料文档（md/txt/docx/pdf）分块存 Milvus project_docs，面试回答自动检索该项目文档基于真实资料作答。面试对练支持多轮追问 + AI 生成问题 + 语音输入（Web Speech API 中文识别）。
+5. **档案管理 + 项目RAG文档库**：档案页**全字段自由编辑**（基本信息/技能/教育经历/成果/项目增删改，5 个 PUT/DELETE 端点）；**编辑即同步 RAG**（profile_sync：档案改动后重建简历四集合向量索引，手动维护的项目细节/难点/挑战/职责进入检索）；**档案与网申助手联通**（GET /profile/export 转扩展格式，popup/sidebar 每次扫描/打开时从后端拉最新档案，本地 chrome.storage 退化为离线缓存）；按项目上传资料文档（md/txt/docx/pdf）分块存 Milvus project_docs，面试回答自动检索该项目文档基于真实资料作答。面试对练支持多轮追问 + AI 生成问题 + 语音输入（Web Speech API 中文识别）。
 
 6. **工程与稳定性**：React + Chrome 插件双前端，22 API 端点（20条路径，含 SSE 流式与 LLM-as-Judge 评测），端到端测试覆盖全链路。Redis 会话持久化 + LLM 语义缓存（embedding 近邻命中）+ 降级退路；三层会话记忆 + LLM 摘要压缩（>48K tokens → ≤500 字）；错误隔离 + 退路机制（LLM 不可用时规则化降级）。
 
@@ -254,6 +254,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 
 | 日期 | 版本 | 改动 |
 |------|------|------|
+| 10.10 | v28 | **档案全字段编辑 + RAG 同步 + 网申助手联通（三合一闭环）**: ①档案页自由编辑扩展到全部区块（基本信息/教育/成果新增 3 端点，原本只读展示）②编辑即同步 RAG（profile_sync.py：档案改动重建简历四集合，手填的细节/难点/挑战/职责进向量索引——此前编辑只写 profile.json，检索永远看到旧数据）③档案↔网申助手联通（GET /profile/export 转扩展扁平格式；popup 扫描/sidebar 打开档案面板时从后端拉最新，chrome.storage 降级为离线缓存）④LLM 缓存随档案变更失效。服务进程内实测：编辑技能→Milvus 18 条即时重建；编辑项目手填难点→面试检索 25 条素材三路命中；导出格式含 bullets/challenges。pytest 28/28，tsc 干净 |
 | 10.08 | v27 | **真实环境联调三连修**: ①HF 离线探测拖垮启动（reranker 缺 embedder 已有防御，同类第三例）→ main.py 入口统一 HF_HUB_OFFLINE/TRANSFORMERS_OFFLINE（防御从模块级升为进程级，下载走 hf-mirror 镜像）②deepseek-v4-pro 推理模型适配（content/reasoning_content 共享 max_tokens 预算 → 预算×3 + 思维链兜底）③402/401 错误显性化（余额/凭证故障不再伪装成生成质量问题）。bge-reranker-base 1.1GB 经 hf-mirror 落地本地。对应 BUG_LOG 案例 23/24 |
 | 9.30 | v26 | **表单分区感知（SPEC 3.2 第三项落地）**: 扫描侧分区检测（7 类分区标题正则 + 文档序回溯，标注 section/section_index）；匹配侧按分区路由经历数组、同名字段按序号取档案第 N 条（第2个"学校名称"→educations[1].school）；LLM 兜底带分区信息 + 第二道后处理防线（档案无第 N 段时 LLM 复制值强制 review）；顺带修复扫描去重按 label 误删多段同名字段的静默丢字段缺陷（改按 data-rm-id）。对应 BUG_LOG 案例 22 |
 | 9.30 | v25 | **扩展侧 LLM 边界对齐 + 别名组扩充**: popup 本地匹配修复编造默认值（民族→汉族/政治面貌→共青团员/学历→本科/语言→否——与后端案例19同根因，档案没有的字段改为不填，走 review/留空）；SELECT_ALIASES 26→44+ 组（学历层次/学历要求/到岗时间/语言水平/雅思托福/经验档位/婚姻细分/行业）；CLAUDE.md 架构约束与 SPEC v20 对齐（Milvus Lite + 真并行表述，修 asycio 拼写）。对应 BUG_LOG 案例 21 |

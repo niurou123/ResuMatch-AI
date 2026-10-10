@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { getProfileDetail, updateProfileProject, deleteProfileProject, updateProfileSkills, uploadProjectDoc, listProjectDocs } from '@/lib/api';
+import {
+  getProfileDetail, updateProfileProject, deleteProfileProject, updateProfileSkills,
+  updateProfileBasic, updateProfileEducation, updateProfileAchievements,
+  uploadProjectDoc, listProjectDocs,
+} from '@/lib/api';
 
 interface ProjectItem {
   name: string;
@@ -74,6 +78,26 @@ export function Profile() {
     setSkillInput('');
   };
 
+  // ===== 基本信息编辑 =====
+  const [basicForm, setBasicForm] = useState({ name: '', email: '', phone: '' });
+  useEffect(() => {
+    setBasicForm({
+      name: profile.name || '',
+      email: profile.email || '',
+      phone: profile.phone || '',
+    });
+  }, [profile]);
+
+  const handleSaveBasic = async () => {
+    try {
+      const res = await updateProfileBasic(basicForm);
+      toast.success(res.message || '基本信息已保存');
+      await load();
+    } catch (err) {
+      toast.error(`保存基本信息失败: ${(err as Error).message}`);
+    }
+  };
+
   // ===== 项目编辑 =====
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [form, setForm] = useState<ProjectItem>({ ...EMPTY_PROJECT });
@@ -143,17 +167,18 @@ export function Profile() {
         <p className="text-text-2 text-sm">加载中...</p>
       ) : (
         <div className="space-y-5">
-          {/* 基本信息 */}
-          {profile.name && (
-            <div className="card-custom">
-              <div className="card-header">基本信息</div>
-              <div className="flex gap-6 text-sm flex-wrap">
-                <span className="text-text-2">{profile.name}</span>
-                {profile.email && <span className="text-text-3">{profile.email}</span>}
-                {profile.phone && <span className="text-text-3">{profile.phone}</span>}
-              </div>
+          {/* 基本信息（自由编辑） */}
+          <div className="card-custom">
+            <div className="card-header">基本信息</div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="姓名" value={basicForm.name} onChange={(v) => setBasicForm({ ...basicForm, name: v })} />
+              <Field label="邮箱" value={basicForm.email} onChange={(v) => setBasicForm({ ...basicForm, email: v })} />
+              <Field label="电话" value={basicForm.phone} onChange={(v) => setBasicForm({ ...basicForm, phone: v })} />
             </div>
-          )}
+            <div className="mt-3">
+              <button className="btn-gradient" onClick={handleSaveBasic}>保存基本信息</button>
+            </div>
+          </div>
 
           {/* 技能编辑 */}
           <div className="card-custom">
@@ -182,6 +207,12 @@ export function Profile() {
               <button className="btn-gradient" onClick={handleSaveSkills}>保存技能</button>
             </div>
           </div>
+
+          {/* 教育经历（自由编辑） */}
+          <EducationEditor profile={profile} onSaved={load} />
+
+          {/* 成果列表（自由编辑） */}
+          <AchievementsEditor profile={profile} onSaved={load} />
 
           {/* 项目列表 */}
           <div className="card-custom">
@@ -359,6 +390,127 @@ function ProjectDocs({ projectName }: { projectName: string }) {
       ) : (
         <p className="text-text-3 text-xs">尚未上传资料，可上传技术栈/模型/项目细节文档</p>
       )}
+    </div>
+  );
+}
+
+// 教育经历编辑器：增删改各段（学校/学历/专业/时间），整体保存
+function EducationEditor({ profile, onSaved }: { profile: Record<string, any>; onSaved: () => void }) {
+  const [list, setList] = useState<{ school: string; degree: string; major: string; time: string }[]>([]);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    const edu = (profile.education || []).map((e: any) => ({
+      school: e.school || '', degree: e.degree || '', major: e.major || '', time: e.time || '',
+    }));
+    setList(edu.length ? edu : [{ school: '', degree: '', major: '', time: '' }]);
+    setDirty(false);
+  }, [profile]);
+
+  const update = (idx: number, key: string, val: string) => {
+    setList(list.map((e, i) => (i === idx ? { ...e, [key]: val } : e)));
+    setDirty(true);
+  };
+  const remove = (idx: number) => {
+    const next = list.filter((_, i) => i !== idx);
+    setList(next.length ? next : [{ school: '', degree: '', major: '', time: '' }]);
+    setDirty(true);
+  };
+  const add = () => { setList([...list, { school: '', degree: '', major: '', time: '' }]); setDirty(true); };
+
+  const save = async () => {
+    const payload = list.filter((e) => e.school.trim() || e.degree.trim() || e.major.trim());
+    if (!payload.length) { toast.error('至少填写一段教育经历（学校/学历/专业）'); return; }
+    try {
+      const res = await updateProfileEducation(payload);
+      toast.success(res.message || '教育经历已保存');
+      setDirty(false);
+      onSaved();
+    } catch (err) {
+      toast.error(`保存教育经历失败: ${(err as Error).message}`);
+    }
+  };
+
+  return (
+    <div className="card-custom">
+      <div className="card-header">教育经历（{list.filter((e) => e.school || e.degree || e.major).length}）</div>
+      <div className="space-y-3">
+        {list.map((e, i) => (
+          <div key={i} className="p-3 rounded-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #2a2a5a' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-text-3 text-xs">第 {i + 1} 段</span>
+              <button className="px-2 py-0.5 rounded-btn text-xs border border-border text-danger" onClick={() => remove(i)} title="删除此段">×</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="学校" value={e.school} onChange={(v) => update(i, 'school', v)} />
+              <Field label="学历" value={e.degree} onChange={(v) => update(i, 'degree', v)} />
+              <Field label="专业" value={e.major} onChange={(v) => update(i, 'major', v)} />
+              <Field label="时间" value={e.time} onChange={(v) => update(i, 'time', v)} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2 mt-3">
+        <button className="px-3 py-1.5 rounded-btn text-sm border border-border text-text-2 hover:text-text" onClick={add}>＋ 添加一段</button>
+        <button className="btn-gradient" onClick={save} style={dirty ? undefined : { opacity: 0.6 }}>保存教育经历</button>
+      </div>
+    </div>
+  );
+}
+
+// 成果列表编辑器：逐条增删改，整体保存
+function AchievementsEditor({ profile, onSaved }: { profile: Record<string, any>; onSaved: () => void }) {
+  const [list, setList] = useState<string[]>([]);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    const ach = (profile.achievements || []).map((a: any) => a.description || '').filter(Boolean);
+    setList(ach.length ? ach : ['']);
+    setDirty(false);
+  }, [profile]);
+
+  const update = (idx: number, val: string) => { setList(list.map((it, i) => (i === idx ? val : it))); setDirty(true); };
+  const remove = (idx: number) => {
+    const next = list.filter((_, i) => i !== idx);
+    setList(next.length ? next : ['']);
+    setDirty(true);
+  };
+  const add = () => { setList([...list, '']); setDirty(true); };
+
+  const save = async () => {
+    const payload = list.map((s) => s.trim()).filter(Boolean);
+    if (!payload.length) { toast.error('至少填写一条成果'); return; }
+    try {
+      const res = await updateProfileAchievements(payload);
+      toast.success(res.message || '成果列表已保存');
+      setDirty(false);
+      onSaved();
+    } catch (err) {
+      toast.error(`保存成果失败: ${(err as Error).message}`);
+    }
+  };
+
+  return (
+    <div className="card-custom">
+      <div className="card-header">关键成果（{list.filter((s) => s.trim()).length}）</div>
+      <div className="space-y-2">
+        {list.map((it, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="text-text-3 text-xs shrink-0 w-5">{i + 1}.</span>
+            <input
+              className="flex-1 bg-surface border border-border rounded-btn px-3 py-1.5 text-text text-sm focus:outline-none focus:border-primary"
+              value={it}
+              placeholder={`第 ${i + 1} 条成果（如：引用准确率35.6%→100%）`}
+              onChange={(e) => update(i, e.target.value)}
+            />
+            <button className="px-2 py-1 rounded-btn text-xs border border-border text-danger" onClick={() => remove(i)} title="删除此项">×</button>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2 mt-3">
+        <button className="px-3 py-1.5 rounded-btn text-sm border border-border text-text-2 hover:text-text" onClick={add}>＋ 添加一条</button>
+        <button className="btn-gradient" onClick={save} style={dirty ? undefined : { opacity: 0.6 }}>保存成果</button>
+      </div>
     </div>
   );
 }

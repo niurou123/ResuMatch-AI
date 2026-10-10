@@ -13,7 +13,9 @@ import json
 from src.api.schemas import (
     ResumeUploadResponse, ProfileResponse,
     ProfileDetailResponse, ProfileUpdateProjectRequest,
-    ProfileUpdateSkillsRequest, ProfileMessageResponse,
+    ProfileUpdateSkillsRequest, ProfileUpdateBasicRequest,
+    ProfileUpdateEducationRequest, ProfileUpdateAchievementsRequest,
+    ProfileMessageResponse,
     InterviewRequest, InterviewResponse,
     JudgeRequest, JudgeResponse,
     MockInterviewStartRequest, MockInterviewStartResponse,
@@ -484,6 +486,7 @@ async def update_project(request: ProfileUpdateProjectRequest):
 
     profile["projects"] = projects
     ProfileStore.save(profile)
+    _sync_profile_rag(profile)
     return ProfileMessageResponse(success=True, message="项目已保存")
 
 
@@ -498,7 +501,25 @@ async def delete_project(project_index: int = -1):
     removed = projects.pop(project_index)
     profile["projects"] = projects
     ProfileStore.save(profile)
+    _sync_profile_rag(profile)
     return ProfileMessageResponse(success=True, message=f"已删除项目: {removed.get('name', '')}")
+
+
+def _sync_profile_rag(profile: dict) -> None:
+    """档案编辑后的 RAG 同步（错误隔离：同步失败不影响档案保存本身）。
+
+    档案检索（面试问答/对练）读的是向量库——只写 profile.json 不同步索引，
+    检索看到的永远是编辑前的旧内容。同步失败时打 WARN 降级（下次编辑会再同步）。
+    """
+    try:
+        from src.rag.profile_sync import sync_profile_to_rag
+        result = sync_profile_to_rag(profile)
+        print(f"[ProfileSync] 索引已重建: {result.get('indexed', 0)} 条 → {result.get('collections')}")
+        # 档案变更 → LLM 语义缓存失效（旧答案基于旧档案，不可复用）
+        llm_cache.flush_prefix("mock_answer")
+        llm_cache.flush_prefix("form_fill")
+    except Exception as e:
+        print(f"[WARN] 档案 RAG 同步失败（下次编辑将重试）: {e}")
 
 
 @router.put("/profile/skills", response_model=ProfileMessageResponse)
@@ -515,7 +536,158 @@ async def update_skills(request: ProfileUpdateSkillsRequest):
             skills.append({"name": s["name"], "category": s.get("category", "manual")})
     profile["skills"] = skills
     ProfileStore.save(profile)
+    _sync_profile_rag(profile)
     return ProfileMessageResponse(success=True, message=f"已保存 {len(skills)} 项技能")
+
+
+@router.put("/profile/basic", response_model=ProfileMessageResponse)
+async def update_basic(request: ProfileUpdateBasicRequest):
+    """更新基本信息（只覆盖传入的非空字段，空串=不修改）"""
+    from src.features.profile_store import ProfileStore
+    profile = ProfileStore.load()
+    changed = []
+    if request.name.strip():
+        profile["name"] = request.name.strip(); changed.append("姓名")
+    if request.email.strip():
+        profile["email"] = request.email.strip(); changed.append("邮箱")
+    if request.phone.strip():
+        profile["phone"] = request.phone.strip(); changed.append("电话")
+    if not changed:
+        return ProfileMessageResponse(success=True, message="未提供任何修改")
+    ProfileStore.save(profile)
+    # 基本信息（姓名/邮箱/电话）不进向量索引（不参与语义检索），
+    # 但 LLM 缓存里的旧答案可能引用旧姓名 → 失效
+    try:
+        llm_cache.flush_prefix("mock_answer")
+    except Exception:
+        pass
+    return ProfileMessageResponse(success=True, message=f"已更新: {', '.join(changed)}")
+
+
+@router.put("/profile/education", response_model=ProfileMessageResponse)
+async def update_education(request: ProfileUpdateEducationRequest):
+    """整体替换教育经历列表"""
+    from src.features.profile_store import ProfileStore
+    profile = ProfileStore.load()
+    education = []
+    for e in request.education:
+        if isinstance(e, dict) and (e.get("school") or e.get("degree") or e.get("major")):
+            education.append({
+                "school": (e.get("school") or "").strip(),
+                "degree": (e.get("degree") or "").strip(),
+                "major": (e.get("major") or "").strip(),
+                "time": (e.get("time") or "").strip(),
+            })
+        elif isinstance(e, str) and e.strip():
+            education.append({"school": e.strip(), "degree": "", "major": "", "time": ""})
+    profile["education"] = education
+    ProfileStore.save(profile)
+    _sync_profile_rag(profile)
+    return ProfileMessageResponse(success=True, message=f"已保存 {len(education)} 段教育经历")
+
+
+@router.put("/profile/achievements", response_model=ProfileMessageResponse)
+async def update_achievements(request: ProfileUpdateAchievementsRequest):
+    """整体替换成果列表"""
+    from src.features.profile_store import ProfileStore
+    profile = ProfileStore.load()
+    achievements = []
+    for a in request.achievements:
+        desc = a.get("description") if isinstance(a, dict) else str(a)
+        if desc and str(desc).strip():
+            achievements.append({"description": str(desc).strip()})
+    profile["achievements"] = achievements
+    ProfileStore.save(profile)
+    _sync_profile_rag(profile)
+    return ProfileMessageResponse(success=True, message=f"已保存 {len(achievements)} 条成果")
+
+
+@router.get("/profile/export")
+async def export_profile_for_extension():
+    """导出档案为扩展（chrome.storage）格式 — 档案页编辑与网申助手联通。
+
+    扩展侧打开档案面板时优先拉本端点（后端档案是唯一事实源），
+    本地 chrome.storage 退化为离线缓存。格式与 sidebar 上传时
+    构造的扁平 profile 完全一致（popup 的 FIELD_RULES 匹配它）。
+    """
+    from src.features.profile_store import ProfileStore
+    p = ProfileStore.load()
+    if not p:
+        return {"profile": None, "message": "尚未上传简历"}
+
+    # 技能按类别分组（扩展格式：[{category, items}]）
+    by_cat: Dict[str, list] = {}
+    for s in p.get("skills", []):
+        name = s.get("name", "") if isinstance(s, dict) else str(s)
+        cat = s.get("category", "other") if isinstance(s, dict) else "other"
+        if name:
+            by_cat.setdefault(cat, [])
+            if name not in by_cat[cat]:
+                by_cat[cat].append(name)
+
+    # 经历：项目 + work_experience（实习/工作）
+    experiences = []
+    for proj in p.get("projects", []):
+        details = [str(d) for d in (proj.get("details") or []) if str(d).strip()]
+        difficulties = [str(d) for d in (proj.get("difficulties") or []) if str(d).strip()]
+        achievements_list = [proj["key_result"]] if proj.get("key_result") else []
+        experiences.append({
+            "type": "项目",
+            "organization": proj.get("name", ""),
+            "role": proj.get("role", ""),
+            "startDate": "", "endDate": "",
+            "description": proj.get("description", ""),
+            "techStack": proj.get("tech_stack") or [],
+            "achievements": achievements_list,
+            "bullets": details + difficulties,  # 档案页手动维护的细节/难点
+            "challenges": proj.get("challenges", ""),
+            "responsibilities": proj.get("responsibilities", ""),
+        })
+    for w in (p.get("work_experience") or []):
+        experiences.append({
+            "type": "实习",
+            "organization": w.get("company", ""),
+            "role": w.get("position", ""),
+            "startDate": "", "endDate": "",
+            "description": w.get("description", ""),
+            "techStack": [], "achievements": [], "bullets": [],
+        })
+
+    # 教育（扩展格式）
+    educations = []
+    for e in p.get("education", []):
+        degree = e.get("degree", "") or ""
+        time_str = e.get("time", "") or ""
+        parts = [t.strip() for t in time_str.replace("–", "-").split("-") if t.strip()]
+        educations.append({
+            "type": "硕士" if "硕士" in degree else ("博士" if "博士" in degree else "本科"),
+            "school": e.get("school", ""),
+            "major": e.get("major", ""),
+            "degree": degree,
+            "startDate": parts[0] if parts else "",
+            "endDate": parts[1] if len(parts) > 1 else "",
+            "college": "", "gpa": "", "ranking": "", "cet4": "", "cet6": "",
+        })
+
+    profile = {
+        "name": p.get("name", ""),
+        "email": p.get("email", ""),
+        "phone": p.get("phone", ""),
+        "gender": "", "birthDate": "", "idNumber": "",
+        "ethnicity": "", "politicalStatus": "",
+        "nativePlace": "", "currentCity": "", "wechat": "",
+        "educations": educations,
+        "experiences": experiences,
+        "skills": [{"category": c, "items": items} for c, items in by_cat.items()],
+        "targetCities": [], "targetPositions": [], "expectedSalary": "",
+        "selfEvaluation": "",
+        "awards": "；".join(
+            (a.get("description", "") if isinstance(a, dict) else str(a)).strip()
+            for a in p.get("achievements", []) if a
+        ),
+        "publications": "", "competitions": "",
+    }
+    return {"profile": profile, "message": "ok"}
 
 
 # ===== 项目资料库（RAG 文档） =====

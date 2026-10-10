@@ -28,6 +28,24 @@ const api = {
     return r.json();
   },
 
+  // 档案导出（扩展格式）——档案页编辑与网申助手联通的数据源
+  async getProfileExport() {
+    const r = await fetch(`${API_BASE}/profile/export`);
+    return r.json();
+  },
+
+  // 拉取最新档案并写入 chrome.storage（供 popup 匹配使用）
+  async syncProfileFromBackend() {
+    try {
+      const d = await this.getProfileExport();
+      if (d && d.profile) {
+        await chrome.storage.local.set({ profile: d.profile, profileTime: Date.now() });
+        return true;
+      }
+    } catch { /* 后端不可用 → 保留本地缓存（离线兜底） */ }
+    return false;
+  },
+
   // 面试问答
   async interviewAnswer(question) {
     const r = await fetch(`${API_BASE}/interview/answer`, {

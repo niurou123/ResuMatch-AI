@@ -25,6 +25,12 @@ $('#scan').onclick=()=>{
       // Dedup：按元素 id（data-rm-id 唯一）。不能按 label——多段教育/项目经历
       // 的同名字段（第2个"学校名称"）是合法的独立字段，按 label 去重会把它们删掉
       const seen=new Set();fields=fields.filter(f=>{if(seen.has(f.id))return false;seen.add(f.id);return true;});
+      // 档案联通：扫描时先从后端同步最新档案（档案页编辑即时生效），
+      // 同步失败回退本地 chrome.storage 快照（离线兜底，填充功能不中断）
+      if(window.ResuMatchAPI){
+        const ok=await window.ResuMatchAPI.syncProfileFromBackend();
+        if(ok)console.log('[Popup] 档案已从后端同步（最新编辑）');
+      }
       const d=await chrome.storage.local.get(['profile']);profile=d.profile;
 
       // Local match（分区感知：同分区同名字段按出现序号对应档案第 N 条经历）

@@ -83,6 +83,17 @@ export const deleteProfileProject = (projectIndex: number) =>
 export const updateProfileSkills = (skills: string[]) =>
   api.put<{ success: boolean; message: string }>('/api/v1/profile/skills', { skills });
 
+// ===== 档案自由编辑（基本信息/教育/成果） =====
+export const updateProfileBasic = (payload: { name?: string; email?: string; phone?: string }) =>
+  api.put<{ success: boolean; message: string }>('/api/v1/profile/basic', payload);
+
+export interface EducationItem { school?: string; degree?: string; major?: string; time?: string }
+export const updateProfileEducation = (education: EducationItem[]) =>
+  api.put<{ success: boolean; message: string }>('/api/v1/profile/education', { education });
+
+export const updateProfileAchievements = (achievements: string[]) =>
+  api.put<{ success: boolean; message: string }>('/api/v1/profile/achievements', { achievements });
+
 // ===== 项目资料库（RAG 文档） =====
 export const uploadProjectDoc = (projectName: string, file: File) => {
   const fd = new FormData();

@@ -126,6 +126,12 @@ $('#btnUpload').onclick=async()=>{
 
 // ===== Profile Panel =====
 async function renderProfilePanel(){
+  // 档案联通：后端是唯一事实源（档案页编辑即时生效），本地 storage 退化为离线缓存。
+  // 后端不可用或未上传时回退本地快照——网申填充不因断网失效
+  if(window.ResuMatchAPI){
+    const synced = await window.ResuMatchAPI.syncProfileFromBackend();
+    if(synced) console.log('[Sidebar] 档案已从后端同步');
+  }
   const {profile}=await chrome.storage.local.get(['profile']);
   if(!profile){
     $('#profileStats').innerHTML='<div class="stat-card"><div class="stat-value">-</div><div class="stat-label">未上传</div></div>';
