@@ -1,0 +1,1198 @@
+{
+ "B01": {
+  "name": "陈某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "Kubernetes",
+    "category": "eval"
+   },
+   {
+    "name": "Celery",
+    "category": "eval"
+   },
+   {
+    "name": "Python",
+    "category": "eval"
+   },
+   {
+    "name": "pytest",
+    "category": "eval"
+   },
+   {
+    "name": "SQLAlchemy",
+    "category": "eval"
+   },
+   {
+    "name": "Django",
+    "category": "eval"
+   },
+   {
+    "name": "Docker",
+    "category": "eval"
+   },
+   {
+    "name": "FastAPI",
+    "category": "eval"
+   },
+   {
+    "name": "Redis",
+    "category": "eval"
+   },
+   {
+    "name": "MySQL",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "电商订单中台",
+    "role": "后端负责人",
+    "tech_stack": [
+     "FastAPI",
+     "MySQL",
+     "Redis",
+     "Celery"
+    ],
+    "time_period": "",
+    "key_result": "订单接口 P99 延迟 800ms→120ms",
+    "description": "处理日均10万订单的订单中台，异步削峰、幂等防重、分布式事务",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "数据同步管道",
+    "role": "核心开发",
+    "tech_stack": [
+     "Python",
+     "Kafka",
+     "MySQL"
+    ],
+    "time_period": "",
+    "key_result": "同步延迟分钟级→秒级",
+    "description": "多源异构数据库到数仓的准实时同步管道，CDC + 断点续传",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "电商订单中台：订单接口 P99 延迟 800ms→120ms"
+   },
+   {
+    "description": "数据同步管道：同步延迟分钟级→秒级"
+   }
+  ],
+  "education": [
+   {
+    "school": "华南理工大学",
+    "degree": "硕士",
+    "major": "计算机技术",
+    "time": "2024-2027"
+   },
+   {
+    "school": "郑州大学",
+    "degree": "学士",
+    "major": "软件工程",
+    "time": "2020-2024"
+   }
+  ]
+ },
+ "B02": {
+  "name": "林某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "TypeScript",
+    "category": "eval"
+   },
+   {
+    "name": "Playwright",
+    "category": "eval"
+   },
+   {
+    "name": "React",
+    "category": "eval"
+   },
+   {
+    "name": "Vue",
+    "category": "eval"
+   },
+   {
+    "name": "TailwindCSS",
+    "category": "eval"
+   },
+   {
+    "name": "Three.js",
+    "category": "eval"
+   },
+   {
+    "name": "Webpack",
+    "category": "eval"
+   },
+   {
+    "name": "WebGL",
+    "category": "eval"
+   },
+   {
+    "name": "Vite",
+    "category": "eval"
+   },
+   {
+    "name": "Node.js",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "可视化大屏引擎",
+    "role": "前端负责人",
+    "tech_stack": [
+     "React",
+     "Three.js",
+     "WebGL"
+    ],
+    "time_period": "",
+    "key_result": "首屏渲染 4s→1.2s",
+    "description": "工业监控 3D 可视化大屏，WebGL 渲染管线优化 + 数据驱动场景",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "低代码表单引擎",
+    "role": "核心开发",
+    "tech_stack": [
+     "Vue",
+     "TypeScript",
+     "Vite"
+    ],
+    "time_period": "",
+    "key_result": "表单搭建效率提升 10 倍",
+    "description": "拖拽式表单搭建引擎，Schema 驱动渲染 + 自定义组件生态",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "可视化大屏引擎：首屏渲染 4s→1.2s"
+   },
+   {
+    "description": "低代码表单引擎：搭建效率提升 10 倍"
+   }
+  ],
+  "education": [
+   {
+    "school": "厦门大学",
+    "degree": "学士",
+    "major": "数字媒体技术",
+    "time": "2021-2025"
+   }
+  ]
+ },
+ "B03": {
+  "name": "高某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "Python",
+    "category": "eval"
+   },
+   {
+    "name": "jieba",
+    "category": "eval"
+   },
+   {
+    "name": "Sentence-Transformers",
+    "category": "eval"
+   },
+   {
+    "name": "RAG",
+    "category": "eval"
+   },
+   {
+    "name": "Milvus",
+    "category": "eval"
+   },
+   {
+    "name": "Transformers",
+    "category": "eval"
+   },
+   {
+    "name": "DeepSpeed",
+    "category": "eval"
+   },
+   {
+    "name": "PyTorch",
+    "category": "eval"
+   },
+   {
+    "name": "LoRA",
+    "category": "eval"
+   },
+   {
+    "name": "LangChain",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "企业知识库问答系统",
+    "role": "算法负责人",
+    "tech_stack": [
+     "LangChain",
+     "Milvus",
+     "RAG"
+    ],
+    "time_period": "",
+    "key_result": "检索 Recall@5 达 92%",
+    "description": "十万级文档企业知识库的 RAG 问答：混合检索 + 重排 + 引用溯源",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "领域模型微调",
+    "role": "核心开发",
+    "tech_stack": [
+     "LoRA",
+     "DeepSpeed",
+     "PyTorch"
+    ],
+    "time_period": "",
+    "key_result": "领域评测准确率 61%→84%",
+    "description": "法律领域 LLM 的 LoRA 微调：指令数据清洗 + 分布式训练",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "企业知识库问答：Recall@5 达 92%"
+   },
+   {
+    "description": "领域微调：准确率 61%→84%"
+   }
+  ],
+  "education": [
+   {
+    "school": "中国科学技术大学",
+    "degree": "硕士",
+    "major": "人工智能",
+    "time": "2024-2027"
+   },
+   {
+    "school": "合肥工业大学",
+    "degree": "学士",
+    "major": "计算机科学",
+    "time": "2020-2024"
+   }
+  ]
+ },
+ "B04": {
+  "name": "徐某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "Python",
+    "category": "eval"
+   },
+   {
+    "name": "Doris",
+    "category": "eval"
+   },
+   {
+    "name": "Flink",
+    "category": "eval"
+   },
+   {
+    "name": "Docker",
+    "category": "eval"
+   },
+   {
+    "name": "ClickHouse",
+    "category": "eval"
+   },
+   {
+    "name": "Spark",
+    "category": "eval"
+   },
+   {
+    "name": "SQL",
+    "category": "eval"
+   },
+   {
+    "name": "Hive",
+    "category": "eval"
+   },
+   {
+    "name": "Airflow",
+    "category": "eval"
+   },
+   {
+    "name": "Kafka",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "实时数仓平台",
+    "role": "数据平台负责人",
+    "tech_stack": [
+     "Flink",
+     "Kafka",
+     "Doris"
+    ],
+    "time_period": "",
+    "key_result": "指标时效 T+1→5分钟",
+    "description": "实时数仓：Flink CDC + Kafka + Doris 构成的分钟级指标体系",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "数据质量监控",
+    "role": "核心开发",
+    "tech_stack": [
+     "Python",
+     "Airflow",
+     "Spark"
+    ],
+    "time_period": "",
+    "key_result": "数据事故发现时间 2h→5min",
+    "description": "全链路数据质量监控：波动检测 + 血缘追溯 + 自动告警",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "实时数仓：指标时效 T+1→5分钟"
+   },
+   {
+    "description": "数据质量监控：事故发现 2h→5min"
+   }
+  ],
+  "education": [
+   {
+    "school": "武汉大学",
+    "degree": "硕士",
+    "major": "大数据",
+    "time": "2023-2026"
+   },
+   {
+    "school": "华中科技大学",
+    "degree": "学士",
+    "major": "信息管理",
+    "time": "2019-2023"
+   }
+  ]
+ },
+ "B05": {
+  "name": "孙某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "Allure",
+    "category": "eval"
+   },
+   {
+    "name": "Git",
+    "category": "eval"
+   },
+   {
+    "name": "Playwright",
+    "category": "eval"
+   },
+   {
+    "name": "Locust",
+    "category": "eval"
+   },
+   {
+    "name": "Selenium",
+    "category": "eval"
+   },
+   {
+    "name": "Jmeter",
+    "category": "eval"
+   },
+   {
+    "name": "Python",
+    "category": "eval"
+   },
+   {
+    "name": "pytest",
+    "category": "eval"
+   },
+   {
+    "name": "Jenkins",
+    "category": "eval"
+   },
+   {
+    "name": "Docker",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "自动化回归体系",
+    "role": "测试负责人",
+    "tech_stack": [
+     "Playwright",
+     "pytest",
+     "Jenkins"
+    ],
+    "time_period": "",
+    "key_result": "回归时长 6h→40min",
+    "description": "UI + API 双层自动化回归，CI 流水线集成与失败自愈",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "全链路压测平台",
+    "role": "核心开发",
+    "tech_stack": [
+     "Locust",
+     "Python",
+     "InfluxDB"
+    ],
+    "time_period": "",
+    "key_result": "定位 3 个容量瓶颈",
+    "description": "全链路压测平台：流量染色 + 影子库隔离 + 实时监控大屏",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "自动化回归：时长 6h→40min"
+   },
+   {
+    "description": "全链路压测：定位 3 个容量瓶颈"
+   }
+  ],
+  "education": [
+   {
+    "school": "大连理工大学",
+    "degree": "学士",
+    "major": "软件工程",
+    "time": "2021-2025"
+   }
+  ]
+ },
+ "B06": {
+  "name": "周某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "Fastlane",
+    "category": "eval"
+   },
+   {
+    "name": "SQLite",
+    "category": "eval"
+   },
+   {
+    "name": "Flutter",
+    "category": "eval"
+   },
+   {
+    "name": "Android",
+    "category": "eval"
+   },
+   {
+    "name": "RxJava",
+    "category": "eval"
+   },
+   {
+    "name": "iOS",
+    "category": "eval"
+   },
+   {
+    "name": "Kotlin",
+    "category": "eval"
+   },
+   {
+    "name": "React Native",
+    "category": "eval"
+   },
+   {
+    "name": "Swift",
+    "category": "eval"
+   },
+   {
+    "name": "Compose",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "跨端电商 App",
+    "role": "移动端负责人",
+    "tech_stack": [
+     "Flutter",
+     "Dart"
+    ],
+    "time_period": "",
+    "key_result": "双端人力 2组→1组",
+    "description": "一套代码双端发布的电商 App：首页动态化 + 购物车流畅度优化",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "音视频互动课堂",
+    "role": "核心开发",
+    "tech_stack": [
+     "React Native",
+     "WebRTC"
+    ],
+    "time_period": "",
+    "key_result": "弱网卡顿率 12%→1.5%",
+    "description": "1v1 与小班课互动课堂：弱网对抗 + 互动白板同步",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "跨端电商：崩溃率 0.9%→0.08%"
+   },
+   {
+    "description": "互动课堂：弱网卡顿率 12%→1.5%"
+   }
+  ],
+  "education": [
+   {
+    "school": "东南大学",
+    "degree": "硕士",
+    "major": "电子信息",
+    "time": "2023-2026"
+   },
+   {
+    "school": "南京航空航天大学",
+    "degree": "学士",
+    "major": "物联网",
+    "time": "2019-2023"
+   }
+  ]
+ },
+ "B07": {
+  "name": "吴某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "gRPC",
+    "category": "eval"
+   },
+   {
+    "name": "Lua",
+    "category": "eval"
+   },
+   {
+    "name": "Terraform",
+    "category": "eval"
+   },
+   {
+    "name": "Istio",
+    "category": "eval"
+   },
+   {
+    "name": "etcd",
+    "category": "eval"
+   },
+   {
+    "name": "Kubernetes",
+    "category": "eval"
+   },
+   {
+    "name": "Go",
+    "category": "eval"
+   },
+   {
+    "name": "Prometheus",
+    "category": "eval"
+   },
+   {
+    "name": "Nginx",
+    "category": "eval"
+   },
+   {
+    "name": "Java",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "服务网格落地",
+    "role": "架构组核心",
+    "tech_stack": [
+     "Istio",
+     "Kubernetes"
+    ],
+    "time_period": "",
+    "key_result": "灰度发布全自动化",
+    "description": "全公司 200+ 微服务的 Istio 服务网格灰度迁移与流量治理",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "统一网关",
+    "role": "负责人",
+    "tech_stack": [
+     "Go",
+     "Nginx",
+     "Lua"
+    ],
+    "time_period": "",
+    "key_result": "网关 QPS 上限 50万",
+    "description": "自研统一 API 网关：鉴权/限流/灰度/可观测一体化",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "服务网格：P99 追加延迟 <2ms"
+   },
+   {
+    "description": "统一网关：QPS 上限 50万"
+   }
+  ],
+  "education": [
+   {
+    "school": "哈尔滨工业大学",
+    "degree": "硕士",
+    "major": "计算机",
+    "time": "2022-2025"
+   },
+   {
+    "school": "东北大学",
+    "degree": "学士",
+    "major": "软件工程",
+    "time": "2018-2022"
+   }
+  ]
+ },
+ "B08": {
+  "name": "赵某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "ELK",
+    "category": "eval"
+   },
+   {
+    "name": "Wazuh",
+    "category": "eval"
+   },
+   {
+    "name": "YARA",
+    "category": "eval"
+   },
+   {
+    "name": "Kubernetes",
+    "category": "eval"
+   },
+   {
+    "name": "Metasploit",
+    "category": "eval"
+   },
+   {
+    "name": "Python",
+    "category": "eval"
+   },
+   {
+    "name": "Wireshark",
+    "category": "eval"
+   },
+   {
+    "name": "Burp Suite",
+    "category": "eval"
+   },
+   {
+    "name": "Golang",
+    "category": "eval"
+   },
+   {
+    "name": "Nmap",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "入侵检测系统",
+    "role": "安全工程师",
+    "tech_stack": [
+     "Wazuh",
+     "ELK"
+    ],
+    "time_period": "",
+    "key_result": "日均告警 2万→800",
+    "description": "主机 + 网络双源入侵检测：日志关联分析 + 告警降噪",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "SDL 流程建设",
+    "role": "核心成员",
+    "tech_stack": [
+     "Python",
+     "YARA"
+    ],
+    "time_period": "",
+    "key_result": "高危漏洞上线前拦截率 98%",
+    "description": "研发安全左移：代码扫描/依赖审计/制品签名的流水线集成",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "入侵检测：日均告警 2万→800"
+   },
+   {
+    "description": "SDL：高危漏洞拦截率 98%"
+   }
+  ],
+  "education": [
+   {
+    "school": "电子科技大学",
+    "degree": "学士",
+    "major": "网络空间安全",
+    "time": "2021-2025"
+   }
+  ]
+ },
+ "B09": {
+  "name": "何某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "C++",
+    "category": "eval"
+   },
+   {
+    "name": "Unity",
+    "category": "eval"
+   },
+   {
+    "name": "Unreal Engine",
+    "category": "eval"
+   },
+   {
+    "name": "Perforce",
+    "category": "eval"
+   },
+   {
+    "name": "OpenGL",
+    "category": "eval"
+   },
+   {
+    "name": "Vulkan",
+    "category": "eval"
+   },
+   {
+    "name": "Blueprint",
+    "category": "eval"
+   },
+   {
+    "name": "Lua",
+    "category": "eval"
+   },
+   {
+    "name": "C#",
+    "category": "eval"
+   },
+   {
+    "name": "Python",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "开放世界地形系统",
+    "role": "引擎组",
+    "tech_stack": [
+     "Unreal Engine",
+     "C++"
+    ],
+    "time_period": "",
+    "key_result": "加载范围 500m→2km",
+    "description": "流式加载的开放世界地形：LOD 调度 + 运行时烘焙 + 内存预算控制",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "战斗同步框架",
+    "role": "核心开发",
+    "tech_stack": [
+     "C++",
+     "Lua"
+    ],
+    "time_period": "",
+    "key_result": "不同步率 0.01%",
+    "description": "帧同步战斗框架：确定性逻辑 + 断线重连 + 回放系统",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "地形系统：内存峰值降 35%"
+   },
+   {
+    "description": "战斗同步：不同步率 0.01%"
+   }
+  ],
+  "education": [
+   {
+    "school": "四川大学",
+    "degree": "学士",
+    "major": "数字娱乐",
+    "time": "2020-2024"
+   }
+  ]
+ },
+ "B10": {
+  "name": "郑某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "Linux 驱动",
+    "category": "eval"
+   },
+   {
+    "name": "PCB",
+    "category": "eval"
+   },
+   {
+    "name": "Yocto",
+    "category": "eval"
+   },
+   {
+    "name": "C++",
+    "category": "eval"
+   },
+   {
+    "name": "CAN",
+    "category": "eval"
+   },
+   {
+    "name": "RTOS",
+    "category": "eval"
+   },
+   {
+    "name": "STM32",
+    "category": "eval"
+   },
+   {
+    "name": "FreeRTOS",
+    "category": "eval"
+   },
+   {
+    "name": "C",
+    "category": "eval"
+   },
+   {
+    "name": "MQTT",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "车规域控制器",
+    "role": "嵌入式工程师",
+    "tech_stack": [
+     "FreeRTOS",
+     "CAN",
+     "STM32"
+    ],
+    "time_period": "",
+    "key_result": "CAN 报文丢失率 <0.001%",
+    "description": "车身域控制器固件：CAN 矩阵诊断 + 功能安全 ASIL-B + OTA 升级",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "低功耗传感网",
+    "role": "核心开发",
+    "tech_stack": [
+     "MQTT",
+     "Linux 驱动"
+    ],
+    "time_period": "",
+    "key_result": "续航 6月→2年",
+    "description": "电池供电传感网络：休眠调度 + 边缘预处理 + 断网缓存",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "域控制器：OTA 成功率 99.5%"
+   },
+   {
+    "description": "传感网：续航 6月→2年"
+   }
+  ],
+  "education": [
+   {
+    "school": "西安电子科技大学",
+    "degree": "硕士",
+    "major": "微电子",
+    "time": "2023-2026"
+   },
+   {
+    "school": "西北工业大学",
+    "degree": "学士",
+    "major": "自动化",
+    "time": "2019-2023"
+   }
+  ]
+ },
+ "B11": {
+  "name": "冯某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "TensorFlow",
+    "category": "eval"
+   },
+   {
+    "name": "Feature Store",
+    "category": "eval"
+   },
+   {
+    "name": "PyTorch",
+    "category": "eval"
+   },
+   {
+    "name": "ONNX",
+    "category": "eval"
+   },
+   {
+    "name": "Ray",
+    "category": "eval"
+   },
+   {
+    "name": "Airflow",
+    "category": "eval"
+   },
+   {
+    "name": "Faiss",
+    "category": "eval"
+   },
+   {
+    "name": "Python",
+    "category": "eval"
+   },
+   {
+    "name": "Spark MLlib",
+    "category": "eval"
+   },
+   {
+    "name": "SQL",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "短视频推荐重构",
+    "role": "推荐算法工程师",
+    "tech_stack": [
+     "PyTorch",
+     "Faiss"
+    ],
+    "time_period": "",
+    "key_result": "人均时长 +18%",
+    "description": "召回+排序双层推荐重构：多路召回融合 + 精排蒸馏",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "特征平台",
+    "role": "核心开发",
+    "tech_stack": [
+     "Spark",
+     "Feature Store"
+    ],
+    "time_period": "",
+    "key_result": "特征上线周期 2周→1天",
+    "description": "实时+离线统一特征平台：点播特征口径 + 在线 serving",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "推荐重构：人均时长 +18%"
+   },
+   {
+    "description": "特征平台：上线周期 2周→1天"
+   }
+  ],
+  "education": [
+   {
+    "school": "中山大学",
+    "degree": "硕士",
+    "major": "计算机",
+    "time": "2023-2026"
+   },
+   {
+    "school": "暨南大学",
+    "degree": "学士",
+    "major": "数学",
+    "time": "2019-2023"
+   }
+  ]
+ },
+ "B12": {
+  "name": "曹某",
+  "email": "",
+  "phone": "",
+  "skills": [
+   {
+    "name": "NestJS",
+    "category": "eval"
+   },
+   {
+    "name": "Docker",
+    "category": "eval"
+   },
+   {
+    "name": "GraphQL",
+    "category": "eval"
+   },
+   {
+    "name": "Node.js",
+    "category": "eval"
+   },
+   {
+    "name": "Redis",
+    "category": "eval"
+   },
+   {
+    "name": "PostgreSQL",
+    "category": "eval"
+   },
+   {
+    "name": "React",
+    "category": "eval"
+   },
+   {
+    "name": "Prisma",
+    "category": "eval"
+   },
+   {
+    "name": "TypeScript",
+    "category": "eval"
+   },
+   {
+    "name": "AWS",
+    "category": "eval"
+   }
+  ],
+  "projects": [
+   {
+    "name": "SaaS 多租户平台",
+    "role": "全栈负责人",
+    "tech_stack": [
+     "NestJS",
+     "PostgreSQL",
+     "React"
+    ],
+    "time_period": "",
+    "key_result": "单集群租户数 5000",
+    "description": "B2B SaaS 多租户平台：行级隔离 + 计量计费 + 插件市场",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   },
+   {
+    "name": "实时协作文档",
+    "role": "核心开发",
+    "tech_stack": [
+     "Node.js",
+     "CRDT"
+    ],
+    "time_period": "",
+    "key_result": "百人同编延迟 <100ms",
+    "description": "富文本实时协作：CRDT 冲突消解 + 离线编辑合并",
+    "details": [],
+    "difficulties": [],
+    "challenges": "",
+    "responsibilities": ""
+   }
+  ],
+  "achievements": [
+   {
+    "description": "SaaS 平台：单集群租户 5000"
+   },
+   {
+    "description": "协作文档：百人同编 <100ms"
+   }
+  ],
+  "education": [
+   {
+    "school": "同济大学",
+    "degree": "学士",
+    "major": "软件工程",
+    "time": "2021-2025"
+   }
+  ]
+ }
+}

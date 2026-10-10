@@ -216,6 +216,30 @@ pytest tests/test_parser.py -v
 
 ---
 
+## 评测体系（毕业论文实验基座）
+
+评测集：12 份合成匿名简历 × 355 道标注面试问题（223 题带检索 ground truth），程序化生成、可复现、零 LLM 消耗。
+
+```bash
+# 1. 生成/重建评测集（幂等）
+python scripts/gen_eval_set.py
+
+# 2. 检索质量评测（零 LLM 消耗——Self-Query 规则版、跳过 HyDE）
+python scripts/eval_retrieval.py                    # 全矩阵：12 简历 × 6 消融模式
+python scripts/eval_retrieval.py --resumes B01      # 单份快跑
+# 指标：Recall@k / MRR / nDCG@k（k=3,5,8）
+# 消融：full / no_hyde / no_rerank / no_graph / no_multiquery / no_semantic
+
+# 3. 生成质量评测（小样本 LLM——默认 10 题约 20 次调用，服务需运行）
+python scripts/eval_generation.py --n 10
+# 指标：STAR 完整率（规则检测）/ 量化数据真实率（数字可回溯简历原文）/
+#       引用数 / 评审总分 —— 避免纯 LLM 自评的循环论证
+```
+
+报告落盘 `data/eval/*.json`（含逐题明细，论文数据来源）。评测库 `data/eval/milvus_eval.db` 与主库隔离，不干扰运行中的服务。
+
+---
+
 ## 路线图
 
 | 优先级 | 模块 | 状态 |
@@ -225,7 +249,8 @@ pytest tests/test_parser.py -v
 | P1 | 项目经验库 + JD智能匹配 | ✅ |
 | P1 | 面试对练 (AI候选人 + AI生成问题) | ✅ |
 | P2 | UI品质升级 (深色渐变主题 + React) | ✅ |
-| P2 | 网申填充增强 | ⏳ |
+| P2 | 网申填充增强 (映射/分区/别名/缓存/视觉验证) | ✅ |
+| P2 | 评测体系 (检索指标+消融+生成质量) | ✅ |
 | P3 | OCR / 简历编辑器 / 进度追踪 | ⏳ |
 
 详见 [SPEC.md](SPEC.md)

@@ -1,0 +1,2674 @@
+[
+ {
+  "resume_id": "B01",
+  "question": "你在 Kubernetes 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你在 Celery 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你在 Python 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你在 pytest 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你在 SQLAlchemy 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你在 Django 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "介绍一下你的电商订单中台项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "电商订单中台里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "电商订单中台有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你在电商订单中台中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "电商订单中台的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "介绍一下你的数据同步管道项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "数据同步管道里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "数据同步管道有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "你在数据同步管道中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "数据同步管道的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "谈谈你在华南理工大学的计算机技术学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "谈谈你在郑州大学的软件工程学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_1"
+  ]
+ },
+ {
+  "resume_id": "B01",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B01",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在 TypeScript 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在 Playwright 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在 React 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在 Vue 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在 TailwindCSS 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在 Three.js 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "介绍一下你的可视化大屏引擎项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "可视化大屏引擎里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "可视化大屏引擎有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在可视化大屏引擎中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "可视化大屏引擎的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "介绍一下你的低代码表单引擎项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "低代码表单引擎里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "低代码表单引擎有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "你在低代码表单引擎中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "低代码表单引擎的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "谈谈你在厦门大学的数字媒体技术学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B02",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B02",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在 Python 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在 jieba 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在 Sentence-Transformers 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在 RAG 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在 Milvus 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在 Transformers 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "介绍一下你的企业知识库问答系统项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "企业知识库问答系统里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "企业知识库问答系统有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在企业知识库问答系统中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "企业知识库问答系统的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "介绍一下你的领域模型微调项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "领域模型微调里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "领域模型微调有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "你在领域模型微调中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "领域模型微调的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "谈谈你在中国科学技术大学的人工智能学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "谈谈你在合肥工业大学的计算机科学学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_1"
+  ]
+ },
+ {
+  "resume_id": "B03",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B03",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在 Python 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在 Doris 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在 Flink 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在 Docker 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在 ClickHouse 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在 Spark 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "介绍一下你的实时数仓平台项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "实时数仓平台里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "实时数仓平台有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在实时数仓平台中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "实时数仓平台的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "介绍一下你的数据质量监控项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "数据质量监控里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "数据质量监控有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "你在数据质量监控中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "数据质量监控的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "谈谈你在武汉大学的大数据学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "谈谈你在华中科技大学的信息管理学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_1"
+  ]
+ },
+ {
+  "resume_id": "B04",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B04",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在 Allure 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在 Git 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在 Playwright 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在 Locust 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在 Selenium 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在 Jmeter 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "介绍一下你的自动化回归体系项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "自动化回归体系里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "自动化回归体系有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在自动化回归体系中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "自动化回归体系的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "介绍一下你的全链路压测平台项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "全链路压测平台里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "全链路压测平台有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "你在全链路压测平台中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "全链路压测平台的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "谈谈你在大连理工大学的软件工程学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B05",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B05",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在 Fastlane 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在 SQLite 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在 Flutter 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在 Android 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在 RxJava 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在 iOS 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "介绍一下你的跨端电商 App项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "跨端电商 App里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "跨端电商 App有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在跨端电商 App中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "跨端电商 App的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "介绍一下你的音视频互动课堂项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "音视频互动课堂里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "音视频互动课堂有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "你在音视频互动课堂中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "音视频互动课堂的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "谈谈你在东南大学的电子信息学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "谈谈你在南京航空航天大学的物联网学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_1"
+  ]
+ },
+ {
+  "resume_id": "B06",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B06",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在 gRPC 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在 Lua 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在 Terraform 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在 Istio 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在 etcd 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在 Kubernetes 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "介绍一下你的服务网格落地项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "服务网格落地里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "服务网格落地有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在服务网格落地中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "服务网格落地的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "介绍一下你的统一网关项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "统一网关里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "统一网关有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "你在统一网关中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "统一网关的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "谈谈你在哈尔滨工业大学的计算机学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "谈谈你在东北大学的软件工程学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_1"
+  ]
+ },
+ {
+  "resume_id": "B07",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B07",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在 ELK 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在 Wazuh 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在 YARA 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在 Kubernetes 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在 Metasploit 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在 Python 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "介绍一下你的入侵检测系统项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "入侵检测系统里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "入侵检测系统有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在入侵检测系统中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "入侵检测系统的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "介绍一下你的SDL 流程建设项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "SDL 流程建设里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "SDL 流程建设有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "你在SDL 流程建设中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "SDL 流程建设的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "谈谈你在电子科技大学的网络空间安全学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B08",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B08",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在 C++ 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在 Unity 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在 Unreal Engine 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在 Perforce 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在 OpenGL 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在 Vulkan 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "介绍一下你的开放世界地形系统项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "开放世界地形系统里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "开放世界地形系统有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在开放世界地形系统中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "开放世界地形系统的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "介绍一下你的战斗同步框架项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "战斗同步框架里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "战斗同步框架有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "你在战斗同步框架中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "战斗同步框架的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "谈谈你在四川大学的数字娱乐学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B09",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B09",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在 Linux 驱动 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在 PCB 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在 Yocto 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在 C++ 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在 CAN 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在 RTOS 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "介绍一下你的车规域控制器项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "车规域控制器里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "车规域控制器有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在车规域控制器中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "车规域控制器的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "介绍一下你的低功耗传感网项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "低功耗传感网里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "低功耗传感网有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "你在低功耗传感网中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "低功耗传感网的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "谈谈你在西安电子科技大学的微电子学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "谈谈你在西北工业大学的自动化学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_1"
+  ]
+ },
+ {
+  "resume_id": "B10",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B10",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在 TensorFlow 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在 Feature Store 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在 PyTorch 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在 ONNX 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在 Ray 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在 Airflow 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "介绍一下你的短视频推荐重构项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "短视频推荐重构里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "短视频推荐重构有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在短视频推荐重构中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "短视频推荐重构的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "介绍一下你的特征平台项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "特征平台里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "特征平台有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "你在特征平台中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "特征平台的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "谈谈你在中山大学的计算机学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "谈谈你在暨南大学的数学学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_1"
+  ]
+ },
+ {
+  "resume_id": "B11",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B11",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在 NestJS 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在 Docker 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_1"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在 GraphQL 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_2"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在 Node.js 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_3"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在 Redis 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在 PostgreSQL 上的实践经验是什么？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_5"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你的核心技术栈里哪些用得最深？",
+  "qtype": "technical_depth",
+  "expected_ids": [
+   "skill_0",
+   "skill_1",
+   "skill_2",
+   "skill_3",
+   "skill_4"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在分布式和高并发场景做过什么？",
+  "qtype": "technical_depth",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "介绍一下你的SaaS 多租户平台项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "SaaS 多租户平台里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "SaaS 多租户平台有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0",
+   "achievement_0"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在SaaS 多租户平台中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "SaaS 多租户平台的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_0"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "介绍一下你的实时协作文档项目",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "实时协作文档里你遇到的最大挑战是什么？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "实时协作文档有哪些可量化的成果？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1",
+   "achievement_1"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "你在实时协作文档中承担什么角色？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "实时协作文档的技术选型是怎么考虑的？",
+  "qtype": "project_followup",
+  "expected_ids": [
+   "project_1"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "谈谈你在同济大学的软件工程学习经历",
+  "qtype": "general",
+  "expected_ids": [
+   "education_0"
+  ]
+ },
+ {
+  "resume_id": "B12",
+  "question": "讲一次你和队友意见冲突并解决的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "说一个你从失败中学到的教训",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "你如何在多任务下安排优先级？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "描述一次你主动承担额外责任的经历",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "你持续学习新技术的方法是什么？",
+  "qtype": "behavioral",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "你最大的优势和不足分别是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "为什么选择这个职业方向？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "未来三年的职业规划是什么？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "你期望什么样的团队氛围？",
+  "qtype": "general",
+  "expected_ids": []
+ },
+ {
+  "resume_id": "B12",
+  "question": "你如何看待加班？",
+  "qtype": "general",
+  "expected_ids": []
+ }
+]
