@@ -17,7 +17,7 @@ langchain-core>=0.3.0
 # 上限 <3.0.0：pymilvus 3.x 为跨大版本；milvus-lite 镜像源已无 2.4.x，最低可用 3.x
 pymilvus>=2.6.0,<3.0.0
 milvus-lite>=3.1.0,<4.0.0
-chromadb>=0.5.0
+chromadb>=1.5.9
 
 # Document parsing
 PyMuPDF>=1.24.0
