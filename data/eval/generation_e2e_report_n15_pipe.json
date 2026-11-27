@@ -1,0 +1,386 @@
+{
+ "generated_at": "2026-11-27 17:18:52",
+ "n": 15,
+ "seed": 42,
+ "resumes": null,
+ "model": "deepseek/deepseek-v4.1-flash",
+ "note": "独立评测画像+独立向量库，生成与比对基准一致（修正 BUG_LOG 案例 29）",
+ "pipeline": {
+  "summary": {
+   "n": 15,
+   "n_ok": 15,
+   "star_complete_rate": 1.0,
+   "number_grounded_rate": 1.0,
+   "avg_answer_len": 559.2,
+   "avg_elapsed_ms": 27531.8
+  },
+  "detail": [
+   {
+    "resume_id": "B10",
+    "question": "你在 PCB 上的实践经验是什么？",
+    "qtype": "technical_depth",
+    "answer_len": 579,
+    "elapsed_ms": 46098.5,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    },
+    "review_total": 4.6,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：根据我的简历，PCB 是作为一项技能列出的，但素材中并未记录我具体参与过的 PCB 项目名称、规模或时间。[来源: {skills} PCB]\n\n**任务（Task）**：同样地，关于我在 PCB 设计中承担的具体任务、目标或需要解决的挑战，根据我的简历，这部分信息暂时没有详细记录。[来源: {skills} PCB]\n\n**行动（Action）**：\n1. 我的简历将 PCB 列为一项技能，说明我在硬件电路板设计方面具备相关能力积累。[来源: {skills} PCB]\n2. 但具体使用了哪些 EDA 工具、承担了哪一层板级设计（原理图、布局布线或打样验证），素材中没有记录。[来源: {skills} PCB]\n3. 板层数、器件选型、信号完整性处理等实现细节，素材中同样没有记录。[来源: {skills} PCB]\n4. 为避免与我的其他项目混淆，我不把低功耗传感网、域控制器等项目的技术内容归到 PCB 经历中。[来源: {projects} 低功耗传感网]\n\n**结果（Result）**：根据我的简历，这部分暂无量化记录。[来源: {skills} PCB]\n\n补充说明：如果希望我展开 PCB 相关的具体实践，建议在简历中补充该项目的板级设计范围、所用工具与验证结果，我可以在后续面试中据此详细说明。"
+   },
+   {
+    "resume_id": "B10",
+    "question": "你在车规域控制器中承担什么角色？",
+    "qtype": "project_followup",
+    "answer_len": 593,
+    "elapsed_ms": 20343.8,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 4,
+     "n_grounded": 4,
+     "rate": 1.0
+    },
+    "review_total": 22.1,
+    "revision_count": 0,
+    "answer": "**情境（Situation）**：我作为嵌入式工程师参与车规域控制器项目，负责车身域控制器固件开发，技术栈涉及 FreeRTOS、CAN 与 STM32。[来源: projects-车规域控制器]\n\n**任务（Task）**：我需要完成 CAN 矩阵诊断、功能安全 ASIL-B 相关实现以及 OTA 升级功能，保证固件在车规环境下的通信可靠性与可升级性。[来源: projects-车规域控制器]\n\n**行动（Action）**：\n1. 我基于 STM32 平台搭建固件基础，并以 FreeRTOS 作为实时调度内核组织任务。[来源: projects-车规域控制器]\n2. 我实现 CAN 矩阵诊断逻辑，对报文收发进行监控与异常处理，以降低报文丢失。[来源: projects-车规域控制器]\n3. 我按功能安全 ASIL-B 的要求推进固件设计与实现。[来源: projects-车规域控制器]\n4. 我参与 OTA 升级功能的开发，支撑固件的远程更新。[来源: projects-车规域控制器]\n\n**结果（Result）**：CAN 报文丢失率 <0.001%；域控制器 OTA 成功率 99.5%。[来源: achievements][来源: projects-车规域控制器]\n\n（说明：素材中未记录该项目的具体规模与起止时间，根据我的简历，这部分信息暂时没有详细记录。）"
+   },
+   {
+    "resume_id": "B02",
+    "question": "可视化大屏引擎有哪些可量化的成果？",
+    "qtype": "project_followup",
+    "answer_len": 571,
+    "elapsed_ms": 15873.5,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    },
+    "review_total": 11.4,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：根据我的简历，我具备 TypeScript、React、Vue、Three.js、WebGL、Webpack 等前端与图形渲染相关技能，但素材中未记录\"可视化大屏引擎\"这一项目的背景、规模或时间信息，这部分暂时没有详细记录。[来源: 核心技能]\n\n**任务（Task）**：素材中未包含我在可视化大屏引擎项目中承担的具体任务、目标或需要解决的挑战，根据我的简历，这部分信息暂时没有详细记录。[来源: 核心技能]\n\n**行动（Action）**：\n1. 我的技能栈中包含 Three.js 与 WebGL，可用于大屏场景的三维渲染方向。[来源: 核心技能]\n2. 我的技能栈中包含 React 与 Vue，可支撑大屏前端界面与组件化开发。[来源: 核心技能]\n3. 我的技能栈中包含 TypeScript，可用于提升工程类型安全。[来源: 核心技能]\n4. 我的技能栈中包含 Webpack，可参与构建与打包环节。[来源: 核心技能]\n以上仅为技能层面的对应，素材中没有该项目的具体技术决策与实现细节记录，我不做额外补充。\n\n**结果（Result）**：根据我的简历，可视化大屏引擎项目暂无量化记录，素材中未出现任何性能指标、渲染帧率、数据规模或效率提升等数字，因此无法给出可量化成果。[来源: 核心技能]"
+   },
+   {
+    "resume_id": "B02",
+    "question": "低代码表单引擎的技术选型是怎么考虑的？",
+    "qtype": "project_followup",
+    "answer_len": 492,
+    "elapsed_ms": 38708.3,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 1,
+     "n_grounded": 1,
+     "rate": 1.0
+    },
+    "review_total": 14.8,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我作为核心开发参与了低代码表单引擎项目，这是一个面向表单场景的拖拽式搭建引擎。[来源: {projects}]\n\n**任务（Task）**：我承担该引擎的技术选型与核心开发工作，目标是通过拖拽式搭建降低表单开发成本、提升搭建效率。[来源: {projects}]\n\n**行动（Action）**：\n1. 技术栈上，我确定采用 Vue + TypeScript + Vite 的组合作为项目基础。[来源: {projects}]\n2. 架构上，我采用 Schema 驱动渲染的方案，用 Schema 描述表单结构并驱动视图渲染。[来源: {projects}]\n3. 我围绕引擎构建了自定义组件生态，以支撑不同表单场景的扩展。[来源: {projects}]\n4. 我实现了拖拽式表单搭建的交互方式，让用户通过拖拽完成表单配置。[来源: {projects}]\n\n需要说明的是，关于各技术方案的具体权衡与取舍理由，根据我的简历，这部分信息暂时没有详细记录。\n\n**结果（Result）**：表单搭建效率提升 10 倍。[来源: {projects}]"
+   },
+   {
+    "resume_id": "B02",
+    "question": "介绍一下你的可视化大屏引擎项目",
+    "qtype": "project_followup",
+    "answer_len": 526,
+    "elapsed_ms": 21986.6,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 2,
+     "n_grounded": 2,
+     "rate": 1.0
+    },
+    "review_total": 19.8,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我作为前端负责人，主导了工业监控 3D 可视化大屏项目「可视化大屏引擎」的开发，技术栈为 React、Three.js 与 WebGL。[来源: {projects}]\n\n**任务（Task）**：我的目标是搭建面向工业监控场景的 3D 可视化大屏，并重点解决 WebGL 渲染管线性能与数据驱动场景组织这两方面的挑战。[来源: {projects}]\n\n**行动（Action）**：\n1. 我基于 React、Three.js 与 WebGL 搭建了 3D 可视化大屏的整体前端架构，并担任前端负责人统筹开发。[来源: {projects}]\n2. 我针对 WebGL 渲染管线进行优化，以改善大屏的渲染性能。[来源: {projects}]\n3. 我采用数据驱动场景的方式组织可视化内容，让场景由数据来驱动呈现。[来源: {projects}]\n4. 关于具体的优化手段（如合批、LOD、资源加载策略等），根据我的简历，这部分信息暂时没有详细记录。\n\n**结果（Result）**：项目首屏渲染从 4s 优化到 1.2s。[来源: {achievements}] 其余量化指标根据我的简历，这部分暂无量化记录。"
+   },
+   {
+    "resume_id": "B02",
+    "question": "你在 TailwindCSS 上的实践经验是什么？",
+    "qtype": "technical_depth",
+    "answer_len": 654,
+    "elapsed_ms": 24648.8,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 3,
+     "n_grounded": 3,
+     "rate": 1.0
+    },
+    "review_total": 12.7,
+    "revision_count": 0,
+    "answer": "**情境（Situation）**：我的简历中 TailwindCSS 被列为一项技能，但根据现有素材，没有记录我具体在哪个项目中落地使用过它。[来源: {skills}]\n\n**任务（Task）**：由于素材中缺少与 TailwindCSS 对应的项目条目，我无法说明基于 TailwindCSS 的具体任务目标或需要解决的样式工程挑战；根据我的简历，这部分信息暂时没有详细记录。\n\n**行动（Action）**：\n1. 根据我的简历，TailwindCSS 仅以技能项形式出现，没有对应的项目实践描述，因此无法展开具体的技术决策。[来源: {skills}]\n2. 我的简历中记录的两个项目——可视化大屏引擎（技术栈为 React、Three.js、WebGL）与低代码表单引擎（技术栈为 Vue、TypeScript、Vite）——其技术栈中均未出现 TailwindCSS，我不会把这两个项目的实现说成是 TailwindCSS 实践。[来源: {projects}]\n3. 为避免误导，我不对 TailwindCSS 的使用方式、配置策略或组件封装做任何推测性描述。\n\n**结果（Result）**：根据我的简历，TailwindCSS 相关实践暂无量化记录；简历中可查的量化成果属于其他项目，例如低代码表单引擎的“表单搭建效率提升 10 倍”与可视化大屏引擎的“首屏渲染 4s→1.2s”，这些均与 TailwindCSS 无关，不能作为本问题的结果引用。[来源: {achievements}]"
+   },
+   {
+    "resume_id": "B01",
+    "question": "你的核心技术栈里哪些用得最深？",
+    "qtype": "technical_depth",
+    "answer_len": 556,
+    "elapsed_ms": 30382.6,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    },
+    "review_total": 10.3,
+    "revision_count": 0,
+    "answer": "**情境（Situation）**：我作为核心开发参与数据同步管道项目，负责多源异构数据库到数仓的准实时同步管道建设。[来源: projects/数据同步管道]\n\n**任务（Task）**：我需要解决的核心挑战是把原本分钟级的同步延迟压下来，同时保证多源异构数据在传输过程中的可靠性与可恢复性。[来源: achievements]\n\n**行动（Action）**：\n1. 我用 Python 作为主要开发语言搭建同步管道的核心逻辑。[来源: projects/数据同步管道]\n2. 我采用 CDC 方式捕获源库变更，并设计断点续传机制保障中断后可恢复。[来源: projects/数据同步管道]\n3. 我引入 Kafka 承接数据流转，配合 MySQL 完成数据落地。[来源: projects/数据同步管道]\n4. 在电商订单中台项目中，我作为后端负责人使用 FastAPI 搭建后端服务。[来源: projects/电商订单中台]\n5. 我结合 Redis 与分布式事务处理订单中台的相关逻辑。[来源: projects/电商订单中台]\n\n**结果（Result）**：数据同步管道实现了同步延迟从分钟级→秒级。[来源: achievements] 关于各技术栈的使用深度，根据我的简历，这部分暂无量化记录。"
+   },
+   {
+    "resume_id": "B11",
+    "question": "短视频推荐重构里你遇到的最大挑战是什么？",
+    "qtype": "project_followup",
+    "answer_len": 564,
+    "elapsed_ms": 26295.8,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 1,
+     "n_grounded": 1,
+     "rate": 1.0
+    },
+    "review_total": 13.7,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我在「短视频推荐重构」项目中担任推荐算法工程师，该项目做的是召回+排序双层推荐重构，技术栈为 PyTorch 与 Faiss [来源: {projects}]；项目的具体起止时间与团队规模，根据我的简历暂时没有详细记录。\n\n**任务（Task）**：我承担的是多路召回融合与精排蒸馏这两块重构工作，目标是把原有推荐链路改造成召回+排序的双层结构 [来源: {projects}]。至于这个项目里\"最大挑战\"的具体所指，根据我的简历，这部分信息暂时没有详细记录，我不做臆测。\n\n**行动（Action）**：\n1. 我参与搭建召回+排序的双层推荐架构，把推荐链路拆成召回与排序两个阶段 [来源: {projects}]。\n2. 在召回层，我做了多路召回的融合，把多路召回结果合并后送入下游 [来源: {projects}]。\n3. 在排序层，我引入精排蒸馏来重构排序模型 [来源: {projects}]。\n4. 工程实现上，模型部分基于 PyTorch，召回检索部分使用 Faiss [来源: {projects}]。\n\n**结果（Result）**：重构后人均时长 +18% [来源: {achievements}]。除这一指标外，关于挑战的具体表现、迭代轮次等，根据我的简历暂无量化记录。"
+   },
+   {
+    "resume_id": "B11",
+    "question": "介绍一下你的短视频推荐重构项目",
+    "qtype": "project_followup",
+    "answer_len": 436,
+    "elapsed_ms": 23954.9,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 1,
+     "n_grounded": 1,
+     "rate": 1.0
+    },
+    "review_total": 19.8,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我作为推荐算法工程师，参与了短视频推荐重构项目，负责召回与排序双层推荐架构的重构工作。[来源: {projects}]\n\n**任务（Task）**：我承担的任务是把推荐链路重构为\"召回+排序\"双层结构，具体包括多路召回融合与精排蒸馏两个方向。[来源: {projects}] 根据我的简历，该项目的团队规模与起止时间暂时没有详细记录。\n\n**行动（Action）**：\n1. 在召回层，我参与多路召回融合的设计与实现，把多路召回结果统一融合后再进入下游。[来源: {projects}]\n2. 在排序层，我负责精排环节的蒸馏方案落地，用蒸馏方式完成精排模型的重构。[来源: {projects}]\n3. 工程实现上，模型侧基于 PyTorch，向量检索侧使用 Faiss 支撑召回链路的检索需求。[来源: {projects}]\n\n**结果（Result）**：重构后项目取得人均时长 +18% 的成果。[来源: {projects}]"
+   },
+   {
+    "resume_id": "B04",
+    "question": "你在数据质量监控中承担什么角色？",
+    "qtype": "project_followup",
+    "answer_len": 589,
+    "elapsed_ms": 23151.1,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    },
+    "review_total": 21.4,
+    "revision_count": 0,
+    "answer": "**情境（Situation）**：我参与的是数据质量监控项目，在该项目中担任核心开发，负责全链路数据质量监控能力建设；根据我的简历，该项目的具体规模与启动时间暂时没有详细记录。[来源: {projects} 数据质量监控]\n\n**任务（Task）**：我承担的具体任务，是围绕波动检测、血缘追溯和自动告警搭建全链路数据质量监控，目标是缩短数据事故的发现时间。[来源: {projects} 数据质量监控]\n\n**行动（Action）**：\n1. 我基于 Python 实现数据质量监控中的波动检测相关逻辑。[来源: {projects} 数据质量监控]\n2. 我使用 Airflow 负责任务编排与调度，把监控流程串联起来。[来源: {projects} 数据质量监控]\n3. 我使用 Spark 支撑监控过程中的数据处理。[来源: {projects} 数据质量监控]\n4. 我参与建设血缘追溯能力，用于定位问题数据的来源与影响范围。[来源: {projects} 数据质量监控]\n5. 我参与实现自动告警链路，让异常能够被及时通知。[来源: {projects} 数据质量监控]\n\n**结果（Result）**：数据事故发现时间从 2h→5min。[来源: {achievements} 数据质量监控：事故发现 2h→5min；来源: {projects} 数据质量监控]"
+   },
+   {
+    "resume_id": "B04",
+    "question": "介绍一下你的实时数仓平台项目",
+    "qtype": "project_followup",
+    "answer_len": 511,
+    "elapsed_ms": 19760.6,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    },
+    "review_total": 19.8,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我在「实时数仓平台」项目中担任数据平台负责人，项目基于 Flink、Kafka、Doris 构建分钟级指标体系。[来源: {projects}]\n\n**任务（Task）**：我承担的核心任务，是把原本 T+1 的指标时效提升到分钟级，解决指标产出滞后的问题。[来源: {projects}]\n\n**行动（Action）**：\n1. 我负责整体数据平台的技术选型与架构设计，确定以 Flink、Kafka、Doris 作为核心技术栈。[来源: {projects}]\n2. 我引入 Flink CDC 进行数据采集，将业务库变更实时同步到链路中。[来源: {projects}]\n3. 我用 Kafka 作为实时数据流的传输层，衔接采集与写入环节。[来源: {projects}]\n4. 我以 Doris 作为指标存储与查询引擎，支撑分钟级指标的对外服务。[来源: {projects}]\n5. 关于团队规模、上线时间与迭代节奏，根据我的简历，这部分信息暂时没有详细记录。\n\n**结果（Result）**：项目最终实现指标时效从 T+1 提升至 5 分钟。[来源: {projects}]"
+   },
+   {
+    "resume_id": "B04",
+    "question": "你在 Docker 上的实践经验是什么？",
+    "qtype": "technical_depth",
+    "answer_len": 711,
+    "elapsed_ms": 30657.0,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    },
+    "review_total": 2.0,
+    "revision_count": 0,
+    "answer": "**情境（Situation）**：根据我的简历，Docker 目前仅作为一项已掌握的技能记录在我的技能清单中，我没有找到与之对应的具体项目描述。[来源: skills-Docker]\n\n**任务（Task）**：因此，我无法说明自己在某个项目中用 Docker 承担了哪些具体任务或解决了哪些挑战。根据我的简历，这部分信息暂时没有详细记录。[来源: skills-Docker]\n\n**行动（Action）**：\n1. 我的简历将 Docker 列为一项已评估的技能项，与 Python、Flink、Spark、Doris、ClickHouse、SQL、Hive 等技能并列。[来源: skills-Docker]\n2. 关于我在容器镜像构建、容器编排或环境交付方面的具体技术决策与实现细节，根据我的简历，这部分信息暂时没有详细记录。[来源: skills-Docker]\n3. 为避免与我的其他项目混淆，需要说明：我简历中的「数据质量监控」项目使用 Python、Airflow、Spark；「实时数仓平台」项目使用 Flink、Kafka、Doris。这两个项目的技术栈中均未记录 Docker 的使用。[来源: projects-数据质量监控][来源: projects-实时数仓平台]\n\n**结果（Result）**：根据我的简历，Docker 相关的实践成果暂无量化记录。我简历中可量化的成果来自其他项目：数据质量监控实现事故发现 2h→5min，实时数仓平台实现指标时效 T+1→5分钟。[来源: achievements][来源: projects-数据质量监控][来源: projects-实时数仓平台]"
+   },
+   {
+    "resume_id": "B08",
+    "question": "介绍一下你的SDL 流程建设项目",
+    "qtype": "project_followup",
+    "answer_len": 521,
+    "elapsed_ms": 32699.6,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 1,
+     "n_grounded": 1,
+     "rate": 1.0
+    },
+    "review_total": 18.3,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我作为核心成员参与了 SDL 流程建设项目，围绕研发安全左移推进安全能力建设；根据我的简历，该项目的时间与团队规模暂时没有详细记录。[来源: projects/SDL 流程建设]\n\n**任务（Task）**：我承担的任务是把安全检测前置到研发流程中，通过代码扫描、依赖审计、制品签名的流水线集成，在漏洞上线前完成拦截。[来源: projects/SDL 流程建设]\n\n**行动（Action）**：\n1. 我参与将代码扫描环节集成进研发流水线，使安全问题在编码阶段即可被发现。[来源: projects/SDL 流程建设]\n2. 我参与在流水线中集成依赖审计，对引入的第三方依赖进行安全核查。[来源: projects/SDL 流程建设]\n3. 我参与在流水线中集成制品签名环节，保障制品在交付前的完整性与可信性。[来源: projects/SDL 流程建设]\n4. 在技术实现上，我使用 Python 与 YARA 支撑相关检测与流程落地。[来源: projects/SDL 流程建设]\n\n**结果（Result）**：项目实现高危漏洞上线前拦截率 98%。[来源: projects/SDL 流程建设]"
+   },
+   {
+    "resume_id": "B09",
+    "question": "你在分布式和高并发场景做过什么？",
+    "qtype": "technical_depth",
+    "answer_len": 624,
+    "elapsed_ms": 22693.7,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 1,
+     "n_grounded": 1,
+     "rate": 1.0
+    },
+    "review_total": 17.0,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我在「战斗同步框架」项目中担任核心开发，技术栈为 C++ 与 Lua，负责帧同步战斗框架的整体实现。[来源: {projects}]\n\n**任务（Task）**：我需要解决的核心挑战是：在多个客户端各自独立运行战斗逻辑的前提下，保证各端计算结果一致，同时还要处理玩家断线、重连以及战斗过程可回放的问题。[来源: {projects}]\n\n**行动（Action）**：\n1. 我采用帧同步架构，让各客户端只同步输入指令，由本地按帧驱动逻辑推演，从而减少状态同步带来的带宽压力。[来源: {projects}]\n2. 为保证各端推演结果一致，我把战斗逻辑设计为确定性逻辑，统一运算与执行顺序，避免浮点误差和随机性导致结果不一致。[来源: {projects}]\n3. 我实现了断线重连机制，让玩家在掉线后能够重新接入战斗并恢复到正确状态。[来源: {projects}]\n4. 我基于帧输入序列实现了回放系统，使战斗过程可以完整复现。[来源: {projects}]\n5. 我使用 C++ 编写核心逻辑层，并用 Lua 承载上层业务，兼顾执行效率与迭代灵活性。[来源: {projects}]\n\n**结果（Result）**：该框架的不同步率为 0.01%。[来源: {projects}]\n\n关于并发连接数、峰值 QPS 等分布式高并发指标，根据我的简历，这部分信息暂时没有详细记录，我不做推测。[来源: 素材]"
+   },
+   {
+    "resume_id": "B07",
+    "question": "你在 gRPC 上的实践经验是什么？",
+    "qtype": "technical_depth",
+    "answer_len": 461,
+    "elapsed_ms": 35722.1,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 3,
+     "n_grounded": 3,
+     "rate": 1.0
+    },
+    "review_total": 9.0,
+    "revision_count": 0,
+    "answer": "**情境（Situation）**：根据我的简历，gRPC 仅以技能项的形式被记录（[来源: skills] gRPC），素材中没有标注它所属的具体项目、规模或时间，因此这部分项目背景暂时没有详细记录。\n\n**任务（Task）**：简历素材中没有记录我在 gRPC 上承担的具体任务、目标或需要解决的挑战，这部分信息暂时没有详细记录。\n\n**行动（Action）**：由于素材中缺少 gRPC 的技术决策与实现细节，我不做推测性描述，以免与真实经历不符。目前可确认的范围只有：1. gRPC 被列为我掌握的核心技能之一（[来源: skills] gRPC）。至于我在接口定义、流式调用、拦截器或性能调优等方面的具体做法，根据我的简历暂无记录。\n\n**结果（Result）**：根据我的简历，gRPC 部分暂无量化记录。素材中确实存在量化成果，例如服务网格 P99 追加延迟 <2ms、统一网关 QPS 上限 50万，但它们分属服务网格落地与统一网关两个项目，与 gRPC 实践没有直接对应关系，因此我不把它们归入本条回答。"
+   }
+  ]
+ },
+ "stats_median_iqr": {
+  "pipeline": {
+   "n": 15,
+   "valid": 15,
+   "star_ok": 15,
+   "grounded_ok": 15,
+   "star_rate": 1.0,
+   "latency_median": 24.6,
+   "latency_iqr": [
+    22.0,
+    32.7
+   ],
+   "chars_median": 564,
+   "chars_iqr": [
+    511,
+    593
+   ],
+   "revisions": 9,
+   "errors": 0
+  }
+ }
+}
