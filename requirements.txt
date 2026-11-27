@@ -44,7 +44,7 @@ torch>=2.1.1
 transformers>=4.35.2
 
 # Templating
-Jinja2>=3.1.0
+Jinja2>=3.1.6
 
 # Evaluation
 rouge-score==0.1.2
