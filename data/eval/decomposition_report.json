@@ -1,0 +1,519 @@
+{
+ "generated_at": "2026-11-26 10:30:47",
+ "resume": "B01",
+ "n_questions": 5,
+ "model": "deepseek/deepseek-v4.1-flash",
+ "decomp": {
+  "summary": {
+   "n": 5,
+   "n_ok": 5,
+   "star_complete_rate": 0.8,
+   "number_grounded_rate": 1.0,
+   "avg_answer_len": 418.6,
+   "avg_elapsed_ms": 78972.1,
+   "aspect_coverage": 0.8833,
+   "n_full_cover": 3,
+   "avg_evidence_rounds": 0.8,
+   "n_supplement_triggered": 0
+  },
+  "detail": [
+   {
+    "arm": "decomp",
+    "question": "请比较你在电商订单中台和数据同步管道两个项目中承担的角色差异，以及各自最大的技术",
+    "answer_len": 402,
+    "elapsed_ms": 91008.0,
+    "error": "",
+    "coverage": {
+     "covered": 3,
+     "total": 4,
+     "rate": 0.75,
+     "detail": {
+      "订单中台角色": true,
+      "同步管道角色": true,
+      "订单中台挑战": false,
+      "同步管道挑战": true
+     }
+    },
+    "evidence_rounds": 1,
+    "n_sub_questions": 2,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    }
+   },
+   {
+    "arm": "decomp",
+    "question": "分别说明订单中台的性能优化手段和数据同步管道的可靠性设计，并说明两者在取舍上有什",
+    "answer_len": 140,
+    "elapsed_ms": 64854.5,
+    "error": "",
+    "coverage": {
+     "covered": 2,
+     "total": 3,
+     "rate": 0.6667,
+     "detail": {
+      "订单性能手段": true,
+      "同步可靠性": false,
+      "取舍差异": true
+     }
+    },
+    "evidence_rounds": 1,
+    "n_sub_questions": 3,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": false,
+     "complete": false
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    }
+   },
+   {
+    "arm": "decomp",
+    "question": "你的技术栈里哪些用于构建后端服务、哪些用于支撑数据处理？它们各自解决了什么问题？",
+    "answer_len": 642,
+    "elapsed_ms": 83073.6,
+    "error": "",
+    "coverage": {
+     "covered": 3,
+     "total": 3,
+     "rate": 1.0,
+     "detail": {
+      "后端服务技术": true,
+      "数据处理技术": true,
+      "解决的问题": true
+     }
+    },
+    "evidence_rounds": 0,
+    "n_sub_questions": 0,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    }
+   },
+   {
+    "arm": "decomp",
+    "question": "同时讲讲你在订单中台做的性能优化，以及在数据同步管道里做的稳定性保障。",
+    "answer_len": 417,
+    "elapsed_ms": 70914.4,
+    "error": "",
+    "coverage": {
+     "covered": 2,
+     "total": 2,
+     "rate": 1.0,
+     "detail": {
+      "性能优化": true,
+      "稳定性保障": true
+     }
+    },
+    "evidence_rounds": 1,
+    "n_sub_questions": 4,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 7,
+     "n_grounded": 7,
+     "rate": 1.0
+    }
+   },
+   {
+    "arm": "decomp",
+    "question": "对比订单中台与数据同步管道两个项目，哪一个技术复杂度更高？请结合各自的实现细节说",
+    "answer_len": 492,
+    "elapsed_ms": 85009.8,
+    "error": "",
+    "coverage": {
+     "covered": 3,
+     "total": 3,
+     "rate": 1.0,
+     "detail": {
+      "复杂度判断": true,
+      "订单实现细节": true,
+      "同步实现细节": true
+     }
+    },
+    "evidence_rounds": 1,
+    "n_sub_questions": 3,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 4,
+     "n_grounded": 4,
+     "rate": 1.0
+    }
+   }
+  ]
+ },
+ "plain": {
+  "summary": {
+   "n": 5,
+   "n_ok": 5,
+   "star_complete_rate": 0.4,
+   "number_grounded_rate": 1.0,
+   "avg_answer_len": 370.2,
+   "avg_elapsed_ms": 71294.4,
+   "aspect_coverage": 0.7333,
+   "n_full_cover": 3,
+   "avg_evidence_rounds": 0.0,
+   "n_supplement_triggered": 0
+  },
+  "detail": [
+   {
+    "arm": "plain",
+    "question": "请比较你在电商订单中台和数据同步管道两个项目中承担的角色差异，以及各自最大的技术",
+    "answer_len": 530,
+    "elapsed_ms": 40898.8,
+    "error": "",
+    "coverage": {
+     "covered": 4,
+     "total": 4,
+     "rate": 1.0,
+     "detail": {
+      "订单中台角色": true,
+      "同步管道角色": true,
+      "订单中台挑战": true,
+      "同步管道挑战": true
+     }
+    },
+    "evidence_rounds": 0,
+    "n_sub_questions": 0,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 4,
+     "n_grounded": 4,
+     "rate": 1.0
+    }
+   },
+   {
+    "arm": "plain",
+    "question": "分别说明订单中台的性能优化手段和数据同步管道的可靠性设计，并说明两者在取舍上有什",
+    "answer_len": 332,
+    "elapsed_ms": 77791.9,
+    "error": "",
+    "coverage": {
+     "covered": 2,
+     "total": 3,
+     "rate": 0.6667,
+     "detail": {
+      "订单性能手段": true,
+      "同步可靠性": false,
+      "取舍差异": true
+     }
+    },
+    "evidence_rounds": 0,
+    "n_sub_questions": 0,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": false,
+     "complete": false
+    },
+    "numbers": {
+     "n_numbers": 1,
+     "n_grounded": 1,
+     "rate": 1.0
+    }
+   },
+   {
+    "arm": "plain",
+    "question": "你的技术栈里哪些用于构建后端服务、哪些用于支撑数据处理？它们各自解决了什么问题？",
+    "answer_len": 78,
+    "elapsed_ms": 76101.1,
+    "error": "",
+    "coverage": {
+     "covered": 0,
+     "total": 3,
+     "rate": 0.0,
+     "detail": {
+      "后端服务技术": false,
+      "数据处理技术": false,
+      "解决的问题": false
+     }
+    },
+    "evidence_rounds": 0,
+    "n_sub_questions": 0,
+    "star": {
+     "S": false,
+     "T": false,
+     "A": false,
+     "R": false,
+     "complete": false
+    },
+    "numbers": {
+     "n_numbers": 0,
+     "n_grounded": 0,
+     "rate": null
+    }
+   },
+   {
+    "arm": "plain",
+    "question": "同时讲讲你在订单中台做的性能优化，以及在数据同步管道里做的稳定性保障。",
+    "answer_len": 624,
+    "elapsed_ms": 73289.9,
+    "error": "",
+    "coverage": {
+     "covered": 2,
+     "total": 2,
+     "rate": 1.0,
+     "detail": {
+      "性能优化": true,
+      "稳定性保障": true
+     }
+    },
+    "evidence_rounds": 0,
+    "n_sub_questions": 0,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 4,
+     "n_grounded": 4,
+     "rate": 1.0
+    }
+   },
+   {
+    "arm": "plain",
+    "question": "对比订单中台与数据同步管道两个项目，哪一个技术复杂度更高？请结合各自的实现细节说",
+    "answer_len": 287,
+    "elapsed_ms": 88390.4,
+    "error": "",
+    "coverage": {
+     "covered": 3,
+     "total": 3,
+     "rate": 1.0,
+     "detail": {
+      "复杂度判断": true,
+      "订单实现细节": true,
+      "同步实现细节": true
+     }
+    },
+    "evidence_rounds": 0,
+    "n_sub_questions": 0,
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": false,
+     "complete": false
+    },
+    "numbers": {
+     "n_numbers": 2,
+     "n_grounded": 2,
+     "rate": 1.0
+    }
+   }
+  ]
+ },
+ "single": {
+  "summary": {
+   "n": 5,
+   "n_ok": 5,
+   "star_complete_rate": 0.4,
+   "number_grounded_rate": 1.0,
+   "avg_answer_len": 393.8,
+   "avg_elapsed_ms": 9867.1,
+   "aspect_coverage": 1.0,
+   "n_full_cover": 5,
+   "avg_evidence_rounds": 0.0,
+   "n_supplement_triggered": 0
+  },
+  "detail": [
+   {
+    "resume_id": "B01",
+    "question": "请比较你在电商订单中台和数据同步管道两个项目中承担的角色差异，以及各自最大的技术挑战是什么。",
+    "qtype": "composite",
+    "answer_len": 313,
+    "elapsed_ms": 7251.4,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 7,
+     "n_grounded": 7,
+     "rate": 1.0
+    },
+    "answer": "S：我参与电商订单中台和数据同步管道两个项目，前者处理日均10万订单，后者实现多源异构数据库到数仓的准实时同步。  \nT：在订单中台我担任后端负责人；在数据同步管道我担任核心开发。角色差异在于前者偏项目后端统筹，后者偏核心链路开发。  \nA：订单中台的主要技术挑战是异步削峰、幂等防重和分布式事务，技术栈为FastAPI、MySQL、Redis、Celery；数据同步管道的主要技术挑战是CDC与断点续传，技术栈为Python、Kafka、MySQL。  \nR：订单中台实现订单接口P99延迟800ms→120ms、大促峰值吞吐提升5倍、重复下单率降为0；数据同步管道实现同步延迟分钟级→秒级、断点恢复时间30min→10s。",
+    "coverage": {
+     "covered": 4,
+     "total": 4,
+     "rate": 1.0,
+     "detail": {
+      "订单中台角色": true,
+      "同步管道角色": true,
+      "订单中台挑战": true,
+      "同步管道挑战": true
+     }
+    }
+   },
+   {
+    "resume_id": "B01",
+    "question": "分别说明订单中台的性能优化手段和数据同步管道的可靠性设计，并说明两者在取舍上有什么不同。",
+    "qtype": "composite",
+    "answer_len": 392,
+    "elapsed_ms": 7784.9,
+    "error": "",
+    "star": {
+     "S": false,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": false
+    },
+    "numbers": {
+     "n_numbers": 7,
+     "n_grounded": 7,
+     "rate": 1.0
+    },
+    "answer": "**S（情境）**：电商订单中台处理日均10万订单；数据同步管道负责多源异构数据库到数仓的准实时同步。  \n**T（任务）**：订单中台需实现异步削峰、幂等防重、分布式事务；数据同步管道需实现CDC与断点续传。  \n**A（行动）**：订单中台基于FastAPI、MySQL、Redis、Celery，围绕异步削峰、幂等防重、分布式事务进行性能优化；数据同步管道基于Python、Kafka、MySQL，采用CDC+断点续传做可靠性设计。  \n**R（结果）**：订单中台订单接口P99延迟800ms→120ms，大促峰值吞吐提升5倍，重复下单率降为0；数据同步管道同步延迟分钟级→秒级，断点恢复时间30min→10s。  \n\n**取舍不同**：订单中台更侧重低延迟与高吞吐，同时用幂等防重、分布式事务控制重复下单；数据同步管道更侧重可靠性，以CDC+断点续传保障同步延迟和断点恢复。",
+    "coverage": {
+     "covered": 3,
+     "total": 3,
+     "rate": 1.0,
+     "detail": {
+      "订单性能手段": true,
+      "同步可靠性": true,
+      "取舍差异": true
+     }
+    }
+   },
+   {
+    "resume_id": "B01",
+    "question": "你的技术栈里哪些用于构建后端服务、哪些用于支撑数据处理？它们各自解决了什么问题？",
+    "qtype": "composite",
+    "answer_len": 486,
+    "elapsed_ms": 19891.7,
+    "error": "",
+    "star": {
+     "S": true,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": true
+    },
+    "numbers": {
+     "n_numbers": 6,
+     "n_grounded": 6,
+     "rate": 1.0
+    },
+    "answer": "**S（情境）**：简历中有电商订单中台和数据同步管道两个项目，技术栈分别涉及 FastAPI、MySQL、Redis、Celery，以及 Python、Kafka、MySQL。\n\n**T（任务）**：需要说明哪些技术用于构建后端服务、哪些用于支撑数据处理，以及各自解决的问题。\n\n**A（行动）**：按简历，构建后端服务主要用 Python、FastAPI、Django 构建服务接口；MySQL 做数据存储；Redis 作为订单中台技术栈组件；Celery 支撑异步削峰；SQLAlchemy 做 ORM；Docker、Kubernetes 用于部署运行；pytest 用于测试。数据处理主要用 Python、Kafka、MySQL，支撑多源异构数据库到数仓的准实时同步管道，采用 CDC + 断点续传，解决同步与断点恢复问题；Celery 在订单中台用于异步削峰。\n\n**R（结果）**：订单中台实现订单接口 P99 延迟 800ms→120ms、大促峰值吞吐提升 5 倍、重复下单率降为 0；数据同步管道实现同步延迟分钟级→秒级、断点恢复时间 30min→10s。",
+    "coverage": {
+     "covered": 3,
+     "total": 3,
+     "rate": 1.0,
+     "detail": {
+      "后端服务技术": true,
+      "数据处理技术": true,
+      "解决的问题": true
+     }
+    }
+   },
+   {
+    "resume_id": "B01",
+    "question": "同时讲讲你在订单中台做的性能优化，以及在数据同步管道里做的稳定性保障。",
+    "qtype": "composite",
+    "answer_len": 313,
+    "elapsed_ms": 6521.0,
+    "error": "",
+    "star": {
+     "S": false,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": false
+    },
+    "numbers": {
+     "n_numbers": 7,
+     "n_grounded": 7,
+     "rate": 1.0
+    },
+    "answer": "**订单中台性能优化（STAR）**  \nS：我作为后端负责人，负责日均10万订单的订单中台。  \nT：需要优化订单接口性能，并解决重复下单问题。  \nA：基于FastAPI、MySQL、Redis、Celery，采用异步削峰、幂等防重和分布式事务。  \nR：订单接口P99延迟从800ms降至120ms，大促峰值吞吐提升5倍，重复下单率降为0。\n\n**数据同步管道稳定性保障（STAR）**  \nS：我作为核心开发，参与多源异构数据库到数仓的准实时同步管道。  \nT：需要保障同步稳定性，降低延迟并提升中断恢复能力。  \nA：采用CDC与断点续传机制。  \nR：同步延迟从分钟级降至秒级，断点恢复时间从30min降至10s。",
+    "coverage": {
+     "covered": 2,
+     "total": 2,
+     "rate": 1.0,
+     "detail": {
+      "性能优化": true,
+      "稳定性保障": true
+     }
+    }
+   },
+   {
+    "resume_id": "B01",
+    "question": "对比订单中台与数据同步管道两个项目，哪一个技术复杂度更高？请结合各自的实现细节说明理由。",
+    "qtype": "composite",
+    "answer_len": 465,
+    "elapsed_ms": 7886.4,
+    "error": "",
+    "star": {
+     "S": false,
+     "T": true,
+     "A": true,
+     "R": true,
+     "complete": false
+    },
+    "numbers": {
+     "n_numbers": 8,
+     "n_grounded": 8,
+     "rate": 1.0
+    },
+    "answer": "**S（情境）**：简历中，电商订单中台处理日均10万订单，涉及异步削峰、幂等防重、分布式事务；数据同步管道是多源异构数据库到数仓的准实时同步，采用CDC+断点续传。  \n**T（任务）**：订单中台需兼顾订单接口性能与一致性；数据同步管道需保证同步时效和故障恢复。  \n**A（行动）**：订单中台使用FastAPI、MySQL、Redis、Celery实现异步削峰、幂等防重、分布式事务；数据同步管道使用Python、Kafka、MySQL实现CDC和断点续传。  \n**R（结果）**：订单中台订单接口P99延迟800ms→120ms，大促峰值吞吐提升5倍，重复下单率降为0；数据同步管道同步延迟分钟级→秒级，断点恢复时间30min→10s。  \n\n**判断**：我认为订单中台技术复杂度更高。理由是简历中订单中台同时覆盖异步削峰、幂等防重、分布式事务三类问题，并对应P99延迟、峰值吞吐和重复下单率三项结果；数据同步管道主要体现CDC与断点续传链路及同步延迟、恢复时间结果。按简历可见实现要点，订单中台涉及的技术维度更多。",
+    "coverage": {
+     "covered": 3,
+     "total": 3,
+     "rate": 1.0,
+     "detail": {
+      "复杂度判断": true,
+      "订单实现细节": true,
+      "同步实现细节": true
+     }
+    }
+   }
+  ]
+ }
+}

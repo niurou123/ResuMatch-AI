@@ -1,0 +1,299 @@
+{
+ "file": "C:\\Users\\pd\\Desktop\\开题答辩\\毕业设计文献综述-刘汪洋.docx",
+ "total": 22,
+ "ok": 17,
+ "warn": 5,
+ "bad": 0,
+ "rows": [
+  {
+   "no": 1,
+   "status": "⚠️",
+   "note": "Crossref 未匹配到可靠记录（需人工确认）",
+   "ref": "[1]LEWIS P, PEREZ E, PIKTUS A, et al. Retrieval-augmented generation for knowledge-intensive NLP tasks[C]//Advances in N",
+   "matched": null
+  },
+  {
+   "no": 2,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[2]GAO L, MA X, LIN J, et al. Precise zero-shot dense retrieval without relevance labels[C]//Proceedings of the 61st Ann",
+   "matched": {
+    "title": "Precise Zero-Shot Dense Retrieval without Relevance Labels",
+    "container": "Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+    "year": 2023,
+    "volume": null,
+    "issue": null,
+    "page": "1762-1777",
+    "doi": "10.18653/v1/2023.acl-long.99"
+   }
+  },
+  {
+   "no": 3,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[3]KARPUKHIN V, OGUZ B, MIN S, et al. Dense passage retrieval for open-domain question answering[C]//Proceedings of the ",
+   "matched": {
+    "title": "Dense Passage Retrieval for Open-Domain Question Answering",
+    "container": "Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)",
+    "year": 2020,
+    "volume": null,
+    "issue": null,
+    "page": "6769-6781",
+    "doi": "10.18653/v1/2020.emnlp-main.550"
+   }
+  },
+  {
+   "no": 4,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[4]REIMERS N, GUREVYCH I. Sentence-BERT: sentence embeddings using Siamese BERT-networks[C]//Proceedings of the 2019 Con",
+   "matched": {
+    "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks",
+    "container": "Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)",
+    "year": 2019,
+    "volume": null,
+    "issue": null,
+    "page": "3980-3990",
+    "doi": "10.18653/v1/d19-1410"
+   }
+  },
+  {
+   "no": 5,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[5]XIAO S, LIU Z, ZHANG P, et al. C-Pack: packed resources for general Chinese embeddings[C]//Proceedings of the 47th In",
+   "matched": {
+    "title": "C-Pack: Packed Resources For General Chinese Embeddings",
+    "container": "Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval",
+    "year": 2024,
+    "volume": null,
+    "issue": null,
+    "page": "641-649",
+    "doi": "10.1145/3626772.3657878"
+   }
+  },
+  {
+   "no": 6,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[6]MUENNIGHOFF N, TAZI N, MAGNE L, et al. MTEB: massive text embedding benchmark[C]//Proceedings of the 17th Conference ",
+   "matched": {
+    "title": "MTEB: Massive Text Embedding Benchmark",
+    "container": "Proceedings of the 17th Conference of the European Chapter of the Association for Computational Linguistics",
+    "year": 2023,
+    "volume": null,
+    "issue": null,
+    "page": "2014-2037",
+    "doi": "10.18653/v1/2023.eacl-main.148"
+   }
+  },
+  {
+   "no": 7,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[7]ROBERTSON S, ZARAGOZA H. The probabilistic relevance framework: BM25 and beyond[J]. Foundations and Trends in Informa",
+   "matched": {
+    "title": "The Probabilistic Relevance Framework: BM25 and Beyond",
+    "container": "Foundations and Trends® in Information Retrieval",
+    "year": 2009,
+    "volume": "4",
+    "issue": "1-2",
+    "page": "1-174",
+    "doi": "10.1561/1500000019"
+   }
+  },
+  {
+   "no": 8,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[8]WANG J, YI X, GUO R, et al. Milvus: a purpose-built vector data management system[C]//Proceedings of the 2021 Interna",
+   "matched": {
+    "title": "Milvus",
+    "container": "Proceedings of the 2021 International Conference on Management of Data",
+    "year": 2021,
+    "volume": null,
+    "issue": null,
+    "page": "2614-2627",
+    "doi": "10.1145/3448016.3457550"
+   }
+  },
+  {
+   "no": 9,
+   "status": "⚠️",
+   "note": "Crossref 未匹配到可靠记录（需人工确认）",
+   "ref": "[9]YAO S, ZHAO J, YU D, et al. ReAct: synergizing reasoning and acting in language models[C]//Proceedings of the 11th In",
+   "matched": null
+  },
+  {
+   "no": 10,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[10]HONG S, ZHUGE M, CHEN J, et al. MetaGPT: meta programming for a multi-agent collaborative framework[C]//Proceedings ",
+   "matched": {
+    "title": "A Multi-Agent Collaborative Framework for Constructing Knowledge Graphs from Text",
+    "container": "2024 IEEE International Conference on Knowledge Graph (ICKG)",
+    "year": 2024,
+    "volume": null,
+    "issue": null,
+    "page": "9-16",
+    "doi": "10.1109/ickg63256.2024.00010"
+   }
+  },
+  {
+   "no": 11,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[11]GUO T, CHEN X, WANG Y, et al. Large language model based multi-agents: a survey of progress and challenges[C]//Proce",
+   "matched": {
+    "title": "Large Language Model Based Multi-agents: A Survey of Progress and Challenges",
+    "container": "Proceedings of the Thirty-ThirdInternational Joint Conference on Artificial Intelligence",
+    "year": 2024,
+    "volume": null,
+    "issue": null,
+    "page": "8048-8057",
+    "doi": "10.24963/ijcai.2024/890"
+   }
+  },
+  {
+   "no": 12,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[12]ZHENG L, CHIANG W L, SHENG Y, et al. Judging LLM-as-a-judge with MT-Bench and Chatbot Arena[C]//Advances in Neural I",
+   "matched": {
+    "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena",
+    "container": "Advances in Neural Information Processing Systems 36",
+    "year": 2023,
+    "volume": null,
+    "issue": null,
+    "page": "46595-46623",
+    "doi": "10.52202/075280-2020"
+   }
+  },
+  {
+   "no": 13,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[13]LIU Y, ITER D, XU Y, et al. G-Eval: NLG evaluation using GPT-4 with better human alignment[C]//Proceedings of the 20",
+   "matched": {
+    "title": "G-Eval: NLG Evaluation using Gpt-4 with Better Human Alignment",
+    "container": "Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing",
+    "year": 2023,
+    "volume": null,
+    "issue": null,
+    "page": "2511-2522",
+    "doi": "10.18653/v1/2023.emnlp-main.153"
+   }
+  },
+  {
+   "no": 14,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[14]ES S, JAMES J, ESPINOSA-ANKE L, et al. RAGAS: automated evaluation of retrieval augmented generation[C]//Proceedings",
+   "matched": {
+    "title": "RAGAs: Automated Evaluation of Retrieval Augmented Generation",
+    "container": "Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics: System Demonstrations",
+    "year": 2024,
+    "volume": null,
+    "issue": null,
+    "page": "150-158",
+    "doi": "10.18653/v1/2024.eacl-demo.16"
+   }
+  },
+  {
+   "no": 15,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[15]YU H, GAN A, ZHANG K, et al. Evaluation of retrieval-augmented generation: a survey[C]//Communications in Computer a",
+   "matched": {
+    "title": "Evaluation of Retrieval-Augmented Generation: A Survey",
+    "container": "Communications in Computer and Information Science",
+    "year": 2025,
+    "volume": null,
+    "issue": null,
+    "page": "102-120",
+    "doi": "10.1007/978-981-96-1024-2_8"
+   }
+  },
+  {
+   "no": 16,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[16]ZHANG M, JENSEN K N, SONNIKS S D, et al. SkillSpan: hard and soft skill extraction from English job postings[C]//Pro",
+   "matched": {
+    "title": "SkillSpan: Hard and Soft Skill Extraction from English Job Postings",
+    "container": "Proceedings of the 2022 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
+    "year": 2022,
+    "volume": null,
+    "issue": null,
+    "page": "4962-4984",
+    "doi": "10.18653/v1/2022.naacl-main.366"
+   }
+  },
+  {
+   "no": 17,
+   "status": "⚠️",
+   "note": "Crossref 未匹配到可靠记录（需人工确认）",
+   "ref": "[17]SENGER E, ZHANG M, VAN DER GOOT R, et al. Deep learning-based computational job market analysis: a survey on skill e",
+   "matched": null
+  },
+  {
+   "no": 18,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[18]WU L, QIU Z, ZHENG Z, et al. Exploring large language model for graph data understanding in online job recommendatio",
+   "matched": {
+    "title": "Exploring Large Language Model for Graph Data Understanding in Online Job Recommendations",
+    "container": "Proceedings of the AAAI Conference on Artificial Intelligence",
+    "year": 2024,
+    "volume": "38",
+    "issue": "8",
+    "page": "9178-9186",
+    "doi": "10.1609/aaai.v38i8.28769"
+   }
+  },
+  {
+   "no": 19,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[19]DENG X, GU Y, ZHENG B, et al. Mind2Web: towards a generalist agent for the web[C]//Advances in Neural Information Pr",
+   "matched": {
+    "title": "Mind2Web: Towards a Generalist Agent for the Web",
+    "container": "Advances in Neural Information Processing Systems 36",
+    "year": 2023,
+    "volume": null,
+    "issue": null,
+    "page": "28091-28114",
+    "doi": "10.52202/075280-1220"
+   }
+  },
+  {
+   "no": 20,
+   "status": "✅",
+   "note": "题名匹配",
+   "ref": "[20]GRESHAKE K, ABDELNABI S, MISHRA S, et al. Not what you have signed up for: compromising real-world LLM-integrated ap",
+   "matched": {
+    "title": "Proceedings of the 16th ACM Workshop on Artificial Intelligence and Security",
+    "container": "",
+    "year": 2023,
+    "volume": null,
+    "issue": null,
+    "page": null,
+    "doi": "10.1145/3605764"
+   }
+  },
+  {
+   "no": 21,
+   "status": "⚠️",
+   "note": "Crossref 未匹配到可靠记录（需人工确认）",
+   "ref": "[21]周志华. 机器学习[M]. 北京: 清华大学出版社, 2016.",
+   "matched": null
+  },
+  {
+   "no": 22,
+   "status": "⚠️",
+   "note": "Crossref 未匹配到可靠记录（需人工确认）",
+   "ref": "[22]国家市场监督管理总局, 国家标准化管理委员会. 信息安全技术 个人信息安全规范: GB/T 35273—2020[S]. 北京: 中国标准出版社, 2020.",
+   "matched": null
+  }
+ ]
+}

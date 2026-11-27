@@ -161,10 +161,11 @@ def run_eval(resume_ids, modes, top_ks=(3, 5, 8), eval_db="data/eval/milvus_eval
     ms._store = eval_store
     ms._store_backend = "milvus"
 
-    # 评测吞吐模式：to_thread 的默认线程池在长跑中累积泄漏（MemoryError 教训），
-    # 换单线程池——评测测的是检索质量而非并行度，串行不影响指标
+    # 评测吞吐模式：默认 to_thread 线程池在长跑中累积泄漏（MemoryError 教训），
+    # 换固定小线程池。3 线程 = 三路 agent 各占一线程（查询只读、无 Milvus 写冲突），
+    # 有界不泄漏；评测测检索质量而非并行峰值，固定池足够
     import concurrent.futures
-    _eval_pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    _eval_pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
     _orig_to_thread = asyncio.to_thread
 
     def _to_thread_single(fn, /, *args, **kwargs):

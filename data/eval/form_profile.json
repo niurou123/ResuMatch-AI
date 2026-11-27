@@ -1,0 +1,72 @@
+{
+  "_comment": "表单映射评测用的完整档案（合成数据，非真实个人信息）。字段结构对齐 extension/lib/template.js 的 EMPTY_PROFILE",
+  "name": "张明",
+  "nameEn": "Zhang Ming",
+  "gender": "男",
+  "birthDate": "2000-03-15",
+  "phone": "13800138000",
+  "email": "zhangming@example.com",
+  "idNumber": "",
+  "ethnicity": "",
+  "politicalStatus": "",
+  "nativePlace": "",
+  "currentCity": "杭州市",
+  "wechat": "",
+  "linkedin": "",
+  "github": "https://github.com/example",
+  "portfolio": "",
+  "targetCities": ["杭州", "上海"],
+  "targetPositions": ["算法工程师", "AI应用开发"],
+  "expectedSalary": "15-20K",
+  "availableDate": "一个月内",
+  "selfEvaluation": "熟悉 RAG 与多 Agent 编排，有完整项目落地经验。",
+  "awards": "校级二等奖学金；蓝桥杯省赛二等奖",
+  "publications": "",
+  "competitions": "蓝桥杯省赛二等奖",
+  "educations": [
+    {
+      "type": "硕士",
+      "school": "浙江大学",
+      "major": "计算机科学与技术",
+      "startDate": "2022",
+      "endDate": "2025",
+      "college": "计算机学院",
+      "gpa": "3.7/4.0",
+      "ranking": "前 15%",
+      "cet4": "通过",
+      "cet6": "通过",
+      "mainCourses": ["机器学习", "自然语言处理"],
+      "awards": ["二等奖学金"]
+    }
+  ],
+  "experiences": [
+    {
+      "type": "项目",
+      "organization": "智能简历匹配系统",
+      "role": "核心开发",
+      "startDate": "2024.03",
+      "endDate": "2024.09",
+      "description": "基于 RAG 的简历与岗位匹配系统",
+      "bullets": ["检索召回率提升 18%"],
+      "techStack": ["Python", "FastAPI", "Milvus"],
+      "achievements": ["检索召回率提升 18%"],
+      "order": 0
+    },
+    {
+      "type": "实习",
+      "organization": "某科技有限公司",
+      "role": "算法实习生",
+      "startDate": "2024.06",
+      "endDate": "2024.12",
+      "description": "负责推荐算法优化",
+      "bullets": [],
+      "techStack": ["PyTorch"],
+      "achievements": [],
+      "order": 1
+    }
+  ],
+  "skills": [
+    { "id": "lang", "category": "编程语言", "items": ["Python", "Java", "SQL"] },
+    { "id": "ai", "category": "AI工具", "items": ["PyTorch", "LangGraph", "RAG"] }
+  ]
+}

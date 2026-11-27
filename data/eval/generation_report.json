@@ -1,0 +1,235 @@
+{
+ "generated_at": "2026-10-10 14:19:08",
+ "sample": [
+  "B01",
+  "B02",
+  "B03",
+  "B04",
+  "B05",
+  "B06",
+  "B08",
+  "B09",
+  "B10",
+  "B11"
+ ],
+ "summary": {
+  "n_total": 10,
+  "n_ok": 7,
+  "avg_answer_len": 312.1,
+  "star_complete_rate": 0.4286,
+  "avg_review_total": 13.37,
+  "number_grounded_avg": 0.4167
+ },
+ "detail": [
+  {
+   "resume_id": "B01",
+   "question": "你在 Kubernetes 上的实践经验是什么？",
+   "qtype": "technical_depth",
+   "answer_len": 0,
+   "error": "",
+   "star": {
+    "S": false,
+    "T": false,
+    "A": false,
+    "R": false,
+    "complete": false
+   },
+   "numbers": {
+    "n_numbers": 0,
+    "n_grounded": 0,
+    "rate": null
+   },
+   "review_total": 7.7,
+   "citations_count": 0
+  },
+  {
+   "resume_id": "B02",
+   "question": "你在 Vue 上的实践经验是什么？",
+   "qtype": "technical_depth",
+   "answer_len": 469,
+   "error": "",
+   "star": {
+    "S": true,
+    "T": true,
+    "A": true,
+    "R": true,
+    "complete": true
+   },
+   "numbers": {
+    "n_numbers": 0,
+    "n_grounded": 0,
+    "rate": null
+   },
+   "review_total": 21.2,
+   "citations_count": 2
+  },
+  {
+   "resume_id": "B03",
+   "question": "你的核心技术栈里哪些用得最深？",
+   "qtype": "technical_depth",
+   "answer_len": 0,
+   "error": "timed out",
+   "star": {
+    "S": false,
+    "T": false,
+    "A": false,
+    "R": false,
+    "complete": false
+   },
+   "numbers": {
+    "n_numbers": 0,
+    "n_grounded": 0,
+    "rate": null
+   },
+   "review_total": null,
+   "citations_count": 2
+  },
+  {
+   "resume_id": "B04",
+   "question": "实时数仓平台里你遇到的最大挑战是什么？",
+   "qtype": "project_followup",
+   "answer_len": 0,
+   "error": "timed out",
+   "star": {
+    "S": false,
+    "T": false,
+    "A": false,
+    "R": false,
+    "complete": false
+   },
+   "numbers": {
+    "n_numbers": 0,
+    "n_grounded": 0,
+    "rate": null
+   },
+   "review_total": null,
+   "citations_count": 2
+  },
+  {
+   "resume_id": "B05",
+   "question": "自动化回归体系的技术选型是怎么考虑的？",
+   "qtype": "project_followup",
+   "answer_len": 0,
+   "error": "timed out",
+   "star": {
+    "S": false,
+    "T": false,
+    "A": false,
+    "R": false,
+    "complete": false
+   },
+   "numbers": {
+    "n_numbers": 0,
+    "n_grounded": 0,
+    "rate": null
+   },
+   "review_total": null,
+   "citations_count": 2
+  },
+  {
+   "resume_id": "B06",
+   "question": "音视频互动课堂有哪些可量化的成果？",
+   "qtype": "project_followup",
+   "answer_len": 705,
+   "error": "",
+   "star": {
+    "S": true,
+    "T": true,
+    "A": true,
+    "R": true,
+    "complete": true
+   },
+   "numbers": {
+    "n_numbers": 6,
+    "n_grounded": 2,
+    "rate": 0.3333333333333333
+   },
+   "review_total": 10.0,
+   "citations_count": 0
+  },
+  {
+   "resume_id": "B08",
+   "question": "你在 ELK 上的实践经验是什么？",
+   "qtype": "technical_depth",
+   "answer_len": 0,
+   "error": "",
+   "star": {
+    "S": false,
+    "T": false,
+    "A": false,
+    "R": false,
+    "complete": false
+   },
+   "numbers": {
+    "n_numbers": 0,
+    "n_grounded": 0,
+    "rate": null
+   },
+   "review_total": 7.3,
+   "citations_count": 0
+  },
+  {
+   "resume_id": "B09",
+   "question": "你在 Perforce 上的实践经验是什么？",
+   "qtype": "technical_depth",
+   "answer_len": 0,
+   "error": "",
+   "star": {
+    "S": false,
+    "T": false,
+    "A": false,
+    "R": false,
+    "complete": false
+   },
+   "numbers": {
+    "n_numbers": 0,
+    "n_grounded": 0,
+    "rate": null
+   },
+   "review_total": 16.3,
+   "citations_count": 0
+  },
+  {
+   "resume_id": "B10",
+   "question": "你的核心技术栈里哪些用得最深？",
+   "qtype": "technical_depth",
+   "answer_len": 1011,
+   "error": "",
+   "star": {
+    "S": true,
+    "T": true,
+    "A": true,
+    "R": true,
+    "complete": true
+   },
+   "numbers": {
+    "n_numbers": 2,
+    "n_grounded": 1,
+    "rate": 0.5
+   },
+   "review_total": 13.2,
+   "citations_count": 18
+  },
+  {
+   "resume_id": "B11",
+   "question": "短视频推荐重构里你遇到的最大挑战是什么？",
+   "qtype": "project_followup",
+   "answer_len": 0,
+   "error": "",
+   "star": {
+    "S": false,
+    "T": false,
+    "A": false,
+    "R": false,
+    "complete": false
+   },
+   "numbers": {
+    "n_numbers": 0,
+    "n_grounded": 0,
+    "rate": null
+   },
+   "review_total": 17.9,
+   "citations_count": 5
+  }
+ ]
+}

@@ -1,0 +1,178 @@
+{
+ "generated_at": "2026-11-25 07:15:33",
+ "resume_id": "",
+ "engine": {
+  "template": 2,
+  "schema": 3,
+  "rules": 29
+ },
+ "field_coverage": {
+  "total": 85,
+  "filled": 75,
+  "rate": 0.8824,
+  "rule_hit_rate": 0.8824,
+  "by_vendor": [
+   {
+    "vendor": "北森(Beisen)",
+    "total": 22,
+    "filled": 18,
+    "ruleHit": 18,
+    "rate": 0.8181818181818182
+   },
+   {
+    "vendor": "Moka",
+    "total": 15,
+    "filled": 13,
+    "ruleHit": 13,
+    "rate": 0.8666666666666667
+   },
+   {
+    "vendor": "智联招聘",
+    "total": 14,
+    "filled": 14,
+    "ruleHit": 14,
+    "rate": 1
+   },
+   {
+    "vendor": "51job",
+    "total": 13,
+    "filled": 12,
+    "ruleHit": 12,
+    "rate": 0.9230769230769231
+   },
+   {
+    "vendor": "通用表单",
+    "total": 21,
+    "filled": 18,
+    "ruleHit": 18,
+    "rate": 0.8571428571428571
+   }
+  ]
+ },
+ "dropdown_alias": {
+  "total": 10,
+  "ok": 10,
+  "rate": 1,
+  "detail": [
+   {
+    "field": "最高学历",
+    "value": "本科",
+    "expect": "大学本科",
+    "got": "大学本科",
+    "ok": true
+   },
+   {
+    "field": "最高学历",
+    "value": "硕士",
+    "expect": "硕士研究生",
+    "got": "硕士研究生",
+    "ok": true
+   },
+   {
+    "field": "学历",
+    "value": "本科",
+    "expect": "本科",
+    "got": "本科",
+    "ok": true
+   },
+   {
+    "field": "到岗时间",
+    "value": "随时",
+    "expect": "随时到岗",
+    "got": "随时到岗",
+    "ok": true
+   },
+   {
+    "field": "到岗时间",
+    "value": "一个月",
+    "expect": "一个月内到岗",
+    "got": "一个月内到岗",
+    "ok": true
+   },
+   {
+    "field": "英语水平",
+    "value": "CET-6",
+    "expect": "英语六级",
+    "got": "英语六级",
+    "ok": true
+   },
+   {
+    "field": "英语水平",
+    "value": "CET4",
+    "expect": "CET-4",
+    "got": "CET-4",
+    "ok": true
+   },
+   {
+    "field": "性别",
+    "value": "男",
+    "expect": "男",
+    "got": "男",
+    "ok": true
+   },
+   {
+    "field": "工作年限",
+    "value": "应届",
+    "expect": "应届毕业生",
+    "got": "应届毕业生",
+    "ok": true
+   },
+   {
+    "field": "求职类型",
+    "value": "全职",
+    "expect": "全职",
+    "got": "全职",
+    "ok": true
+   }
+  ]
+ },
+ "no_fabrication": {
+  "total": 5,
+  "ok": 5,
+  "rate": 1,
+  "detail": [
+   {
+    "field": "民族",
+    "got": "",
+    "ok": true,
+    "why": "档案未提供民族，应留空不编造"
+   },
+   {
+    "field": "政治面貌",
+    "got": "",
+    "ok": true,
+    "why": "档案未提供政治面貌，应留空不编造"
+   },
+   {
+    "field": "身份证号码",
+    "got": "",
+    "ok": true,
+    "why": "档案未提供证件号，应留空不编造"
+   },
+   {
+    "field": "籍贯",
+    "got": "",
+    "ok": true,
+    "why": "档案未提供籍贯，应留空不编造"
+   },
+   {
+    "field": "微信号",
+    "got": "",
+    "ok": true,
+    "why": "档案未提供微信，应留空不编造"
+   }
+  ]
+ },
+ "unrecognized_fields": [
+  "北森(Beisen): *身份证号码",
+  "北森(Beisen): 民族",
+  "北森(Beisen): 政治面貌",
+  "北森(Beisen): 籍贯",
+  "Moka: 身份证号",
+  "Moka: 工作年限",
+  "51job: 电子邮件",
+  "通用表单: 民族",
+  "通用表单: 政治面貌",
+  "通用表单: 籍贯"
+ ]
+}

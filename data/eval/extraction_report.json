@@ -1,0 +1,669 @@
+{
+ "generated_at": "2026-11-26 11:23:37",
+ "summary": {
+  "n_resumes": 12,
+  "field_accuracy": 1.0,
+  "skills_f1": 1.0,
+  "skills_precision": 1.0,
+  "skills_recall": 1.0,
+  "project_name_rate": 1.0,
+  "project_count_exact_rate": 1.0,
+  "project_role_rate": 1.0,
+  "project_tech_f1": 1.0,
+  "project_result_rate": 1.0,
+  "edu_school_rate": 1.0,
+  "edu_degree_rate": 1.0,
+  "edu_major_rate": 1.0,
+  "achievement_rate": 1.0
+ },
+ "detail": [
+  {
+   "id": "B01",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 2,
+    "pred": 2,
+    "school_hit": 2,
+    "degree_hit": 2,
+    "major_hit": 2,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 31,
+   "field_total": 31,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B02",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 1,
+    "pred": 1,
+    "school_hit": 1,
+    "degree_hit": 1,
+    "major_hit": 1,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 27,
+   "field_total": 27,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B03",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 2,
+    "pred": 2,
+    "school_hit": 2,
+    "degree_hit": 2,
+    "major_hit": 2,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 30,
+   "field_total": 30,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B04",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 3
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 2,
+    "pred": 2,
+    "school_hit": 2,
+    "degree_hit": 2,
+    "major_hit": 2,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 3,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 30,
+   "field_total": 30,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B05",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 1,
+    "pred": 1,
+    "school_hit": 1,
+    "degree_hit": 1,
+    "major_hit": 1,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 27,
+   "field_total": 27,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B06",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 2,
+    "pred": 2,
+    "school_hit": 2,
+    "degree_hit": 2,
+    "major_hit": 2,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 28,
+   "field_total": 28,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B07",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 2,
+    "pred": 2,
+    "school_hit": 2,
+    "degree_hit": 2,
+    "major_hit": 2,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 29,
+   "field_total": 29,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B08",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 1,
+    "pred": 1,
+    "school_hit": 1,
+    "degree_hit": 1,
+    "major_hit": 1,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 25,
+   "field_total": 25,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B09",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 9,
+    "pred": 9,
+    "gold": 9,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 1,
+    "pred": 1,
+    "school_hit": 1,
+    "degree_hit": 1,
+    "major_hit": 1,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 24,
+   "field_total": 24,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B10",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 9,
+    "pred": 9,
+    "gold": 9,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 2,
+    "pred": 2,
+    "school_hit": 2,
+    "degree_hit": 2,
+    "major_hit": 2,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 28,
+   "field_total": 28,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B11",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 4
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 2,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 2,
+    "pred": 2,
+    "school_hit": 2,
+    "degree_hit": 2,
+    "major_hit": 2,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 4,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 28,
+   "field_total": 28,
+   "field_accuracy": 1.0
+  },
+  {
+   "id": "B12",
+   "parsed_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 3
+   },
+   "gold_counts": {
+    "skills": 10,
+    "projects": 2,
+    "education": 1,
+    "achievements": 2
+   },
+   "skills": {
+    "tp": 10,
+    "pred": 10,
+    "gold": 10,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "projects": {
+    "gold": 2,
+    "pred": 2,
+    "count_exact_match": 1,
+    "name_hit": 2,
+    "role_hit": 2,
+    "result_hit": 2,
+    "name_rate": 1.0,
+    "role_rate": 1.0,
+    "result_rate": 1.0,
+    "tech_f1": 1.0
+   },
+   "education": {
+    "gold": 1,
+    "pred": 1,
+    "school_hit": 1,
+    "degree_hit": 1,
+    "major_hit": 1,
+    "school_rate": 1.0,
+    "degree_rate": 1.0,
+    "major_rate": 1.0
+   },
+   "achievements": {
+    "gold": 2,
+    "pred": 3,
+    "hit": 2,
+    "rate": 1.0
+   },
+   "field_correct": 26,
+   "field_total": 26,
+   "field_accuracy": 1.0
+  }
+ ]
+}
