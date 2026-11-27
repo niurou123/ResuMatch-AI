@@ -20,9 +20,18 @@ class Settings(BaseSettings):
 
     # ===== DeepSeek API =====
     DEEPSEEK_API_KEY: str = ""
-    DEEPSEEK_MODEL: str = "deepseek-v4-pro"
-    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
+    DEEPSEEK_MODEL: str = "deepseek/deepseek-v4.1-flash"
+    DEEPSEEK_BASE_URL: str = "https://api.commandcode.ai/provider/v1"
     DEEPSEEK_TIMEOUT: int = 60
+    # 是否按"推理模型"处理（放大 max_tokens 预算 + 限制思维链输出）。
+    # None = 按模型名自动判定：名称含 flash 视为非推理；含 pro / reasoner 视为推理。
+    # 换模型后无需改代码，显式设置 True/False 可强制覆盖。
+    MODEL_IS_REASONING: Optional[bool] = None
+    # content 为空时是否自动重试一次（默认开）
+    LLM_RETRY_ON_EMPTY: bool = True
+    # 是否允许把 reasoning_content（思维链）当答案兜底。
+    # 默认关闭：思维链泄漏会污染回答（BUG_LOG 案例 31），宁可显式失败走规则降级。
+    ALLOW_REASONING_FALLBACK: bool = False
 
     # ===== 向量库配置 =====
     # 主路径：Milvus Lite（pymilvus 嵌入式，本地单文件）；ChromaDB 为自动降级退路

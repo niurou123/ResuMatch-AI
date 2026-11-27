@@ -46,6 +46,25 @@ class DeepSeekClient:
         """释放连接池（进程退出时调用；全局单例通常无需手动调）"""
         await self._http.aclose()
 
+    def _is_reasoning_model(self) -> bool:
+        """是否按推理模型处理（放大 max_tokens 预算、加 reasoning 参数）
+
+        判定顺序：
+        1. 配置显式指定 MODEL_IS_REASONING（True/False）——优先
+        2. 模型名自动判定：含 flash / turbo / chat 视为非推理；
+           含 pro / reasoner / r1 / think 视为推理
+        换模型时无需改代码（如 v4-pro → v4.1-flash 会自动降级为非推理）。
+        """
+        explicit = getattr(settings, "MODEL_IS_REASONING", None)
+        if explicit is not None:
+            return bool(explicit)
+        name = (self.model or "").lower()
+        if not name:
+            return False
+        if any(k in name for k in ("flash", "turbo", "chat", "lite")):
+            return False
+        return any(k in name for k in ("pro", "reasoner", "r1", "think"))
+
     async def _request(
         self, endpoint: str, data: Dict[str, Any], stream: bool = False
     ) -> Union[Dict[str, Any], AsyncGenerator]:
@@ -107,35 +126,53 @@ class DeepSeekClient:
             "top_p": settings.TOP_P,
             "stream": stream,
         }
-        # 推理模型（deepseek-v4-pro 线）：思维链与正式答案共享 max_tokens 预算。
-        # 思维链通常消耗数百到数千 token——预算不放大时 content 会被截成空串
-        # （finish_reason=length，全部 token 被 reasoning 吃掉）。
-        # 这里按 3 倍放大预算并显式关闭思维链输出（业务场景只需正式答案）。
-        if self.model and ("v4" in self.model or "reasoner" in self.model):
+        # 推理模型（如 deepseek-v4-pro 线）：思维链与正式答案共享 max_tokens 预算，
+        # 预算不放大时 content 会被截成空串（finish_reason=length）。
+        # 但 flash 等非推理模型不能加 reasoning 参数，否则网关可能直接拒绝；
+        # 因此判定改为「显式配置优先，否则按模型名判定」。
+        if self._is_reasoning_model():
             data["max_tokens"] = mt * 3
             data["reasoning"] = {"effort": "low"}  # 最短思维链（若网关支持）
 
         if stream:
             return await self._request("chat/completions", data, stream=True)
-        else:
-            response = await self._request("chat/completions", data, stream=False)
-            try:
-                msg = response["choices"][0]["message"]
-                content = msg.get("content") or ""
-                # 推理模型兜底：content 为空但 reasoning_content 有值时，
-                # 说明预算被思维链耗尽——把思维链里的可用文本作为降级返回
-                # （好过返回空串让上层误判为生成失败）
-                if not content.strip():
-                    reasoning = msg.get("reasoning_content") or ""
-                    if reasoning.strip():
-                        content = reasoning.strip()
-                return ChatResponse(
-                    content=content,
-                    usage=response.get("usage", {}),
-                    model=response.get("model", self.model),
-                )
-            except (KeyError, IndexError, TypeError) as e:
-                raise Exception(f"Invalid response format: {response}") from e
+
+        response = await self._request("chat/completions", data, stream=False)
+        try:
+            msg = response["choices"][0]["message"]
+            content = (msg.get("content") or "").strip()
+            reasoning = (msg.get("reasoning_content") or "").strip()
+
+            # content 为空时的处理（BUG_LOG 案例 31）：
+            # 早期实现直接把 reasoning_content 当答案返回，导致思维链原文泄漏到
+            # 最终回答里（"我们需要回答中文。需要严格四段标签……"），既污染答案，
+            # 也会让"数字可回溯率"等指标失效。这里改为「重试一次；仍为空才兜底」，
+            # 且兜底默认关闭——宁可显式失败走规则降级，也不把思维链当答案。
+            if not content:
+                if getattr(settings, "LLM_RETRY_ON_EMPTY", True):
+                    try:
+                        retry = await self._request("chat/completions", data, stream=False)
+                        msg = retry["choices"][0]["message"]
+                        content = (msg.get("content") or "").strip()
+                        response = retry
+                        reasoning = (msg.get("reasoning_content") or "").strip()
+                    except Exception:
+                        pass
+                if not content and reasoning:
+                    if getattr(settings, "ALLOW_REASONING_FALLBACK", False):
+                        content = reasoning
+                    else:
+                        raise Exception(
+                            "LLM 返回空内容且未开启思维链兜底"
+                            "（content 为空；如需强制兜底请设 ALLOW_REASONING_FALLBACK=true）"
+                        )
+            return ChatResponse(
+                content=content,
+                usage=response.get("usage", {}),
+                model=response.get("model", self.model),
+            )
+        except (KeyError, IndexError, TypeError) as e:
+            raise Exception(f"Invalid response format: {response}") from e
 
     async def chat_sync(self, messages: List[Message], temperature: float = None,
                         max_tokens: int = None) -> str:
