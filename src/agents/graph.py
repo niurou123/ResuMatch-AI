@@ -32,6 +32,10 @@ from src.agents.retriever_node import (
     parallel_retrieval_node
 )
 from src.agents.writer import star_writer_node, star_writer_stream
+from src.agents.decomposer import (
+    decomposition_node, sub_answer_node, synthesize_node,
+    evidence_gate_node, should_supplement, is_composite
+)
 from src.agents.reviewer import (
     reviewer_correctness, reviewer_completeness, reviewer_advantage,
     parallel_review_node, vote_node
@@ -41,6 +45,31 @@ from src.config import settings
 
 # ==================== 条件边 ====================
 
+def should_decompose(state: AgentState) -> str:
+    """Router 之后的分流：复合问题走"分解→子问题并行→整合"，其余走原链路
+
+    仅当同时满足三个条件才启用，避免为复杂而复杂：
+      1. 问题被判定为复合问题（并列/比较表述）
+      2. 非 fast 模式（fast 的定位是低延迟）
+      3. Planner 未显式关闭分解（decomposition_depth 为 0 表示不拆）
+    """
+    decisions = state.get("planner_decisions", {}) or {}
+    if decisions.get("skip_review") is True:                 # fast 模式标记
+        return should_retrieve(state)
+    if decisions.get("enable_decomposition") is False:        # 显式关闭
+        return should_retrieve(state)
+    # 注意：不能用 planner_decisions.decomposition_depth 门控——该字段描述的是
+    # "检索查询的拆解深度"，与本文的"复合问题分解链路"是两件事。
+    if is_composite(state.get("query", "")):
+        return "decompose"
+    return should_retrieve(state)
+
+
+def after_decompose(state: AgentState) -> Literal["sub", "retrieve", "skip"]:
+    """分解节点之后：成功拆出子问题则进入并行作答，否则回落到原链路"""
+    if state.get("sub_questions"):
+        return "sub"
+    return should_retrieve(state)
 def should_retrieve(state: AgentState) -> str:
     """
     Planner + Router 联合决策
@@ -116,6 +145,10 @@ def build_graph() -> StateGraph:
     # ===== 注册节点 =====
     workflow.add_node("planner", dynamic_planner_node)
     workflow.add_node("router", question_router_node)
+    workflow.add_node("decompose", decomposition_node)        # 复合问题拆解
+    workflow.add_node("sub_parallel", sub_answer_node)        # 子问题并行作答（fan-out）
+    workflow.add_node("synthesize", synthesize_node)          # 整合总答（fan-in）
+    workflow.add_node("evidence_gate", evidence_gate_node)    # 证据充分性闸门（Self-RAG 循环）
     workflow.add_node("parallel_retrieval", parallel_retrieval_node)
     workflow.add_node("writer", star_writer_node)
     workflow.add_node("parallel_review", parallel_review_node)
@@ -126,13 +159,44 @@ def build_graph() -> StateGraph:
     # ===== Planner → Router =====
     workflow.add_edge("planner", "router")
 
-    # ===== Router → 条件分发 =====
+    # ===== Router → 条件分发（复合问题优先走分解链路）=====
     workflow.add_conditional_edges(
         "router",
-        should_retrieve,
+        should_decompose,
         {
+            "decompose": "decompose",
             "retrieve": "parallel_retrieval",
             "skip": "writer",
+        },
+    )
+
+    # ===== 分解 → 子问题并行 / 回落原链路 =====
+    workflow.add_conditional_edges(
+        "decompose",
+        after_decompose,
+        {
+            "sub": "sub_parallel",
+            "retrieve": "parallel_retrieval",
+            "skip": "writer",
+        },
+    )
+
+    # ===== 子问题并行 → 证据闸门 →（补充检索回环）→ 整合 → 评审 =====
+    workflow.add_edge("sub_parallel", "evidence_gate")
+    workflow.add_conditional_edges(
+        "evidence_gate",
+        should_supplement,
+        {
+            "supplement": "sub_parallel",   # 证据不足：定向补充后回到子问题节点
+            "synthesize": "synthesize",
+        },
+    )
+    workflow.add_conditional_edges(
+        "synthesize",
+        should_review,
+        {
+            "review": "parallel_review",
+            "skip": END,
         },
     )
 
@@ -218,11 +282,10 @@ async def run_interview_workflow(
 
     config = {"configurable": {"thread_id": session_id}}
 
-    final = None
-    async for event in graph.astream(initial, config):
-        for node_name, node_state in event.items():
-            final = node_state
-
+    # 注意：不能用 astream 逐事件覆盖 final —— 事件里是"状态增量"，
+    # 返回最后一条增量会让调用方拿到不完整的 state（分解链路的 sub_questions、
+    # 证据轮次等字段会凭空消失）。ainvoke 返回完整的终态。
+    final = await graph.ainvoke(initial, config)
     return final or initial
 
 

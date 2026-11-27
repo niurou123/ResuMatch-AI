@@ -44,6 +44,17 @@ class AgentState(TypedDict, total=False):
     retrieved_education: List[Dict[str, Any]]    # 匹配的教育背景
     reranked_context: List[Dict[str, Any]]       # Cross-Encoder 精排后的最终上下文
 
+    # ===== 复合问题分解（src/agents/decomposer.py）=====
+    # 注意：LangGraph 只为本 TypedDict 中声明的字段建立状态通道，
+    # 运行时新加的键会在节点间被丢弃 —— 因此下面这些字段必须在此声明。
+    sub_questions: List[str]              # 拆解出的子问题
+    sub_answers: List[Dict[str, Any]]     # 每个子问题的独立答案与证据数
+    decomposition_used: bool              # 是否走了分解链路
+    decomposition_source: str             # llm / rule
+    decomposition_stats: Dict[str, Any]   # 子问题数与成功作答数
+    evidence_rounds: int                  # 证据检索轮次（1=首轮，2=补充轮）
+    supplement_queries: Dict[str, str]    # 补充检索查询（子问题 → 查询词）
+    evidence_sufficiency: Dict[str, Any]  # 充分性判定结果
     # ===== 生成结果 =====
     draft_answer: str                   # STARWriter 生成的草稿
     candidate_answers: List[Dict[str, Any]]  # 候选回答（多版本）
