@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用问题与讨论
+    url: https://github.com/niurou123/ResuMatch-AI/discussions
+    about: 安装配置、使用疑问、经验交流请在 Discussions 提出
+  - name: 安全漏洞
+    url: https://github.com/niurou123/ResuMatch-AI/blob/main/SECURITY.md
+    about: 请勿在 Issue 中公开报告安全问题，阅读安全策略后私下联系
+  - name: 已知缺陷清单
+    url: https://github.com/niurou123/ResuMatch-AI/blob/main/BUG_LOG.md
+    about: 提交 Bug 前先查一下缺陷档案，可能已有记录与修复说明

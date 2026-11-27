@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1) 后端语法与结构检查（不安装重依赖，几十秒完成）
+  backend-lint:
+    name: 后端语法检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 编译所有 Python 源文件
+        run: python -m compileall -q src scripts tests
+      - name: 检查关键模块可导入（不加载模型）
+        env:
+          DEEPSEEK_API_KEY: sk-ci-placeholder
+        run: |
+          python -c "import importlib, sys; \
+          mods=['src.config','src.agents.state','src.agents.decomposer']; \
+          [importlib.import_module(m) for m in mods]; print('imports ok')"
+
+  # 2) 前端类型检查与构建
+  frontend:
+    name: 前端构建
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: TypeScript 类型检查
+        run: npx tsc --noEmit -p tsconfig.app.json
+      - name: 生产构建
+        run: npm run build
+
+  # 3) 单元测试（安装完整依赖，需下载嵌入模型）
+  test:
+    name: 单元测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 缓存 HuggingFace 模型
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ runner.os }}-bge-small-zh
+      - name: 运行测试
+        env:
+          DEEPSEEK_API_KEY: sk-ci-placeholder
+          HF_HUB_OFFLINE: "0"
+        run: pytest -q

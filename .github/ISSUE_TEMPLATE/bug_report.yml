@@ -1,0 +1,70 @@
+name: Bug 报告
+description: 报告一个可复现的缺陷
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请填写以下信息以便快速定位问题。
+        提交前建议先看 [BUG_LOG.md](https://github.com/niurou123/ResuMatch-AI/blob/main/BUG_LOG.md)，可能已有同类记录。
+        安全漏洞请勿在此提交，请阅读 [SECURITY.md](https://github.com/niurou123/ResuMatch-AI/blob/main/SECURITY.md)。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 现象描述
+      description: 你期望发生什么？实际发生了什么？
+      placeholder: 上传 PDF 简历后，界面提示"解析失败"，但后台日志无报错……
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开 http://localhost:5173/resume
+        2. 上传 xxx.pdf
+        3. 观察到……
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 影响模块
+      multiple: true
+      options:
+        - 简历解析（src/rag/parser.py）
+        - 检索（src/rag、src/agents/retriever_node.py）
+        - 多 Agent 工作流（src/agents）
+        - 前端（frontend/）
+        - Chrome 扩展（extension/）
+        - 评测脚本（scripts/）
+        - 文档
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: 后端控制台输出或浏览器 Console 报错（请删除其中的密钥与个人信息）
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / 提交
+      description: 可执行 `git rev-parse --short HEAD` 获取
+      placeholder: 4251b4f
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      options: [Windows, macOS, Linux]
+    validations:
+      required: true
