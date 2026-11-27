@@ -15,6 +15,14 @@ from dataclasses import dataclass, field
 from src.config import settings
 
 
+# ===== OCR 兜底（扫描件型 PDF）=====
+OCR_ENABLED = True             # 总开关
+OCR_MIN_CHARS_PER_PAGE = 50    # 每页平均有效字符低于此值判为扫描件
+OCR_DPI = 150                  # 渲染分辨率（150 在精度与速度间较均衡，200 会慢一倍）
+OCR_MAX_PAGES = 4              # 单份最多 OCR 前 N 页（简历核心信息通常在前几页）
+
+
+
 # ============ 数据模型 ============
 
 @dataclass
@@ -223,6 +231,7 @@ class ResumeParser:
         raw_lines = raw_text.split('\n')
 
         # Step 3: 按段落分割
+        raw_text = self._normalize_blob_text(raw_text)  # 整块文本结构化（适配 PDF 提取的真实简历）
         paragraphs = self._split_paragraphs(raw_text)
 
         # Step 4: 识别简历分区
@@ -402,17 +411,66 @@ class ResumeParser:
             return content.decode("utf-8", errors="ignore")
 
     def _extract_pdf(self, file_path: str) -> str:
-        """PyMuPDF 直接提取"""
+        """PyMuPDF 提取；文本层过稀（扫描件）时自动回落 OCR"""
         try:
             import fitz
-            doc = fitz.open(file_path)
-            text_parts = []
-            for page in doc:
-                text_parts.append(page.get_text("text"))
-            doc.close()
-            return "\n".join(text_parts)
         except ImportError:
             raise ImportError("需要安装 PyMuPDF: pip install PyMuPDF")
+
+        doc = fitz.open(file_path)
+        try:
+            text_parts = [page.get_text("text") for page in doc]
+            text = "\n".join(text_parts)
+            n_pages = max(1, len(doc))
+            # 判定为扫描件：每页平均有效字符过少（图片型 PDF 文本层几乎为空）
+            per_page = len(re.sub(r"\s", "", text)) / n_pages
+            if per_page >= OCR_MIN_CHARS_PER_PAGE:
+                return text
+
+            ocr_text = self._ocr_pdf(doc)
+            # OCR 也不理想时，返回两者中更长的那个（宁可多不可空）
+            if len(re.sub(r"\s", "", ocr_text)) > len(re.sub(r"\s", "", text)):
+                return ocr_text
+            return text
+        finally:
+            doc.close()
+
+    def _ocr_pdf(self, doc) -> str:
+        """对 PDF 每页渲染图做 OCR（RapidOCR，中英文）
+
+        失败一律返回空串，由调用方回落到原文本层 —— 不允许因为 OCR 不可用
+        而让整份简历解析失败。
+        """
+        engine = self._get_ocr_engine()
+        if engine is None:
+            return ""
+        out = []
+        try:
+            for page_no, page in enumerate(doc):
+                if page_no >= OCR_MAX_PAGES:
+                    break
+                pix = page.get_pixmap(dpi=OCR_DPI)
+                img_bytes = pix.tobytes("png")
+                result, _ = engine(img_bytes)
+                if not result:
+                    continue
+                out.append("\n".join(seg[1] for seg in result if len(seg) > 1 and seg[1]))
+        except Exception:
+            return ""
+        return "\n".join(out)
+
+    def _get_ocr_engine(self):
+        """惰性初始化 OCR 引擎（模型加载较重，纯文本 PDF 不应付出该开销）"""
+        if not OCR_ENABLED:
+            return None
+        if getattr(self, "_ocr_engine", "uninit") != "uninit":
+            return self._ocr_engine
+        try:
+            from rapidocr_onnxruntime import RapidOCR
+            self._ocr_engine = RapidOCR()
+        except Exception:
+            self._ocr_engine = None
+        return self._ocr_engine
 
     def _extract_docx(self, file_path: str) -> str:
         """python-docx 提取，失败回退 XML"""
@@ -463,6 +521,38 @@ class ResumeParser:
         paras = re.split(r'\n\s*\n', text)
         return [p.strip() for p in paras if p.strip()]
 
+    # 常见英文分区标题（用于把 PDF 提取出的整块文本重新切出结构）
+    EN_HEADINGS = (
+        "professional experience", "work experience", "employment history", "work history",
+        "education and training", "academic background", "core competencies",
+        "technical skills", "certifications", "certificates", "achievements",
+        "publications", "summary", "objective", "education", "experience",
+        "projects", "skills", "awards", "honors", "training", "languages", "interests",
+    )
+
+    def _normalize_blob_text(self, text: str) -> str:
+        """把"整块"文本重新切出分区结构
+
+        真实简历（尤其是从 PDF 提取的）常把多个分区标题塞在同一行里，例如
+        "HR ADMINISTRATOR       Summary     Dedicated Customer Service Manager…"。
+        这类文本所有分区都识别不到，抽取结果为空。此处把被 3 个以上空格包夹的
+        英文分区标题单独成行，使后续分区识别可以正常工作。
+        中文简历几乎不会出现该形态，因此对本项目原有用例无影响。
+        """
+        if not text or not re.search(r"[A-Za-z]{4,}", text):
+            return text
+        heads = sorted(self.EN_HEADINGS, key=len, reverse=True)
+        pattern = re.compile(
+            r"\s{2,}(" + "|".join(re.escape(h) for h in heads) + r")\s{2,}",
+            re.IGNORECASE,
+        )
+        out_lines = []
+        for line in text.split("\n"):
+            if pattern.search(line):
+                out_lines.append(pattern.sub(lambda m: "\n\n" + m.group(1).strip() + "\n\n", line))
+            else:
+                out_lines.append(line)
+        return "\n".join(out_lines)
     def _identify_sections(self, paragraphs: List[str]) -> Dict[str, str]:
         """识别简历分区（严格版 - 精确匹配分区标题行）"""
         sections = {}
@@ -473,20 +563,21 @@ class ResumeParser:
         # 格式: "XX经历"、"XX背景"、"XX技能"、"XX项目" 等
         section_patterns = [
             ("education", re.compile(
-                r'^(?:教育背景|教育经历|学历|education|academic|主修课程)'
+                r'^(?:教育背景|教育经历|学历|education|academic|education and training|academic background|主修课程)'
                 r'(?:[：:].*)?\s*$', re.IGNORECASE)),
             ("skills", re.compile(
-                r'^(?:专业技能|技能|技术栈|技术能力|skills|technologies)'
+                r'^(?:专业技能|技能|技术栈|技术能力|skills|technologies|technical skills|core competencies|competencies|expertise)'
                 r'(?:[：:].*)?\s*$', re.IGNORECASE)),
             ("work", re.compile(
-                r'^(?:工作经历|工作经验|实习经历|科研经历|科研项目|'
+                r'^(?:工作经历|工作经验|实习经历|科研经历|科研项目|professional experience|work history|employment history|'
                 r'work experience|experience|employment)'
                 r'(?:[：:].*)?\s*$', re.IGNORECASE)),
             ("projects", re.compile(
                 r'^(?:项目经历|项目经验|实习项目|项目|projects|project experience)'
                 r'(?:[：:].*)?\s*$', re.IGNORECASE)),
             ("achievements", re.compile(
-                r'^(?:获奖|荣誉证书|证书|achievements|awards|honors|'
+                r'^(?:获奖|荣誉证书|证书|关键成就|核心成果|主要成果|项目成果|'
+                r'个人成果|成果|亮点|achievements|awards|honors|'
                 r'论文发表|论文|发表)'
                 r'(?:[：:].*)?\s*$', re.IGNORECASE)),
         ]
@@ -505,7 +596,17 @@ class ResumeParser:
                         current_section = section_name
                         current_content = []
                         lines = para.strip().split("\n")
-                        remaining = [l.strip() for l in lines[1:] if l.strip() and not l.strip().startswith("#")]
+                        # 只丢弃同级或更高层级的分区标题（# / ##），保留更深层标题
+                        # （如 "### 项目名"）——否则项目名会被当成标题一并丢掉
+                        remaining = []
+                        for _l in lines[1:]:
+                            _ls = _l.strip()
+                            if not _ls:
+                                continue
+                            _m = re.match(r'^(#+)\s*', _ls)
+                            if _m and len(_m.group(1)) <= 2:
+                                continue
+                            remaining.append(_ls)
                         if remaining:
                             current_content.extend(remaining)
                         matched = True
@@ -702,6 +803,17 @@ class ResumeParser:
             r'|[^\n]{5,100}\s*\|\s*[^\n]{1,30}))',
             project_text
         )
+        # 兼容 "### 项目名\n角色: xxx" 这类既无日期、也无 | 的常见 markdown 排版：
+        # 先按 2~6 级标题切分，再对每段套用上述边界规则，避免整段被当成一个项目
+        if re.search(r'\n#{2,6}\s+\S', project_text):
+            _merged: List[str] = []
+            for _chunk in re.split(r'\n(?=#{2,6}\s+\S)', project_text):
+                _merged.extend(re.split(
+                    r'\n(?=#*\s*[A-Za-z一-鿿（(](?:[^\n]{3,120}\s{4,}\d{4}[.\-]'
+                    r'|[^\n]{5,100}\s*\|\s*[^\n]{1,30}))',
+                    _chunk
+                ))
+            project_blocks = _merged
 
         for block in project_blocks:
             block = block.strip()
@@ -710,6 +822,8 @@ class ResumeParser:
 
             lines = block.split("\n")
             first_line = lines[0].strip() if lines else "未知项目"
+            # 去掉 markdown 标题前缀（### 项目名）与加粗标记（**项目名**）
+            first_line = re.sub(r'^#{1,6}\s*', '', first_line).strip().strip("*").strip()
             # 清理项目名中的编号前缀
             name = re.sub(r'^[\d]+[\.\)、]\s*', '', first_line)
             # 清理尾部长空白及日期
@@ -728,9 +842,11 @@ class ResumeParser:
             if len(name) > 120:
                 name = name[:120]
             # 跳过明显不是项目名的块
-            if re.match(r'^(?:项目简介|设计|主要工作|简历|技能|工具|语言|基于前后|负责|封装|搭建|引入|实现)', name):
+            if re.match(r'^(?:项目简介|设计|主要工作|简历|技能|工具|语言|基于前后|负责|封装|搭建|引入|实现|'
+                        r'角色|职位|岗位|技术栈|描述|关键成果|主要成果|时间|成果)[：:]?', name):
                 continue
-            if len(name) < 5:
+            # 中文项目名常见为 4 字（统一网关/特征平台），阈值降到 3
+            if len(name) < 3:
                 continue
 
             # 提取角色（若首行未含 |，则从 "角色/岗位/职位: xxx" 提取）
@@ -909,25 +1025,44 @@ class ResumeParser:
             major = ""
             time_period = ""
 
-            # 学位匹配
-            degree_match = re.search(r'(?:学士|硕士|博士|本科|研究生|MBA|PhD|Bachelor|Master)', line)
-            if degree_match:
-                degree = degree_match.group(0)
-                school = line.replace(degree, "").strip()
+            work = line
 
-            # 专业匹配
-            major_match = re.search(
-                r'(?:计算机|软件|数据|人工智能|电子|通信|机械|金融|管理|数学|物理|化学|生物|'
-                r'Computer Science|Software Engineering|Data Science|AI)',
-                line, re.IGNORECASE
+            # 时间匹配（先剥离，避免年份污染学校名与专业名）
+            # 兼容 "2024-2027" / "2024.09-2027.06" / "2024年9月-2027年6月" / "2020.03-至今"
+            time_match = re.search(
+                r'((?:19|20)\d{2}(?:[./年]\d{1,2}[月]?)?\s*[-–—至到~]\s*'
+                r'(?:(?:19|20)\d{2}(?:[./年]\d{1,2}[月]?)?|至今|现在|present))',
+                work, re.IGNORECASE
             )
-            if major_match:
-                major = major_match.group(0)
-
-            # 时间匹配
-            time_match = re.search(r'(\d{4}[./年]\d{1,2}[月]?\s*[-–—至到]\s*\d{4}[./年]\d{1,2}[月]?)', line)
             if time_match:
                 time_period = time_match.group(1)
+                work = work.replace(time_period, " ")
+
+            # 学位匹配
+            degree_match = re.search(
+                r'(?:学士|硕士|博士|本科|研究生|专科|MBA|PhD|Bachelor|Master)',
+                work, re.IGNORECASE
+            )
+            if degree_match:
+                degree = degree_match.group(0)
+                work = work.replace(degree, " ")
+
+            # 剩余文本按空白切分：首段为学校，其余合并为专业
+            # 兼容 "学校 专业 学历 时间" 与 "学历 学校 专业" 等常见顺序
+            tokens = [t for t in re.split(r'\s+', work.strip()) if t]
+            if tokens:
+                school = tokens[0].strip("，,、|·")
+                rest = [t.strip("，,、|·") for t in tokens[1:] if t.strip("，,、|·")]
+                if rest:
+                    major = " ".join(rest)
+            if not major:
+                # 兜底：无显式专业字段时按学科关键词匹配（2-10 个汉字）
+                major_match = re.search(
+                    r'([\u4e00-\u9fa5]{2,10}(?:技术|工程|科学|学|管理|设计))',
+                    work, re.IGNORECASE
+                )
+                if major_match and major_match.group(1) != school:
+                    major = major_match.group(1)
 
             line_range = self._find_line_range(line, raw_lines)
 

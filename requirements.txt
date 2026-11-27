@@ -77,3 +77,10 @@ python-json-logger==2.0.7
 
 # Redis (会话持久化 + LLM缓存)
 redis>=5.0.0
+
+# ===== 扫描件 PDF 的 OCR 兜底 =====
+# 引擎：RapidOCR（onnxruntime 推理，无需 Tesseract 系统依赖，自带中英模型）
+# 注意：opencv-python 5.x 声明依赖 numpy>=2，与本项目 numpy<2.0 的钉法冲突；
+#       实测在当前 numpy 1.26 下 OCR 可正常工作。若日后报 numpy ABI 错误，
+#       把 opencv 改为 opencv-python>=4.8,<5 即可。
+rapidocr-onnxruntime>=1.3.0
