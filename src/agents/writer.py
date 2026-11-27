@@ -98,6 +98,18 @@ async def star_writer_node(state: AgentState) -> AgentState:
         citations = _extract_citations(full_answer, reranked_context)
         validated_answer = _validate_citations(full_answer, citations)
 
+        # ===== 最短长度保护（BUG_LOG 案例 32）=====
+        # 模型偶发只吐一个标题或一句话（实测出现过 25 字残答），
+        # 若不加保护，这种残答会被评审当作正常结果接受。
+        if _looks_truncated(validated_answer):
+            repaired = await _repair_short_answer(client, query, system_prompt, validated_answer)
+            if repaired and len(repaired) > len(validated_answer):
+                validated_answer = repaired
+                citations = _extract_citations(validated_answer, reranked_context)
+                validated_answer = _validate_citations(validated_answer, citations)
+        # 每轮都刷新该标记（避免上一轮的值残留）；仍过短则交给 should_revise 强制再修一轮
+        state["answer_truncated"] = _looks_truncated(validated_answer)
+
         state["draft_answer"] = validated_answer
         state["citations"] = citations
 
@@ -139,6 +151,47 @@ async def star_writer_stream(state: AgentState) -> AsyncGenerator[str, None]:
 
     except Exception as e:
         yield f"\n\n[生成错误: {str(e)}]"
+
+
+# ===== 残答防护（BUG_LOG 案例 32）=====
+MIN_ANSWER_CHARS = 180          # 四段式 STAR 回答的合理下限
+STAR_LABELS = ("情境", "任务", "行动", "结果", "Situation", "Task", "Action", "Result")
+
+
+def _looks_truncated(answer: str) -> bool:
+    """判断回答是否像"没写完"：内容为空、过短，或完全没有 STAR 结构标签
+
+    纯规则判断，不调用模型，因此可被单元测试覆盖，也不增加 LLM 开销。
+    """
+    text = (answer or "").strip()
+    if not text:
+        return True
+    if len(text) < MIN_ANSWER_CHARS:
+        return True
+    lowered = text.lower()
+    return not any(lb.lower() in lowered for lb in STAR_LABELS)
+
+
+async def _repair_short_answer(client, query: str, system_prompt: str,
+                               short_answer: str) -> str:
+    """对过短回答做一次定向补全；失败返回空串，由调用方回落到原文"""
+    try:
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=(
+                "你上一次的回答过短或结构不完整，只输出了：\n"
+                f"{short_answer[:200]}\n\n"
+                f"请针对问题「{query}」重新作答，要求：\n"
+                "1. 严格包含 **情境（Situation）**、**任务（Task）**、"
+                "**行动（Action）**、**结果（Result）** 四段标签\n"
+                "2. 全文字数不少于 300 字，每段都要有具体事实\n"
+                "3. 只使用简历中已有的事实与数字，不得新增或改写数字"
+            )),
+        ]
+        out = await client.chat_sync(messages, temperature=0.4)
+        return (out or "").strip()
+    except Exception:
+        return ""
 
 
 def _detect_uncertain_claims(answer: str) -> List[str]:

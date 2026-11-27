@@ -106,6 +106,11 @@ def should_revise(state: AgentState) -> Literal["revise", "accept"]:
     needs_revision = state.get("needs_revision", False)
     revision_count = state.get("revision_count", 0)
 
+    # 残答（BUG_LOG 案例 32）：即使评审投票通过，只要回答过短/缺结构，
+    # 也强制再走一轮修订——此时 Writer 已带 answer_truncated 标记与聚合反馈重写
+    if state.get("answer_truncated") and revision_count < settings.MAX_REVISION_ROUNDS:
+        return "revise"
+
     if needs_revision and revision_count < settings.MAX_REVISION_ROUNDS:
         return "revise"
     return "accept"
