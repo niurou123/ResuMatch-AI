@@ -235,6 +235,8 @@ export interface SystemInfoResponse {
   embedding_model: string;
   collections: Record<string, number>;
   memory_stats: Record<string, unknown>;
+  /** 向量库后端：milvus / chromadb（后端 /system/info 暴露） */
+  vector_backend?: string;
 }
 
 export interface HealthResponse {

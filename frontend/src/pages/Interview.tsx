@@ -66,10 +66,10 @@ const NODE_LABELS: Record<DAGNodeId, string> = {
 
 function DAGNode({ nodeId, status }: { nodeId: DAGNodeId; status: string }) {
   const colors: Record<string, { border: string; bg: string; dot: string; text: string }> = {
-    pending: { border: '#2a2a5a', bg: 'transparent', dot: '#3a3a5a', text: '#5e5e88' },
-    running: { border: '#f59e0b', bg: 'rgba(245,158,11,0.08)', dot: '#f59e0b', text: '#f59e0b' },
-    success: { border: '#22c55e', bg: 'rgba(34,197,94,0.08)', dot: '#22c55e', text: '#22c55e' },
-    failed: { border: '#ef4444', bg: 'rgba(239,68,68,0.08)', dot: '#ef4444', text: '#ef4444' },
+    pending: { border: '#e5e6eb', bg: 'transparent', dot: '#d0d3d9', text: '#86909c' },
+    running: { border: '#d97706', bg: 'rgba(245,158,11,0.08)', dot: '#d97706', text: '#d97706' },
+    success: { border: '#2ea121', bg: 'rgba(34,197,94,0.08)', dot: '#2ea121', text: '#2ea121' },
+    failed: { border: '#d93026', bg: 'rgba(239,68,68,0.08)', dot: '#d93026', text: '#d93026' },
   };
   const c = colors[status] || colors.pending;
   return (
@@ -182,7 +182,7 @@ function AgentDetailSection({
       {parts.map((p, i) => (
         <details key={i} className="agent-detail" open={i === parts.length - 1}>
           <summary>
-            <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ background: '#22c55e' }} />
+            <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ background: '#2ea121' }} />
             {p.label}
           </summary>
           <div className="body" dangerouslySetInnerHTML={{ __html: p.content }} />
@@ -296,7 +296,7 @@ function SingleQA() {
       {/* 进度条 */}
       <div className="card-custom">
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: '#1a1a3e' }}>
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: '#fafafa' }}>
             <div
               className="h-full transition-all duration-500 brand-gradient rounded-full"
               style={{ width: `${dag.progress}%` }}
@@ -493,7 +493,7 @@ function MockInterview() {
                 onClick={() => setFocusAreas(focusAreas.includes(a) ? focusAreas.filter((f) => f !== a) : [...focusAreas, a])}
                 className={`px-3 py-1.5 rounded-btn text-xs transition-colors ${
                   focusAreas.includes(a)
-                    ? 'bg-primary/20 text-primary-2 border border-primary/30'
+                    ? 'bg-primary/20 text-primary border border-primary/30'
                     : 'bg-surface border border-border text-text-3 hover:text-text-2'
                 }`}
               >
@@ -551,7 +551,7 @@ function MockInterview() {
                     key={m}
                     onClick={() => setSuggestMode(m)}
                     className={`px-2.5 py-1 text-xs rounded-btn transition-colors ${
-                      suggestMode === m ? 'bg-primary/20 text-primary-2' : 'text-text-3 hover:text-text-2'
+                      suggestMode === m ? 'bg-primary/20 text-primary' : 'text-text-3 hover:text-text-2'
                     }`}
                   >
                     {m === 'followup' ? '追问' : '新问题'}
@@ -585,7 +585,7 @@ function MockInterview() {
                     {/* 对练走单次 LLM 调用、不做评审，后端返回 0 即视为无评分 */}
                     {h.reviewTotal ? <span className="text-text-3 text-xs">评分 {h.reviewTotal}/25</span> : null}
                   </div>
-                  <p className="text-text-2 text-sm mb-3" style={{ borderLeft: '2px solid #6366f1', paddingLeft: '0.75rem' }}>
+                  <p className="text-text-2 text-sm mb-3" style={{ borderLeft: '2px solid #1f2329', paddingLeft: '0.75rem' }}>
                     {h.question}
                   </p>
                   <div className="text-xs text-text-3 uppercase tracking-wide mb-1.5">AI 候选人回答</div>
@@ -606,7 +606,7 @@ export function Interview() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text mb-1">面试模拟</h1>
+      <h1 className="text-[21px] font-semibold tracking-tight text-text mb-0.5">面试模拟</h1>
       <p className="text-text-2 text-sm mb-6">
         AI 驱动的面试问答，多Agent并行检索 + 多Agent评审
       </p>
@@ -618,7 +618,7 @@ export function Interview() {
             onClick={() => setMode(m)}
             className={`px-4 py-2 text-sm font-medium rounded-btn transition-colors ${
               mode === m
-                ? 'bg-surface text-primary-2 border border-border'
+                ? 'bg-surface text-primary border border-border'
                 : 'text-text-3 hover:text-text-2'
             }`}
           >

@@ -2,160 +2,276 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 全局基础样式 */
+/* ===== 基础：白底黑字 ===== */
+
+/* 根字号 16px → 17px：Tailwind 的 rem 类（text-sm/间距）整体放大约 6% */
+html {
+  font-size: 17px;
+}
+
 body {
   margin: 0;
-  background: #0a0a1a;
-  color: #e0e0f0;
+  background: #ffffff;
+  color: #1f2329;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* 品牌渐变文字 */
+h1, h2, h3, h4 {
+  color: #1f2329;
+  font-weight: 600;
+}
+
+/* 数字等宽，指标/表格列不跳动 */
+.tabular,
+table,
+.metric-card,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 焦点可见 */
+:where(a, button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid rgba(11, 107, 203, 0.45);
+  outline-offset: 1px;
+}
+
+/* ===== 品牌 ===== */
 .brand-text {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1f2329;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
-/* 品牌渐变背景 */
 .brand-gradient {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: #1f2329;
 }
 
-/* 状态灯脉冲 */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
 .animate-pulse-dot {
-  animation: pulse-dot 1.2s ease-in-out infinite;
+  animation: pulse-dot 1.6s ease-in-out infinite;
 }
 
-/* 技能标签 */
-.tag-skill {
-  display: inline-block;
-  padding: 0.125rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin: 0 0.375rem 0.375rem 0;
-  background: rgba(99, 102, 241, 0.15);
-  color: #a78bfa;
-}
-
-/* 匹配/缺失标签 */
-.tag-match {
-  display: inline-block;
-  padding: 0.125rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin: 0 0.375rem 0.375rem 0;
-  background: rgba(34, 197, 94, 0.12);
-  color: #22c55e;
-}
-.tag-missing {
-  display: inline-block;
-  padding: 0.125rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin: 0 0.375rem 0.375rem 0;
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
-}
-
-/* 卡片 */
+/* ===== 卡片：白底 + 细边框，无阴影 ===== */
 .card-custom {
-  background: #13132b;
-  border: 1px solid #2a2a5a;
-  border-radius: 14px;
-  padding: 1.5rem;
-  transition: border-color 0.2s;
+  background: #ffffff;
+  border: 1px solid #e5e6eb;
+  border-radius: 4px;
+  padding: 16px 18px;
 }
-.card-custom:hover { border-color: #3a3a6a; }
+.card-custom:hover {
+  border-color: #d0d3d9;
+}
 
-/* 指标卡片 */
 .metric-card {
-  background: #13132b;
-  border: 1px solid #2a2a5a;
-  border-radius: 12px;
-  padding: 1rem 1.2rem;
+  background: #fafafa;
+  border: 1px solid #e5e6eb;
+  border-radius: 4px;
+  padding: 10px 12px;
 }
 
-/* 文件上传区域 */
-.file-upload-zone {
-  border: 2px dashed #2a2a5a;
-  border-radius: 12px;
-  padding: 2.5rem 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-}
-.file-upload-zone:hover,
-.file-upload-zone.dragover {
-  border-color: #6c5ce7;
-  background: rgba(99, 102, 241, 0.06);
-}
-
-/* 渐变按钮 */
-.btn-gradient {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 0.6rem 1.5rem;
+/* 卡片标题：黑字 + 底部细线 */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
   font-weight: 600;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
-  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
-  transition: all 0.2s ease;
+  color: #1f2329;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e5e6eb;
+}
+
+/* ===== 按钮：主按钮用蓝，次按钮保持黑白 ===== */
+.btn-gradient {
+  background: #0b6bcb;
+  color: #ffffff;
+  border: 1px solid #0b6bcb;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
 .btn-gradient:hover {
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
-  transform: translateY(-1px);
-}
-.btn-gradient:active { transform: translateY(0); }
-.btn-gradient:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  background: #0a5eb4;
+  border-color: #0a5eb4;
   transform: none;
+  box-shadow: none;
+}
+.btn-gradient:active {
+  background: #084c8f;
+  border-color: #084c8f;
+}
+.btn-gradient:disabled {
+  background: #a8c7e8;
+  border-color: #a8c7e8;
+  color: #ffffff;
+  cursor: not-allowed;
 }
 
-/* 卡片标题 */
-.card-header {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #5e5e88;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 1rem;
-}
-
-/* Agent 详情折叠 */
-.agent-detail summary {
-  color: #a78bfa;
+/* 次级按钮：白底黑边 */
+.btn-outline {
+  background: #ffffff;
+  color: #1f2329;
+  border: 1px solid #d0d3d9;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: border-color 0.15s ease, background 0.15s ease;
   cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0.5rem 0;
-  list-style: none;
 }
-.agent-detail summary::-webkit-details-marker { display: none; }
-.agent-detail .body {
-  padding: 0.5rem 0 0.5rem 0.875rem;
-  color: #9090b0;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  border-left: 1px solid #2a2a5a;
-  margin-left: 0.25rem;
+.btn-outline:hover {
+  background: #f5f6f7;
+  border-color: #1f2329;
 }
 
-/* 滚动条 */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a5a; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a6a; }
+/* ===== 标签：灰阶为主，语义色仅点缀 ===== */
+.tag-skill,
+.tag-match,
+.tag-missing {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  height: 24px;
+  border-radius: 2px;
+  font-size: 12.5px;
+  font-weight: 400;
+  margin: 0 6px 6px 0;
+  border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
+}
+.tag-skill {
+  background: #f2f3f5;
+  border-color: #e5e6eb;
+  color: #1f2329;
+}
+.tag-match {
+  background: #f0f9f0;
+  border-color: #d9efd9;
+  color: #2ea121;
+}
+.tag-missing {
+  background: #fdf2f1;
+  border-color: #fbdedb;
+  color: #d93026;
+}
+
+/* ===== 上传区 ===== */
+.file-upload-zone {
+  border: 1px dashed #d0d3d9;
+  border-radius: 4px;
+  padding: 32px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: #ffffff;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.file-upload-zone:hover,
+.file-upload-zone.dragover {
+  border-color: #1f2329;
+  background: #fafafa;
+}
+
+/* ===== Agent 折叠详情 ===== */
+.agent-detail summary {
+  color: #4e5969;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.agent-detail summary:hover {
+  color: #1f2329;
+}
+.agent-detail summary::-webkit-details-marker {
+  display: none;
+}
+.agent-detail summary::before {
+  content: '▸';
+  color: #a9aeb8;
+  font-size: 12px;
+  transition: transform 0.15s ease;
+}
+.agent-detail[open] summary::before {
+  transform: rotate(90deg);
+}
+.agent-detail .body {
+  padding: 4px 0 8px 12px;
+  color: #4e5969;
+  font-size: 14px;
+  line-height: 1.7;
+  border-left: 2px solid #f0f1f2;
+  margin-left: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 数据与代码 ===== */
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+/* 表格：黑白细线 */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.data-table th {
+  text-align: left;
+  font-weight: 500;
+  color: #86909c;
+  background: #fafafa;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e6eb;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #f0f1f2;
+  color: #4e5969;
+}
+.data-table tbody tr:hover td {
+  background: #fafafa;
+}
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e5e6eb;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d0d3d9;
+}
+
+::selection {
+  background: rgba(31, 35, 41, 0.12);
+  color: #1f2329;
+}

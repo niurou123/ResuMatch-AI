@@ -158,7 +158,7 @@ export function Profile() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text mb-1">档案</h1>
+      <h1 className="text-[21px] font-semibold tracking-tight text-text mb-0.5">档案</h1>
       <p className="text-text-2 text-sm mb-6">
         上传简历自动解析入库；此处可手动完善技能与项目细节，供面试模拟使用
       </p>
@@ -223,7 +223,7 @@ export function Profile() {
 
             <div className="space-y-4">
               {projects.map((p, i) => (
-                <div key={i} className="p-4 rounded-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #2a2a5a' }}>
+                <div key={i} className="p-4 rounded-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #e5e6eb' }}>
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <span className="text-text font-semibold">{p.name || '未命名项目'}</span>
@@ -270,7 +270,7 @@ export function Profile() {
 
           {/* 编辑/新增表单 */}
           {editingIndex !== null && (
-            <div className="card-custom" style={{ border: '1px solid #6366f1' }}>
+            <div className="card-custom" style={{ border: '1px solid #1f2329' }}>
               <div className="card-header">{editingIndex === -1 ? '新增项目' : `编辑: ${projects[editingIndex]?.name || ''}`}</div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="项目名称 *" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
@@ -363,9 +363,9 @@ function ProjectDocs({ projectName }: { projectName: string }) {
   };
 
   return (
-    <div className="mt-3 pt-3" style={{ borderTop: '1px dashed #2a2a5a' }}>
+    <div className="mt-3 pt-3" style={{ borderTop: '1px dashed #e5e6eb' }}>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-text-3 text-xs">📄 项目资料库（面试回答会检索）</span>
+        <span className="text-text-3 text-xs">项目资料库（面试回答会检索）</span>
         <label
           className="px-2.5 py-1 rounded-btn text-xs border border-border text-text-2 hover:text-text cursor-pointer"
           style={uploading ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
@@ -436,7 +436,7 @@ function EducationEditor({ profile, onSaved }: { profile: Record<string, any>; o
       <div className="card-header">教育经历（{list.filter((e) => e.school || e.degree || e.major).length}）</div>
       <div className="space-y-3">
         {list.map((e, i) => (
-          <div key={i} className="p-3 rounded-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #2a2a5a' }}>
+          <div key={i} className="p-3 rounded-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #e5e6eb' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-text-3 text-xs">第 {i + 1} 段</span>
               <button className="px-2 py-0.5 rounded-btn text-xs border border-border text-danger" onClick={() => remove(i)} title="删除此段">×</button>

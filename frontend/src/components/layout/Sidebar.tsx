@@ -1,9 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import { Circle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { checkHealth, getSystemInfo } from '@/lib/api';
-import { APP_NAME, APP_TAGLINE, NAV_ITEMS } from '@/lib/constants';
+import { APP_NAME, APP_VERSION, NAV_ITEMS } from '@/lib/constants';
 
+/** 侧边栏：白底黑字，靠右侧细边框与内容区分隔 */
 export function Sidebar() {
   const { data: health } = useQuery({
     queryKey: ['health'],
@@ -22,86 +22,66 @@ export function Sidebar() {
   const totalDocs = sysInfo?.collections
     ? Object.values(sysInfo.collections).reduce((a, b) => a + b, 0)
     : 0;
-  const model = sysInfo?.model || 'N/A';
+  const model = sysInfo?.model || '—';
 
   return (
-    <aside
-      className="w-64 h-screen flex flex-col fixed left-0 top-0 border-r border-border overflow-y-auto"
-      style={{ background: '#08081a' }}
-    >
-      {/* 品牌 */}
-      <div className="px-5 pt-6 pb-4">
-        <h2 className="text-xl font-bold m-0">
-          <span className="brand-text font-extrabold tracking-tight">{APP_NAME}</span>
-        </h2>
-        <p className="text-text-3 text-[11px] mt-0.5">{APP_TAGLINE}</p>
+    <aside className="fixed left-0 top-0 flex h-screen w-[224px] flex-col border-r border-border bg-white">
+      {/* Logo 区 */}
+      <div className="flex h-12 flex-none items-center gap-2 border-b border-border px-4">
+        <span className="brand-text truncate text-[16px]">{APP_NAME}</span>
+        <span className="mono text-[10px] text-text-3">{APP_VERSION}</span>
       </div>
 
-      {/* API 状态 */}
-      <div className="px-4 mb-4">
-        {connected ? (
-          <div
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-btn text-sm"
-            style={{
-              background: 'rgba(34,197,94,0.08)',
-              border: '1px solid rgba(34,197,94,0.2)',
-            }}
-          >
-            <Circle className="w-2 h-2 fill-current text-success" />
-            <div>
-              <div className="font-medium text-text">API 已连接</div>
-              <div className="text-[11px] text-text-3">
-                {model} &middot; 已索引 {totalDocs} 条
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-btn text-sm"
-            style={{
-              background: 'rgba(239,68,68,0.08)',
-              border: '1px solid rgba(239,68,68,0.2)',
-            }}
-          >
-            <Circle className="w-2 h-2 fill-current text-danger" />
-            <div>
-              <div className="font-medium text-text">API 离线</div>
-              <div className="text-[11px] text-text-3">启动: python -m src.api.main</div>
-            </div>
-          </div>
-        )}
+      {/* 运行状态 */}
+      <div className="mx-3 mt-3 flex-none rounded-[4px] border border-border bg-surface-2 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <span
+            className={`h-1.5 w-1.5 flex-none rounded-full ${
+              connected ? 'bg-success animate-pulse-dot' : 'bg-danger'
+            }`}
+          />
+          <span className="text-[13px] font-medium text-text">
+            {connected ? 'API 已连接' : 'API 离线'}
+          </span>
+        </div>
+        <div className="mono mt-1 truncate text-[11px] text-text-3" title={model}>
+          {connected ? `${model} · ${totalDocs} 条索引` : 'python -m src.api.main'}
+        </div>
       </div>
 
-      {/* 导航 */}
-      <nav className="flex-1 px-3">
-        <p className="text-text-3 text-[11px] uppercase tracking-wider mb-1.5 px-2">
-          功能导航
-        </p>
+      {/* 菜单 */}
+      <nav className="mt-3 flex-1 overflow-y-auto px-2">
         {NAV_ITEMS.map(({ to, label }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `block px-3 py-2.5 rounded-btn text-sm mb-0.5 transition-colors ${
+              `relative mb-0.5 flex h-10 items-center rounded-[4px] px-3 text-[14.5px] transition-colors ${
                 isActive
-                  ? 'text-primary-2 bg-surface font-medium'
-                  : 'text-text-2 hover:text-text hover:bg-surface/50'
+                  ? 'bg-primary-light font-medium text-primary'
+                  : 'text-nav-text hover:bg-nav-hover hover:text-text'
               }`
             }
           >
-            {label}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 bg-primary" />
+                )}
+                {label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
-      {/* 底部 */}
-      <div className="px-4 pb-5 pt-3">
-        <div className="border-t border-border pt-3">
-          <p className="text-[10px] text-center text-text-3">
-            LangGraph Multi-Agent v3.0<br />
-            DeepSeek + ChromaDB + bge
-          </p>
-        </div>
+      {/* 底部技术栈 */}
+      <div className="flex-none border-t border-border px-4 py-3">
+        <p className="mono text-[10.5px] leading-relaxed text-text-3">
+          LangGraph · FastAPI
+          <br />
+          Milvus Lite · bge-small-zh
+        </p>
       </div>
     </aside>
   );

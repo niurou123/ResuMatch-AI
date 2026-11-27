@@ -31,7 +31,7 @@ export function SelfIntro() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text mb-1">自我介绍</h1>
+      <h1 className="text-[21px] font-semibold tracking-tight text-text mb-0.5">自我介绍</h1>
       <p className="text-text-2 text-sm mb-6">
         基于简历素材，LLM 生成 30 秒/1 分钟/3 分钟三个版本的自我介绍
       </p>
@@ -70,7 +70,7 @@ export function SelfIntro() {
                 onClick={() => setActiveTab(t.key)}
                 className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
                   activeTab === t.key
-                    ? 'text-primary-2 border-primary'
+                    ? 'text-primary border-primary'
                     : 'text-text-3 border-transparent hover:text-text-2'
                 }`}
               >

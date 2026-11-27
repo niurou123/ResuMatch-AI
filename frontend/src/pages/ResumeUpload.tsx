@@ -31,15 +31,24 @@ export function ResumeUpload() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text mb-1">简历上传</h1>
+      <h1 className="text-[21px] font-semibold tracking-tight text-text mb-0.5">简历上传</h1>
       <p className="text-text-2 text-sm mb-6">
         AI 蒸馏解析 — 纯规则提取，零 LLM 介入，每个字段可溯源
       </p>
 
-      <FileUpload
-        onUpload={(f) => uploadMutation.mutate(f)}
-        uploading={uploadMutation.isPending}
-      />
+      {/* 上传区装进卡片，与后台其他模块一致 */}
+      <div className="card-custom">
+        <div className="card-header">
+          <span>简历文件</span>
+          <span className="mono text-[11px] font-normal text-text-3">
+            PDF / DOCX / MD / TXT
+          </span>
+        </div>
+        <FileUpload
+          onUpload={(f) => uploadMutation.mutate(f)}
+          uploading={uploadMutation.isPending}
+        />
+      </div>
 
       {result && p && (
         <div className="mt-6 space-y-5">
@@ -69,7 +78,7 @@ export function ResumeUpload() {
                   onClick={() => setActiveTab(t)}
                   className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
                     activeTab === t
-                      ? 'text-primary-2 border-primary'
+                      ? 'text-primary border-primary'
                       : 'text-text-3 border-transparent hover:text-text-2'
                   }`}
                 >

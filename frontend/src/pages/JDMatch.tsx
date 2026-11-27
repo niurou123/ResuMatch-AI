@@ -9,9 +9,9 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className="px-5 py-2 rounded-lg text-sm font-medium transition-colors"
       style={{
-        background: active ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
-        color: active ? '#fff' : '#8a8ab0',
-        border: active ? 'none' : '1px solid #2a2a5a',
+        background: active ? '#fafafa' : 'transparent',
+        color: active ? '#fff' : '#86909c',
+        border: active ? 'none' : '1px solid #e5e6eb',
       }}
     >
       {children}
@@ -24,7 +24,7 @@ export function JDMatch() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text mb-1">JD 匹配</h1>
+      <h1 className="text-[21px] font-semibold tracking-tight text-text mb-0.5">JD 匹配</h1>
       <p className="text-text-2 text-sm mb-6">
         分析简历与职位描述的匹配程度，覆盖技能与项目两个维度
       </p>
@@ -96,14 +96,11 @@ function SkillMatch() {
       {result && (
         <div className="space-y-5">
           <div className="card-custom text-center">
-            <div
-              className="text-6xl font-extrabold mb-2"
-              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-            >
+            <div className="mono mb-2 text-[44px] font-semibold leading-none tabular-nums text-text">
               {result.match_score}%
             </div>
             <p className="text-text-3 text-sm">综合匹配度</p>
-            <div className="mt-4 h-2 rounded-full overflow-hidden max-w-md mx-auto" style={{ background: '#1a1a3e' }}>
+            <div className="mt-4 h-2 rounded-full overflow-hidden max-w-md mx-auto" style={{ background: '#fafafa' }}>
               <div className="h-full brand-gradient rounded-full transition-all duration-700" style={{ width: `${result.match_score}%` }} />
             </div>
           </div>
@@ -149,7 +146,7 @@ function SkillMatch() {
           {/* 技术栈增强：保留原有 + 建议补充 */}
           {enhanced?.added_skills && enhanced.added_skills.length > 0 && (
             <div className="card-custom">
-              <div className="card-header">🧩 技术栈增强（保留原有 + 建议补充）</div>
+              <div className="card-header">技术栈增强（保留原有 + 建议补充）</div>
               <p className="text-text-3 text-xs mb-3">在原有技术栈基础上，为更匹配该岗位建议补充以下技能：</p>
               <div className="flex flex-wrap">
                 {enhanced.added_skills.map((s, i) => <span key={i} className="tag-missing">{s} ＋</span>)}
@@ -160,7 +157,7 @@ function SkillMatch() {
           {/* 针对性简历内容（技术栈增强 + 项目描述增强） */}
           {enhanced?.resume_content && (
             <div className="card-custom">
-              <div className="card-header">📄 针对性简历内容（面向该岗位优化）</div>
+              <div className="card-header">针对性简历内容（面向该岗位优化）</div>
               <p className="text-text-3 text-xs mb-3">已保留原有技能，新增岗位要求的技能，并优化了 Top 匹配项目描述。</p>
               <pre className="text-text-2 text-sm leading-relaxed whitespace-pre-wrap font-sans">{enhanced.resume_content}</pre>
             </div>
@@ -261,7 +258,7 @@ function ProjectMatch() {
                   <div className="card-header">项目匹配排行</div>
                   <div className="space-y-4">
                     {result.projects.map((p, i) => (
-                      <div key={i} className="p-4 rounded-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #2a2a5a' }}>
+                      <div key={i} className="p-4 rounded-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #e5e6eb' }}>
                         <div className="flex justify-between items-center mb-2">
                           <div>
                             <span className="text-text font-semibold">{p.name}</span>
@@ -269,7 +266,7 @@ function ProjectMatch() {
                               <span className="text-text-3 text-xs ml-2">{p.role} {p.time_period}</span>
                             )}
                           </div>
-                          <span className="text-2xl font-extrabold" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                          <span className="mono text-[17px] font-semibold tabular-nums text-text">
                             {Math.round(p.match_score)}
                           </span>
                         </div>
@@ -293,7 +290,7 @@ function ProjectMatch() {
               {/* 技术栈增强：保留原有 + 建议补充 */}
               {result.added_skills && result.added_skills.length > 0 && (
                 <div className="card-custom">
-                  <div className="card-header">🧩 技术栈增强（保留原有 + 建议补充）</div>
+                  <div className="card-header">技术栈增强（保留原有 + 建议补充）</div>
                   <p className="text-text-3 text-xs mb-3">
                     在原有技术栈基础上，为更匹配该岗位建议补充以下技能：
                   </p>
@@ -307,12 +304,12 @@ function ProjectMatch() {
               {(result.targeted_answer || result.targeted_resume_desc) && result.top_project && (
                 <div className="space-y-4">
                   <div className="card-custom">
-                    <div className="card-header">🎯 针对性 STAR 回答（基于「{result.top_project.name}」）</div>
+                    <div className="card-header">针对性 STAR 回答（基于「{result.top_project.name}」）</div>
                     <p className="text-text-2 text-sm leading-relaxed whitespace-pre-wrap">{result.targeted_answer || '（LLM 不可用或生成失败，跳过）'}</p>
                   </div>
                   {result.targeted_resume_desc && (
                     <div className="card-custom">
-                      <div className="card-header">📝 针对性简历项目描述</div>
+                      <div className="card-header">针对性简历项目描述</div>
                       <pre className="text-text-2 text-sm leading-relaxed whitespace-pre-wrap font-sans">{result.targeted_resume_desc}</pre>
                     </div>
                   )}
@@ -322,7 +319,7 @@ function ProjectMatch() {
               {/* 针对性完整简历内容（技术栈增强 + 项目描述增强） */}
               {result.resume_content && (
                 <div className="card-custom">
-                  <div className="card-header">📄 针对性简历内容（面向该岗位优化）</div>
+                  <div className="card-header">针对性简历内容（面向该岗位优化）</div>
                   <p className="text-text-3 text-xs mb-3">
                     已保留原有技能，新增岗位要求的技能，并优化了 Top 匹配项目描述。
                   </p>
