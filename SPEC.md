@@ -28,7 +28,7 @@ AI 驱动的校招网申 + 面试助手。支持简历智能解析、表单自�
 ```
 Chrome Extension (Manifest V3)     │  Python Backend (FastAPI) - v3.0 多Agent架构
 ───────────────────────────────────┼──────────────────────────────────────────
-popup.js: 扫描+本地匹配+填充        │  src/agents/: LangGraph多Agent工作流 (6节点)
+popup.js: 扫描+本地匹配+填充        │  src/agents/: LangGraph多Agent工作流 (8节点，含复合问题分解)
   - 120+规则本地毫秒匹配             │    Planner → Router → 3路并行检索Agent
   - LLM兜底(仅未匹配字段)            │      (keyword/semantic/graph, asyncio.gather)
   - 9种填充策略                     │    → Fusion投票 → Writer(Agent通信)
@@ -39,7 +39,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 ```
 
 **当前模型配置**：
-- LLM：`deepseek-v4-pro`（DeepSeek API）
+- LLM：`deepseek/deepseek-v4.1-flash`（commandcode 套餐，OpenAI 兼容端点）
 - 嵌入模型：`BAAI/bge-small-zh`（512维）
 - Cross-Encoder 精排：`BAAI/bge-reranker-base`
 - 向量库：Milvus Lite（pymilvus 嵌入式，`data/milvus_resumatch.db`；ChromaDB 为自动降级退路）多集合存储（skills/projects/achievements/education/project_docs）
@@ -78,6 +78,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 - [x] 3并行Reviewer (正确性/完整性/优势) → 多数表决
 - [x] 动态Planner (按问题类型调度Agent)
 - [x] Agent间通信 (Writer可以问Reviewer)
+- [x] 复合问题分解链路：分解 → 子问题并行作答 → 整合（src/agents/decomposer.py）
 
 ### 🟡 P2 — 体验增强
 
@@ -116,7 +117,7 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 |----|------|
 | 前端 | React (Vite + TypeScript + Tailwind CSS) — frontend/；Chrome Extension MV3 (vanilla JS) — extension/；Streamlit 已弃用 |
 | 后端 | Python, FastAPI, LangGraph |
-| LLM | DeepSeek v4-pro |
+| LLM | deepseek/deepseek-v4.1-flash（commandcode） |
 | 向量库 | Milvus Lite（pymilvus 嵌入式，ChromaDB 为自动降级退路），bge-small-zh (512维) |
 | 解析 | PyMuPDF, python-docx, mammoth |
 | 测试 | pytest |
@@ -254,6 +255,11 @@ background.js: 消息路由              │  src/api/: 22个端点（20条路�
 
 | 日期 | 版本 | 改动 |
 |------|------|------|
+| 11.26 | v34 | **前端定稿：白底黑字 + 单点蓝（UI v34）**: 根字号 16→17px、正文 15px、页面标题 21px；内容区去掉 max-width 改为铺满（实测占视口 84.3%），侧边栏 210→224px，上传页内容装入卡片；配色方案采纳“黑白打底 + 仅主按钮/当前菜单项/链接/聚焦选中态用 #0b6bcb”，墨色独立为 ink 令牌。浏览器实测：body 背景 rgb(255,255,255)、文字 rgb(31,35,41)、当前菜单 文字 rgb(11,107,203)+底 rgb(232,241,251)。tsc 与 vite build 通过 |
+| 11.26 | v33 | **前端改白底黑字单色风（UI v33）**: 页面/卡片统一纯白、去除阴影堆叠，以 1px 细边框分层；文字改用墨色 #1f2329 / #4e5969 / #86909c；主按钮黑底白字（hover #3a4048、active #000000）、次按钮白底黑边；侧边栏由深蓝改纯白，激活项浅灰底 + 墨色左竖条；标签改灰阶（语义色仅保留低饱和绿/橙/红）；表格改黑白细线；页面内全部彩色硬编码（含 #409eff/#002140 等）统一映射为墨阶与灰阶。tsc 与 vite build 通过 |
+| 11.26 | v32 | **前端对齐 peidi-bi 风格（UI v32）**: 参照 D:\pd\peidi-bi-frontend（vue-pure-admin + Element Plus）重做视觉 —— 主色改 #409eff、页面底 #f2f3f5、白卡片 + 1px #e4e7ed 边框 + 极轻阴影、圆角统一 4px、文字 #303133/#606266/#909399；侧边栏改深蓝 #001529 + logo 区 #002140 + 亮蓝左竖条激活；标签改 Element tag 观感；页面内 34 处硬编码暗色全部映射为浅色令牌，3 处低对比 text-primary-2 修正为主色。tsc 与 vite build 通过 |
+| 11.26 | v31 | **前端专业化重构（UI v31）**: 设计令牌改为中性近黑 + 细边框 + 低饱和主色（#5b7cfa，替换原 #6366f1/#8b5cf6 紫渐变）；圆角统一收敛到 8/6/4px；移除品牌渐变文字、发光按钮、悬浮位移与全部 emoji（6 处）；侧边栏由 256→240px、品牌改纯文字、状态区改为单点+两行等宽信息、导航激活改为左侧竖条；页面标题 24px→19px 半粗；卡片标题加左侧竖条锚点、标签去胶囊改 4px 描边；新增 .mono/.data-table/.btn-outline 与等宽数字（tabular-nums）；补 :focus-visible 键盘可达样式。tsc 与 vite build 均通过 |
+| 11.26 | v30 | **复合问题分解链路**: 新增 decompose/sub_parallel/synthesize 三节点（8 节点工作流）；复合问题判定用规则线索，LLM 拆解失败退化规则切分；子问题并行多集合检索+作答；综合节点回填素材供修订复用；新增 scripts/eval_decomposition.py（方面覆盖率规则评测）。实测：相对同链路无分解，方面覆盖率 80%→93.3%、STAR 80%→100%；但小语料下全文直送单次调用仍更优，适用边界取决于语料规模 |
 | 10.10 | v29 | **P2-3.2 网申填充收官 + 全链路真实落地确认**: 填充后视觉验证落地（结果徽章+失败定位+错误标签+成功淡出）；别名匹配勾选（实测 5/5）；充值后 LLM 链路全通实测（SSE 全流程 681 字答案 18.4/25 评审、judge 评分、form/fill 映射「张三」不编造）；P2-3.2 六项全部完成（仅剩站点模板系统为 P3 级）。3.2 网申填充完成 |
 | 10.10 | v28 | **档案全字段编辑 + RAG 同步 + 网申助手联通（三合一闭环）**: ①档案页自由编辑扩展到全部区块（基本信息/教育/成果新增 3 端点，原本只读展示）②编辑即同步 RAG（profile_sync.py：档案改动重建简历四集合，手填的细节/难点/挑战/职责进向量索引——此前编辑只写 profile.json，检索永远看到旧数据）③档案↔网申助手联通（GET /profile/export 转扩展扁平格式；popup 扫描/sidebar 打开档案面板时从后端拉最新，chrome.storage 降级为离线缓存）④LLM 缓存随档案变更失效。服务进程内实测：编辑技能→Milvus 18 条即时重建；编辑项目手填难点→面试检索 25 条素材三路命中；导出格式含 bullets/challenges。pytest 28/28，tsc 干净 |
 | 10.08 | v27 | **真实环境联调三连修**: ①HF 离线探测拖垮启动（reranker 缺 embedder 已有防御，同类第三例）→ main.py 入口统一 HF_HUB_OFFLINE/TRANSFORMERS_OFFLINE（防御从模块级升为进程级，下载走 hf-mirror 镜像）②deepseek-v4-pro 推理模型适配（content/reasoning_content 共享 max_tokens 预算 → 预算×3 + 思维链兜底）③402/401 错误显性化（余额/凭证故障不再伪装成生成质量问题）。bge-reranker-base 1.1GB 经 hf-mirror 落地本地。对应 BUG_LOG 案例 23/24 |

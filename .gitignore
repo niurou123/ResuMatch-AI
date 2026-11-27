@@ -88,3 +88,6 @@ data/eval/milvus_eval.db/
 !data/eval/resumes/
 !data/eval/questions.json
 !data/eval/profile_seed.json
+
+# ---------- 外部公开语料（scripts/fetch_external_resumes.py 可重抓，避免仓库膨胀）----------
+data/eval/resumes_ext/

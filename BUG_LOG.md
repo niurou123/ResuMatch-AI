@@ -618,3 +618,162 @@ auto_decode(open('requirements.txt','rb').read())
 - 问医疗问题 → 8 条素材全为视觉康复，回答含 ResuMatch=False、含3路并行=False ✅
 - 问 ResuMatch → 素材聚焦 ResuMatch，回答不再误用医疗背景 ✅
 - Python 编译通过 ✅
+
+
+### 案例 27：简历解析器对 markdown 简历的"项目/成果"整体失效（系统性）
+
+**现象**：新增字段级评测脚本 `scripts/eval_extraction.py` 后，12 份评测简历的字段级准确率仅 **63.1%**；其中**项目名/角色/技术栈/关键成果命中率全部为 0%**，成果命中率 4.2%。而技能（F1=1.000）与教育（学校命中 100%）正常。
+
+**根因**（两处叠加，均出在分区识别与项目切分）：
+1. [src/rag/parser.py](src/rag/parser.py) `_identify_sections`：当分区标题与子标题处于**同一段落**时（`## 项目经验\n### 电商订单中台\n角色: …`，中间无空行），代码用 `not l.startswith("#")` 过滤剩余行，把 `### 电商订单中台` 这个**项目名**当成分区标题丢弃，导致首个项目块从"角色:"开始，项目名变成 `角色: 后端负责人`。
+2. `_extract_projects_v2` 的切分正则只认两种边界（"名称+4空格+年份"、"名称 | 角色"），**不认 markdown `### 项目名`**；且 `if len(name) < 5: continue` 会把 4 字中文项目名（统一网关/特征平台）整块丢掉。
+3. 成果分区标题正则缺少「关键成就/核心成果/主要成果」等同义表述，导致成果内容被并入项目分区，`achievements` 恒为空。
+
+**解决方案**（[src/rag/parser.py](src/rag/parser.py)）：
+- `_identify_sections`：只丢弃 1~2 级标题（`#`/`##`），保留 `###` 及更深层标题，使项目名存活
+- `_extract_projects_v2`：先按 `\n(?=#{2,6}\s+\S)` 切分，再对每段套用原有边界规则（两段式切分，不改原规则）
+- 项目名清洗增加 `^#{1,6}\s*` 与 `**` 剥离；长度阈值 5→3，并把「角色/职位/岗位/技术栈/描述/关键成果」加入排除前缀
+- 成果分区正则补充：关键成就|核心成果|主要成果|项目成果|个人成果|成果|亮点
+
+**验证**：`python scripts/eval_extraction.py` 字段级准确率 **63.1% → 98.5% → 100%**，项目名/角色/技术栈/成果命中率 0% → 100%；新增 `tests/test_parser_regression.py`（6 例）覆盖全部修复点，全量 pytest **34 passed**。
+
+### 案例 28：教育经历"年-年"时间格式提取失败，专业字段被年份污染
+
+**现象**：教育行 `华南理工大学 计算机技术 硕士 2024-2027` 解析结果为 `school=华南理工大学`、`major=计算机技术 2024-2027`、`time=""`；另一版实现中专业被关键词表截断为 `计算机`（丢"技术"）。
+
+**根因**：
+1. 时间正则要求 `年份+分隔符+月份`（`\d{4}[./年]\d{1,2}`），`2024-2027` 这种**纯年份区间**不匹配 → time 为空、区间滞留在专业字段
+2. `school` 直接取整行再删学位词，未剥离时间与专业 → 学校名被污染
+3. 专业用固定关键词表匹配（`计算机|软件|…`），只能命中最短前缀，`计算机技术` 被截成 `计算机`
+
+**解决方案**（[src/rag/parser.py](src/rag/parser.py) `_extract_education_v2`）：
+- 时间正则改为兼容纯年份区间：`(?:19|20)\d{2}(?:[./年]\d{1,2}[月]?)?\s*[-–—至到~]\s*(?:…|至今|present)`
+- 解析顺序改为「先剥时间 → 再剥学位 → 剩余按空白切分：首段=学校，其余=专业」
+- 专业兜底改为 `[汉字]{2,10}(技术|工程|科学|学|管理|设计)` 贪婪匹配，不再截断
+
+**验证**：`education` 的 school/degree/major 学校命中率 100%、专业命中率 **66.7% → 100%**、`time` 正确得到 `2024-2027`；回归测试 `test_education_fields_split` 通过。
+### 案例 29：生成质量评测的"数字可回溯率"指标本身失效（评测设计缺陷）
+
+**现象**：`data/eval/generation_report.json`（2026-10-10，n=10）中 `number_grounded_avg=0.4167`、`star_complete_rate=0.4286`。数字指标长期偏低，却查不出生成侧的具体问题。
+
+**根因**：[scripts/eval_generation.py](scripts/eval_generation.py) 只向 `/interview/answer` 发送 `{"question": ...}`，而服务端 [src/api/routes.py](src/api/routes.py) `interview_answer` 强制 `_load_user_profile()` 读取**服务端档案**（`data/profile.json`，即作者本人的真实简历）来生成回答；评测脚本却拿**合成评测简历** `data/eval/resumes/resume_Bxx.md` 作为比对基准。两边根本不是同一份简历，因此"回答里的数字能否在原文找到"这个指标衡量的是**画像错配**，而非生成质量——0.4167 属于度量伪影。
+（STAR 完整率不含比对基准，故 0.4286 仍是有意义的度量。）
+
+**解决方案**：
+1. 新增 [scripts/eval_star_smoke.py](scripts/eval_star_smoke.py)：绕过 HTTP 与检索链路，直接用 `build_star_prompt` + 相同的检索素材调一次 LLM，1 次调用即可得到**基准一致**的 STAR 与数字回溯指标，作为改 prompt 后的快速回归手段。
+2. 在脚本内明确标注该限制，避免后续把 `generation_report.json` 的数字当作"端到端生成质量"引用。端到端有效评测需像 `eval_retrieval.py` 那样，先把评测简历装载进**独立评测库与评测画像**再跑。
+
+**验证**：
+- 修 prompt 后 `eval_star_smoke.py` 抽查 4 题（B01/B03/B05/B08）：STAR 完整 **4/4**，数字回溯 **18/18（6/6、3/3、1/1、8/8）**
+- 对照修复前口径：STAR 完整率 42.9%（n=10，有效）；数字回溯率 41.7%（画像错配，作废）
+### 案例 30：模型判定用 `v4` 子串，会把 flash 模型误当成推理模型
+
+**现象**：把 LLM 从 `deepseek-v4-pro`（推理模型）换成 `deepseek/deepseek-v4.1-flash`（快模型）后，请求仍会附带 `reasoning` 参数并把 `max_tokens` 放大 3 倍。
+
+**根因**：[src/core/llm_client.py](src/core/llm_client.py) `chat()` 里判定条件是
+`if "v4" in self.model or "reasoner" in self.model`——`deepseek-v4.1-flash`、`deepseek-v4-flash-0731` 等
+fast 模型名同样包含 `v4`，被误判为推理模型。后果：对非推理模型多加 `reasoning` 字段（部分网关直接 400），
+并把输出预算放大 3 倍（浪费额度、拉长延迟）。
+
+**解决方案**：
+1. `src/config.py` 新增 `MODEL_IS_REASONING: Optional[bool] = None`（显式 True/False 优先覆盖）
+2. `llm_client` 新增 `_is_reasoning_model()`：显式配置优先；否则按名称判定——
+   含 `flash / turbo / chat / lite` → 非推理；含 `pro / reasoner / r1 / think` → 推理
+3. 换模型时只需改 `.env`，无需改代码
+
+**验证**：
+- `deepseek/deepseek-v4.1-flash` → `reasoning=False`，请求不再带 `reasoning` 字段，返回正常
+- `deepseek-v4-pro`（旧线）仍判定为推理模型，行为不变
+- 全量 `pytest tests/` 34 passed
+### 案例 31：思维链被当作答案返回，污染最终回答
+
+**现象**：三档端到端评测里，"全量流水线"的**数字可回溯率 = 0%**、平均字数 718（fast 档 520、单Agent 294）。抽查回答发现正文是模型的推理过程：
+"我们需要回答中文。需要严格四段标签：情境、任务、行动、结果。问题：核心技术栈哪些用得最深？需要基于素材，不能编造。上一版意见要求……"
+
+**根因**：[src/core/llm_client.py](src/core/llm_client.py) `chat()` 中，为兼容 `deepseek-v4-pro` 的推理预算问题，写了"content 为空就把 `reasoning_content` 当答案返回"的兜底。换到 `deepseek/deepseek-v4.1-flash`（commandcode 端点）后，该模型同样会返回 `reasoning_content`，一旦某轮 `content` 为空（修订回环里更容易触发），整段思维链就被当成正式答案。后果：
+- 回答变成推理草稿，可读性报废
+- 思维链里的临时数字（如"400"）进入正文 → 数字可回溯率归零
+- 全量档比 fast 档更容易命中（回环调用次数多）
+
+**解决方案**：
+1. `src/config.py` 新增 `LLM_RETRY_ON_EMPTY: bool = True`、`ALLOW_REASONING_FALLBACK: bool = False`
+2. `chat()` 改为：content 为空 → **重试一次**；仍为空且未显式开启兜底 → 抛异常，交由上层规则降级（项目本身有降级退路），
+   绝不默认把思维链当答案
+3. 保留开关，需要时可用 `ALLOW_REASONING_FALLBACK=true` 显式打开
+
+**验证**：
+- 单题抽查：回答为正常四段式（"**情境（Situation）**：我在电商订单中台项目……"），无推理草稿
+- 修复后全量流水线 n=3：数字可回溯率 **0% → 100%**，平均字数 718 → 389，STAR 完整率 66.7%（同时暴露了新的"残答"问题）
+- 全量 `pytest tests/` 34 passed
+### 案例 32：生成链路存在"残答/空答"，且空结果无兜底
+
+**现象**：三档端到端评测（n=6）中，完整工作流有 1 题只返回 **25 字**残答；单次调用基线有 **2 题返回空内容**（len=0）。两者都没有报错，`error` 字段为空——若不加检查，空回答会被当作正常结果呈现给用户。
+
+**根因**（两条链路各一处）：
+1. **写作节点缺最短长度保护**：[src/agents/writer.py](src/agents/writer.py) 直接取模型返回的 `content` 作为 `final_answer`，
+   修订回环达到上限或模型只吐了个标题时，短文本照样成为最终答案。
+2. **单次调用路径无兜底**：`llm_client.chat()` 在 content 为空时按案例 31 的修复会"重试一次后抛异常"，
+   评测脚本捕获异常后记 `answer=""`，但**生产链路（如自我介绍、表单兜底映射）并没有对应的重试或降级处理**，
+   等于把"模型偶发返回空"直接暴露给用户。
+
+**解决方案（待实施，已列入 6.2 节展望）**：
+- 写作节点：`len(final_answer) < 阈值` 时回退到 `draft_answer`；仍不足则强制再修订一轮并记录告警
+- 生成入口统一封装：空内容 → 重试 → 仍空则走规则化降级，禁止把空串当作成功结果
+
+**验证（当前状态）**：复测数据显示快速工作流 6/6 产出有效回答、STAR 完整率 100%，
+完整工作流 4/5、单次基线 4/4（有效回答口径）——说明**评审与降级机制确实兜住了空结果**，
+但完整工作流的残答问题仍需上述长度保护才能根治。该项已如实写入论文 5.4 与 6.2 节。
+
+### 案例 33：解析器对 PDF 提取的真实简历完全失效（外部语料成功率 0%）
+
+**现象**：引入 48 份公开真实简历（CC0 40 份文本 + MIT 8 份 PDF）做鲁棒性评测，解析成功率为 **0%**：
+所有文件只识别出一个 header 分区，技能/项目/教育/成果全为 0，单份耗时仅 1ms。
+
+**根因**：
+1. 真实简历多由 PDF 工具导出，**多个分区标题被挤在同一行**，例如
+   `HR ADMINISTRATOR       Summary     Dedicated Customer Service Manager…`。
+   `_split_paragraphs` 按空行切段、`_identify_sections` 只检查段落首行，
+   于是整段被当作「页眉之后的无名正文」，任何分区都识别不到。
+2. 分区别名只覆盖中文与少量英文裸词（education/skills/experience），
+   真实英文简历用的是 `Professional Experience`、`Core Competencies`、`Education and Training`
+   这类带限定词或组合词，而正则要求整行等于关键词，匹配不上。
+
+**解决方案**（[src/rag/parser.py](src/rag/parser.py)）：
+1. 新增 `_normalize_blob_text()`：在分段之前，把被 2 个以上空格包夹的英文分区标题
+   （summary/experience/education/skills/projects 等 22 个词）单独成段（前后插空行），
+   使分区识别能正常命中；中文简历几乎不出现该形态，对原有语料无影响。
+2. 扩充英文分区别名：`professional experience / work history / employment history`、
+   `technical skills / core competencies / competencies / expertise`、
+   `education and training / academic background`、`certifications / certificates / licenses`。
+3. 教训：`_normalize_blob_text` 必须在 `parse()` 中、`_split_paragraphs` **之前**调用。
+   首次只定义未接线，指标毫无变化，排查浪费一轮。
+
+**验证**：
+- 外部语料解析成功率 **0% → 83.3%**（48 份中 40 份成功）；平均分区数 0.96 → 3.42；
+  平均字段 0 → 27.21（技能 25.69、教育 1.52）
+- 合成评测集字段准确率仍为 **100%**，`pytest tests/` **34 passed**，无回归
+- 未成功的 8 份均为扫描件型 PDF（无文本层）需 OCR；英文简历的项目信息写在经历分区内，
+  不再单独成项，属版面语义差异而非缺陷 —— 两点均已写入论文 5.2 与 6.2
+
+### 案例 34：扫描件型 PDF 无文本层，解析结果为空（已接入 OCR 兜底）
+
+**现象**：外部真实语料 48 份中，8 份 PDF 的 `raw_text` 几乎为空（每页有效字符 < 50），
+结构化抽取自然为 0；串到下游即"上传了简历却什么都读不出来"。
+
+**根因**：`_extract_pdf` 只用 `page.get_text("text")` 取文本层。扫描件/图片型 PDF 没有文本层，
+该方法返回空串，而代码没有做任何兜底判断。
+
+**解决方案**（[src/rag/parser.py](src/rag/parser.py)）：
+1. 文本层稀疏判定：`每页平均有效字符 < OCR_MIN_CHARS_PER_PAGE(50)` 即判为扫描件，触发 OCR
+2. 新增 `_ocr_pdf()`：按页渲染 PNG（DPI 150）→ RapidOCR（onnxruntime，pip 直装，无需 Tesseract）
+3. 惰性初始化 OCR 引擎（`_get_ocr_engine`）：纯文本 PDF 不付出模型加载开销（冷启动约 1~2s）
+4. 双保险：OCR 结果与文本层取"更长的那个"；OCR 异常一律返回空串，不允许因此让整份解析失败
+5. 限流：`OCR_MAX_PAGES=4`，只 OCR 前 4 页（简历核心信息集中在前几页）
+
+**验证**：
+- 8 份扫描件全部恢复出文本，外部语料**文本提取成功率 83.3% → 100%**
+- 单份 P007：`raw_text` 0 → 9584 字符
+- 结构化成功率仍 83.3%——未通过的 8 份均为**越南语**简历，语言超出当前中英文分区规则覆盖，
+  属后续工作（多语言分区），不是 OCR 缺陷
+- 合成集字段准确率仍 100%，`pytest tests/` 34 passed
+- 代价：OCR 走 CPU，单份 31~135 秒（4 页），生产环境应改为异步任务

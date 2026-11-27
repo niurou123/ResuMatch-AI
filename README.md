@@ -27,7 +27,7 @@ Chrome Extension (MV3)              │  → 多数表决 → END/Revise回环
                                     │  项目-JD匹配: 三维度打分 + 简历内容增强
 ```
 
-### 6 节点 LangGraph 工作流
+### 8 节点 LangGraph 工作流（含复合问题分解链路）
 
 | 节点 | 职责 |
 |------|------|
@@ -35,6 +35,9 @@ Chrome Extension (MV3)              │  → 多数表决 → END/Revise回环
 | **QuestionRouter** | 规则化问题分类 + 难度评估（0s延迟） |
 | **ParallelRetrieval** | 3路并行检索 (关键词/语义/知识图谱) → Fusion |
 | **STARWriter** | 流式生成 + Agent通信自我修正 |
+| **Decomposition** | 复合问题判定 + 拆解 2~4 个子问题（LLM 拆解，规则切分兜底） |
+| **SubAnswer** | 子问题并行作答（asyncio.gather，每个子问题独立多集合检索 + 生成） |
+| **Synthesize** | 子答案整合为 STAR 总答，并回填素材供修订复用 |
 | **ParallelReview** | 3路并行评审 (正确性/完整性/优势) → 多数表决 |
 
 ---
@@ -197,9 +200,9 @@ GET  /api/v1/system/info          # 系统信息
 
 | 层 | 技术 |
 |----|------|
-| 前端 | React (Vite + TypeScript + Tailwind) — frontend/, Chrome Extension MV3 |
+| 前端 | React (Vite + TypeScript + Tailwind，专业工具风 UI v31) — frontend/, Chrome Extension MV3 |
 | 后端 | Python, FastAPI, LangGraph |
-| LLM | DeepSeek v4-pro |
+| LLM | deepseek/deepseek-v4.1-flash（commandcode） |
 | 向量库 | Milvus Lite (pymilvus 嵌入式，ChromaDB 为自动降级退路)，bge-small-zh (512维) |
 | 解析 | PyMuPDF, python-docx, mammoth |
 | 精排 | bge-reranker-base (Cross-Encoder) |
@@ -224,17 +227,49 @@ pytest tests/test_parser.py -v
 # 1. 生成/重建评测集（幂等）
 python scripts/gen_eval_set.py
 
-# 2. 检索质量评测（零 LLM 消耗——Self-Query 规则版、跳过 HyDE）
+# 2. 字段提取准确率评测（零 LLM 消耗——对照 profile_seed.json 真值）
+python scripts/eval_extraction.py
+# 指标：字段级总准确率 / 技能集合 P·R·F1 / 项目名·角色·技术栈·成果命中率 /
+#       教育（学校·学历·专业）命中率
+# 当前实测：字段级准确率 100%（12 份规范排版简历），详见 data/eval/extraction_report.json
+
+# 3. 检索质量评测（零 LLM 消耗——Self-Query 规则版、跳过 HyDE）
 python scripts/eval_retrieval.py                    # 全矩阵：12 简历 × 6 消融模式
 python scripts/eval_retrieval.py --resumes B01      # 单份快跑
 # 指标：Recall@k / MRR / nDCG@k（k=3,5,8）
 # 消融：full / no_hyde / no_rerank / no_graph / no_multiquery / no_semantic
 
-# 3. 生成质量评测（小样本 LLM——默认 10 题约 20 次调用，服务需运行）
+# 4. 生成质量评测（小样本 LLM——默认 10 题约 20 次调用，服务需运行）
 python scripts/eval_generation.py --n 10
 # 指标：STAR 完整率（规则检测）/ 量化数据真实率（数字可回溯简历原文）/
 #       引用数 / 评审总分 —— 避免纯 LLM 自评的循环论证
+
+# 5. 单 Agent 基线对比（回答"多 Agent 是否必要"这一答辩高频问题）
+python scripts/eval_baseline.py --n 10
+# 对照：单次 LLM 调用（简历全文直送，无检索/无评审） vs 5 节点工作流
+# 指标同 eval_generation；输出 data/eval/baseline_report.json
+
+# 6. STAR 结构单题抽查（改 prompt 后的快速回归，1 次 LLM 调用）
+python scripts/eval_star_smoke.py --resume B01
+# 直接调用 build_star_prompt，跳过 HTTP 与检索，基准一致地看
+# 「四段式标签是否出现 / STAR 是否完整 / 数字能否回溯原文」
+
+# 7. 表单字段映射评测（静态，无需浏览器与 LLM）
+node scripts/eval_form_fill.js
+# 直接加载 extension/lib 的真实映射引擎（matchField / matchSelectOption），
+# 对 5 类 ATS 字段夹具逐字段求值
+# 指标：字段覆盖率 / 下拉别名准确率 / 空值不编造率
+# 当前实测：覆盖率 88.2%（85 字段）、下拉别名 10/10、空值不编造 5/5
+# 8. 解析鲁棒性评测（合成语料 vs 外部真实语料）
+python scripts/fetch_external_resumes.py --text 40 --pdf 8   # 抓取 CC0/MIT 公开简历
+python scripts/eval_robustness.py
+# 当前实测：合成集成功率 100%（字段准确率 100%）；外部 48 份成功率 83.3%
 ```
+
+> ⚠️ **指标口径注意**：`eval_generation.py` 只向服务发送问题，回答使用服务端 `data/profile.json`
+> 画像生成，而比对基准是合成评测简历——**两者不是同一份简历**，因此其「数字可回溯率」不可作为
+> 生成质量结论引用（详见 BUG_LOG 案例 29）。要得到基准一致的数字，用 `eval_star_smoke.py`
+> 或按 `eval_retrieval.py` 的方式先把评测简历装进独立评测库与评测画像。
 
 报告落盘 `data/eval/*.json`（含逐题明细，论文数据来源）。评测库 `data/eval/milvus_eval.db` 与主库隔离，不干扰运行中的服务。
 

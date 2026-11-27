@@ -38,6 +38,9 @@ const FIELD_RULES = [
   { keywords: ['技术栈','使用技术','tech stack'], path: 'experiences.1.techStack', priority: 85 },
   { keywords: ['意向城市','期望城市','工作城市'], path: 'targetCities', priority: 85 },
   { keywords: ['意向岗位','期望岗位','应聘岗位'], path: 'targetPositions', priority: 85 },
+  { keywords: ['期望薪资','期望月薪','薪资要求','期望待遇','薪资预期','salary'], path: 'expectedSalary', priority: 85 },
+  { keywords: ['到岗时间','可到岗','入职时间','最快到岗','到岗日期','availability'], path: 'availableDate', priority: 85 },
+  { keywords: ['英语水平','英语等级','外语水平','english level'], path: 'educations.0.cet6', priority: 80 },
   { keywords: ['自我评价','自我介绍','about me'], path: 'selfEvaluation', priority: 75 },
   { keywords: ['获奖','所获奖项','awards'], path: 'awards', priority: 70 },
 ];
