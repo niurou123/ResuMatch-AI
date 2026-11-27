@@ -128,6 +128,7 @@ async def run_pipeline_arms(sample, profiles, vs, arms):
                     "qtype": q.get("qtype", ""),
                     "answer_len": len(answer), "elapsed_ms": elapsed, "error": err,
                     "star": star, "numbers": nums, "review_total": review_total,
+                    "revision_count": state.get("revision_count", 0) if err == "" else 0,
                     "answer": answer,
                 })
                 mark = "✓" if star["complete"] else "✗"

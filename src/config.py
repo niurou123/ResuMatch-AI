@@ -62,7 +62,11 @@ class Settings(BaseSettings):
     REPETITION_PENALTY: float = 1.0
 
     # ===== 工作流配置 =====
-    MAX_REVISION_ROUNDS: int = 3       # 最大修订轮数
+    # 最大修订轮数：1 = 初稿 + 最多一次修订。
+    # 依据 v34 三档对照：fast 档（0 轮修订）STAR 完整率与数字可回溯率已达 100%，
+    # 而 3 轮会把最坏端到端延迟推到 110s（实测），修订带来的质量增益未被观测到。
+    # 需要更严格打磨时可临时调到 2~3。
+    MAX_REVISION_ROUNDS: int = 1
     MIN_REVIEW_SCORE: int = 20         # 最低通过分（满分25）
     STREAM_CHUNK_SIZE: int = 50        # 流式传输块大小
 

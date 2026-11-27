@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-27 11:58:21",
+ "generated_at": "2026-11-27 14:10:44",
  "n": 6,
  "seed": 42,
  "resumes": null,
@@ -11,16 +11,16 @@
    "n_ok": 6,
    "star_complete_rate": 0.8333,
    "number_grounded_rate": 1.0,
-   "avg_answer_len": 539.2,
-   "avg_elapsed_ms": 72249.0
+   "avg_answer_len": 516.5,
+   "avg_elapsed_ms": 29242.4
   },
   "detail": [
    {
     "resume_id": "B10",
     "question": "你在 PCB 上的实践经验是什么？",
     "qtype": "technical_depth",
-    "answer_len": 627,
-    "elapsed_ms": 50806.7,
+    "answer_len": 705,
+    "elapsed_ms": 44770.0,
     "error": "",
     "star": {
      "S": true,
@@ -30,19 +30,20 @@
      "complete": true
     },
     "numbers": {
-     "n_numbers": 2,
-     "n_grounded": 2,
+     "n_numbers": 1,
+     "n_grounded": 1,
      "rate": 1.0
     },
-    "review_total": 11.6,
-    "answer": "**情境（Situation）**：根据我的简历，PCB 目前仅作为一项技能条目记录，尚未关联到具体项目，因此没有可直接展开的项目背景与角色信息。[来源: {skills} PCB]\n\n**任务（Task）**：面试官希望了解我在 PCB 上的实际动手经验。就现有简历素材而言，这部分信息暂时没有详细记录，我无法给出具体的设计任务、板卡规模或时间线。[来源: {skills} PCB]\n\n**行动（Action）**：\n1. 我诚实说明：简历中 PCB 仅为技能项，没有对应的项目描述、设计工具或成果记录。[来源: {skills} PCB]\n2. 我在低功耗传感网项目中担任核心开发，负责电池供电传感网络的休眠调度、边缘预处理与断网缓存，这些工作让我对硬件功耗约束下的系统行为有直接理解。[来源: {projects} 低功耗传感网]\n3. 我具备 Linux 驱动、RTOS、STM32、CAN 等软硬件交界能力，可在需要时迁移到板级调试与电路基础工作中。[来源: {skills} Linux 驱动、RTOS、STM32、CAN]\n4. 若岗位需要 PCB 设计，我会先补齐原理图与布局工具的系统练习，再从小板卡实践入手。\n\n**结果（Result）**：根据我的简历，PCB 相关的量化成果暂无记录；可引用的项目成果为低功耗传感网续航由 6月→2年，但该成果属于传感网项目，并非 PCB 设计成果。[来源: {projects} 低功耗传感网]"
+    "review_total": 18.7,
+    "revision_count": 0,
+    "answer": "**情境（Situation）**：根据我的简历，PCB 是作为一项技能被列出的，但素材中并没有记录我具体在哪个项目、什么时间、多大规模的场景下使用过 PCB 设计。[来源: {skills} PCB] 因此这部分背景信息暂时没有详细记录。\n\n**任务（Task）**：同样地，关于我在 PCB 相关工作中承担的具体任务、目标或需要解决的挑战，根据我的简历，这部分信息暂时没有详细记录，我不会在这里补充未经记录的内容。[来源: {skills} PCB]\n\n**行动（Action）**：\n1. 我的简历素材中，PCB 仅以技能标签形式出现，没有记录我采用过的具体设计流程或工具链，因此这部分无法展开。[来源: {skills} PCB]\n2. 素材中没有记录我在层叠设计、布线或信号完整性方面的具体技术决策，我不做推测性描述。[来源: {skills} PCB]\n3. 素材中也没有记录 PCB 与其他技能（如 Linux 驱动、CAN）在同一个项目中的配合方式，我不跨项目拼接内容。[来源: {skills} PCB]\n\n**结果（Result）**：根据我的简历，PCB 相关的成果暂无量化记录。需要说明的是，我简历中可查到的量化成果属于其他项目，例如低功耗传感网项目实现“续航 6月→2年”，域控制器项目实现“OTA 成功率 99.5%”，但这些成果与 PCB 实践没有素材支撑的关联，因此我不把它们归到本问题下。[来源: {achievements}]\n\n补充说明：如果面试官需要了解我在 PCB 上的真实经验，我可以在后续沟通中提供简历之外的补充材料；但在本次回答中，我只陈述素材中确有记录的内容。"
    },
    {
     "resume_id": "B02",
     "question": "可视化大屏引擎有哪些可量化的成果？",
     "qtype": "project_followup",
-    "answer_len": 541,
-    "elapsed_ms": 63862.0,
+    "answer_len": 400,
+    "elapsed_ms": 25584.7,
     "error": "",
     "star": {
      "S": true,
@@ -56,15 +57,16 @@
      "n_grounded": 0,
      "rate": null
     },
-    "review_total": 8.9,
-    "answer": "**情境（Situation）**：根据我的简历素材，我具备 Three.js、WebGL、TypeScript、React、Vue、Webpack 等前端与图形渲染相关技能[来源: 核心技能]；但素材中未记录我参与过的具体可视化大屏引擎项目名称、项目规模与时间。\n\n**任务（Task）**：这个问题需要我说明在大屏引擎中承担的具体任务与目标。根据我的简历，这部分信息暂时没有详细记录，我无法确认自己在该类项目中的角色与挑战。\n\n**行动（Action）**：\n1. 我能确认的是，我的技能栈覆盖可视化大屏常用的底层渲染技术 Three.js 与 WebGL[来源: 核心技能]。\n2. 工程侧我具备 TypeScript 与 Webpack 的使用能力，可用于大屏项目的构建与类型约束[来源: 核心技能]。\n3. 框架侧我掌握 React 与 Vue，可支撑大屏页面层的组件化开发[来源: 核心技能]。\n4. 至于我在某个具体大屏引擎中做了哪些技术选型、如何实现，根据我的简历暂时没有详细记录，我不做推测。\n\n**结果（Result）**：根据我的简历，可视化大屏引擎这部分暂无量化记录，我不会编造提升比例、帧率或性能数字。如果面试官需要，我可以补充该项目的真实数据后再作说明。"
+    "review_total": 9.4,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：根据我的简历，可视化大屏引擎这一项目的背景、规模与我的具体角色，暂时没有详细记录。[来源: 素材]\n\n**任务（Task）**：根据我的简历，我在此项目中承担的具体任务与目标暂无详细记录。[来源: 素材]\n\n**行动（Action）**：\n1. 根据我的简历，我在可视化相关技术栈上具备 WebGL、Three.js 等能力储备，但素材未记录这些能力在大屏引擎中的具体应用方式。[来源: 素材]\n2. 根据我的简历，素材中未记录我在该项目中的技术选型决策。[来源: 素材]\n3. 根据我的简历，素材中未记录我在该项目中的具体实现过程。[来源: 素材]\n\n**结果（Result）**：根据我的简历，这部分暂无量化记录。素材中未出现任何与可视化大屏引擎相关的数字指标（如性能提升比例、渲染帧率、承载数据量、交付周期等），因此我不对成果做任何量化表述。[来源: 素材]"
    },
    {
     "resume_id": "B01",
     "question": "你的核心技术栈里哪些用得最深？",
     "qtype": "technical_depth",
-    "answer_len": 376,
-    "elapsed_ms": 94626.1,
+    "answer_len": 349,
+    "elapsed_ms": 28857.9,
     "error": "",
     "star": {
      "S": true,
@@ -78,15 +80,16 @@
      "n_grounded": 0,
      "rate": null
     },
-    "review_total": 14.3,
-    "answer": "**情境（Situation）**：我在「数据同步管道」项目中担任核心开发，负责多源异构数据库到数仓的准实时同步管道；同时在「电商订单中台」项目中担任后端负责人。[来源: projects]\n\n**任务（Task）**：前者的目标是把同步延迟从分钟级压到秒级，并保证多源异构数据在链路中断后能续传、不丢数；后者要解决订单链路的分布式事务一致性问题。[来源: projects]\n\n**行动（Action）**：\n1. 数据同步管道以 Python 为主语言实现 CDC 采集与写入链路，用 Kafka 承接变更数据流，MySQL 作为同步侧存储。[来源: projects]\n2. 围绕「CDC + 断点续传」设计管道，使中断后从断点恢复而非全量重跑；断点记录与幂等的具体实现细节，根据我的简历，这部分信息暂时没有详细记录。[来源: projects]"
+    "review_total": 14.5,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我以核心开发身份参与「数据同步管道」项目，同时在后端负责人角色上参与「电商订单中台」项目。[来源: projects]\n\n**任务（Task）**：在数据同步管道中，我需要解决多源异构数据库到数仓的准实时同步问题，把同步延迟从分钟级压到秒级；这条 Python + Kafka + MySQL 的链路也是我平时用得最深的技术栈。[来源: projects]\n\n**行动（Action）**：\n1. 我用 Python 承担同步管道的主体开发工作。[来源: projects]\n2. 我引入 Kafka 作为数据流转的中间层，承接多源异构库的变更数据。[来源: projects]\n3. 我以 MySQL 作为同步链路上的数据库侧组件。[来源: projects]"
    },
    {
     "resume_id": "B11",
     "question": "短视频推荐重构里你遇到的最大挑战是什么？",
     "qtype": "project_followup",
-    "answer_len": 516,
-    "elapsed_ms": 108769.4,
+    "answer_len": 540,
+    "elapsed_ms": 31646.0,
     "error": "",
     "star": {
      "S": true,
@@ -100,15 +103,16 @@
      "n_grounded": 1,
      "rate": 1.0
     },
-    "review_total": 14.4,
-    "answer": "**情境（Situation）**：我作为推荐算法工程师参与短视频推荐重构项目，负责召回+排序双层推荐链路的整体重构，主要技术栈为 PyTorch 与 Faiss。[来源: {projects}]\n\n**任务（Task）**：我的任务是把原有推荐链路重构为“多路召回融合 + 精排蒸馏”的双层结构，需要解决两个核心问题：多路召回结果如何统一融合，以及精排能力如何通过蒸馏落地。[来源: {projects}]\n\n**行动（Action）**：\n1. 我负责多路召回融合方案的设计与实现，把多路召回结果统一融合后再送入排序阶段。[来源: {projects}]\n2. 我采用精排蒸馏的方式重构排序环节，通过蒸馏把精排模型的能力沉淀下来。[来源: {projects}]\n3. 技术实现上，我以 PyTorch 作为模型训练与推理框架、以 Faiss 作为向量检索组件来支撑召回链路。[来源: {projects}]\n4. 至于挑战中的具体难点细节（例如各路召回的配比策略、蒸馏的具体损失设计），根据我的简历，这部分信息暂时没有详细记录。\n\n**结果（Result）**：项目最终实现人均时长 +18%。[来源: {projects}]"
+    "review_total": 19.8,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我作为推荐算法工程师参与短视频推荐重构项目，负责召回与排序双层推荐架构的重构工作。[来源: projects]\n\n**任务（Task）**：我承担的核心任务是把原有推荐链路重构为\"多路召回融合 + 精排蒸馏\"的双层结构，其中最大的挑战在于召回侧多路结果的高效融合与近邻检索，以及排序侧用蒸馏方式在保证效果的前提下控制模型复杂度。[来源: projects]\n\n**行动（Action）**：\n1. 我基于 PyTorch 搭建召回与排序两层的模型结构，统一训练与推理流程。[来源: projects]\n2. 在召回侧，我设计多路召回融合方案，把不同召回通路的候选集合并后统一送入后续环节。[来源: projects]\n3. 我引入 Faiss 做向量近邻检索，支撑召回阶段的候选生成效率。[来源: projects]\n4. 在排序侧，我采用精排蒸馏的方式，用教师模型指导精排模型学习，平衡效果与线上可用性。[来源: projects]\n\n**结果（Result）**：重构上线后人均时长 +18%。[来源: achievements]\n\n（说明：素材中未记录该项目的具体启动时间、团队规模与迭代周期，根据我的简历，这部分信息暂时没有详细记录。）"
    },
    {
     "resume_id": "B04",
     "question": "你在数据质量监控中承担什么角色？",
     "qtype": "project_followup",
-    "answer_len": 564,
-    "elapsed_ms": 25508.1,
+    "answer_len": 542,
+    "elapsed_ms": 22373.5,
     "error": "",
     "star": {
      "S": true,
@@ -122,15 +126,16 @@
      "n_grounded": 0,
      "rate": null
     },
-    "review_total": 21.4,
-    "answer": "**情境（Situation）**：我作为核心开发参与了「数据质量监控」项目，负责全链路数据质量监控体系的建设；根据我的简历，该项目的具体规模与时间信息暂时没有详细记录。[来源: {projects} 数据质量监控]\n\n**任务（Task）**：我需要解决的核心挑战是数据事故发现滞后的问题，目标是让异常数据能够被更早、更准地识别出来，并且能够定位到问题源头、及时通知到相关方。[来源: {projects} 数据质量监控]\n\n**行动（Action）**：\n1. 我基于 Python、Airflow、Spark 搭建了监控链路的技术底座，把质量校验任务纳入调度体系。[来源: {projects} 数据质量监控]\n2. 我实现了波动检测能力，对指标数据的异常波动进行自动识别。[来源: {projects} 数据质量监控]\n3. 我实现了血缘追溯，在异常出现后可以沿数据链路回溯定位问题来源。[来源: {projects} 数据质量监控]\n4. 我接入了自动告警，把检测结果第一时间推送给相关方，减少人工巡检的依赖。[来源: {projects} 数据质量监控]\n\n**结果（Result）**：数据事故发现时间从 2h 缩短到 5min。[来源: {achievements}；来源: {projects} 数据质量监控]"
+    "review_total": 22.2,
+    "revision_count": 0,
+    "answer": "**情境（Situation）**：我在「数据质量监控」项目中担任核心开发，这是一个覆盖全链路的数据质量监控项目。[来源: projects]\n\n**任务（Task）**：我需要解决的核心挑战是数据事故发现滞后——在监控体系建立前，数据事故发现时间长达 2h，我负责把发现时效压下来，并让问题定位与告警形成闭环。[来源: projects]\n\n**行动（Action）**：\n1. 我采用 Python 作为主要开发语言搭建监控逻辑。[来源: projects]\n2. 我用 Airflow 负责任务编排与调度，把监控任务纳入统一的工作流管理。[来源: projects]\n3. 我基于 Spark 做数据计算，支撑全链路的波动检测。[来源: projects]\n4. 我在波动检测之外补充了血缘追溯能力，用于定位问题数据的来源链路。[来源: projects]\n5. 我接入了自动告警，让异常在检测到之后直接触达相关方，形成发现—定位—通知的闭环。[来源: projects]\n\n**结果（Result）**：数据事故发现时间从 2h 缩短到 5min。[来源: projects]\n\n补充说明：根据我的简历，该项目除上述时效指标外，暂无其他量化记录（如告警准确率、覆盖表数量等）。"
    },
    {
     "resume_id": "B04",
     "question": "介绍一下你的实时数仓平台项目",
     "qtype": "project_followup",
-    "answer_len": 611,
-    "elapsed_ms": 89921.9,
+    "answer_len": 563,
+    "elapsed_ms": 22222.2,
     "error": "",
     "star": {
      "S": true,
@@ -144,146 +149,9 @@
      "n_grounded": 0,
      "rate": null
     },
-    "review_total": 17.5,
-    "answer": "**情境（Situation）**：我作为数据平台负责人，主导了实时数仓平台项目，项目采用 Flink、Kafka、Doris 技术栈。[来源: {projects}]\n\n**任务（Task）**：我的核心任务是把原先 T+1 的指标时效提升到分钟级，构建一套分钟级指标体系。[来源: {projects}] 根据我的简历，团队规模、数据体量等背景信息暂时没有详细记录。\n\n**行动（Action）**：\n1. 我采用 Flink CDC 作为数据采集链路，实现业务数据的实时捕获。[来源: {projects}]\n2. 我引入 Kafka 作为消息中间件，承接实时数据流并在链路中做缓冲与解耦。[来源: {projects}]\n3. 我以 Doris 作为实时数仓的存储与查询引擎，支撑分钟级指标的计算与查询。[来源: {projects}]\n4. 最终我把 Flink CDC + Kafka + Doris 组合成一套分钟级指标体系。[来源: {projects}]\n\n关于为何选择 Flink CDC 而非批处理、Kafka 分区与 Doris 表模型的具体设计权衡，以及乱序处理、背压调优等难点细节，根据我的简历，这部分信息暂时没有详细记录。\n\n**结果（Result）**：指标时效由 T+1 提升到 5 分钟。[来源: {projects}] 根据我的简历，数据规模、团队规模与业务方使用反馈等暂无量化记录。"
-   }
-  ]
- },
- "single": {
-  "summary": {
-   "n": 6,
-   "n_ok": 6,
-   "star_complete_rate": 1.0,
-   "number_grounded_rate": 1.0,
-   "avg_answer_len": 282.7,
-   "avg_elapsed_ms": 7283.5
-  },
-  "detail": [
-   {
-    "resume_id": "B10",
-    "question": "你在 PCB 上的实践经验是什么？",
-    "qtype": "technical_depth",
-    "answer_len": 263,
-    "elapsed_ms": 7787.9,
-    "error": "",
-    "star": {
-     "S": true,
-     "T": true,
-     "A": true,
-     "R": true,
-     "complete": true
-    },
-    "numbers": {
-     "n_numbers": 3,
-     "n_grounded": 3,
-     "rate": 1.0
-    },
-    "answer": "S（情境）：简历“技能”栏列有 PCB；项目经验包括车规域控制器和低功耗传感网。  \nT（任务）：面试要求说明我在 PCB 上的实践经验。  \nA（行动）：简历未记录我在 PCB 上的具体任务与行动，例如原理图设计、布局布线、打样调试等均未提及，因此不能推断或虚构。  \nR（结果）：仅能确认 PCB 是我列出的技能之一，但简历未提供可验证的 PCB 实践成果；项目成果中可确认的数字包括 CAN 报文丢失率 <0.001%、OTA 成功率 99.5%、续航 6月→2年、上报流量降 85%，但这些未与 PCB 工作直接关联。"
-   },
-   {
-    "resume_id": "B02",
-    "question": "可视化大屏引擎有哪些可量化的成果？",
-    "qtype": "project_followup",
-    "answer_len": 233,
-    "elapsed_ms": 4856.4,
-    "error": "",
-    "star": {
-     "S": true,
-     "T": true,
-     "A": true,
-     "R": true,
-     "complete": true
-    },
-    "numbers": {
-     "n_numbers": 5,
-     "n_grounded": 5,
-     "rate": 1.0
-    },
-    "answer": "**S（情境）**：在工业监控 3D 可视化大屏项目中，我担任前端负责人，项目涉及 WebGL 渲染管线优化与数据驱动场景。  \n**T（任务）**：负责该可视化大屏引擎的前端工作，推进 WebGL 渲染管线优化和数据驱动场景建设。  \n**A（行动）**：围绕 WebGL 渲染管线进行优化，并结合数据驱动场景开展前端实现。  \n**R（结果）**：可量化成果包括：首屏渲染从 4s 降至 1.2s；同屏点位数从 5万提升至 20万；GPU 内存占用降低 40%。"
-   },
-   {
-    "resume_id": "B01",
-    "question": "你的核心技术栈里哪些用得最深？",
-    "qtype": "technical_depth",
-    "answer_len": 494,
-    "elapsed_ms": 11318.5,
-    "error": "",
-    "star": {
-     "S": true,
-     "T": true,
-     "A": true,
-     "R": true,
-     "complete": true
-    },
-    "numbers": {
-     "n_numbers": 7,
-     "n_grounded": 7,
-     "rate": 1.0
-    },
-    "answer": "**S（情境）**：我在电商订单中台担任后端负责人，项目处理日均10万订单，技术栈为FastAPI、MySQL、Redis、Celery；同时作为核心开发参与数据同步管道，技术栈为Python、Kafka、MySQL。\n\n**T（任务）**：订单中台需要实现异步削峰、幂等防重、分布式事务；数据同步管道需要实现多源异构数据库到数仓的准实时同步，并支持CDC与断点续传。\n\n**A（行动）**：从简历项目经验看，我使用最深的是FastAPI、MySQL、Redis、Celery，以及Python、MySQL。在订单中台中，我围绕异步削峰、幂等防重、分布式事务使用FastAPI、MySQL、Redis、Celery；在数据同步管道中，我使用Python、Kafka、MySQL实现CDC和断点续传。\n\n**R（结果）**：订单中台订单接口P99延迟从800ms降至120ms，大促峰值吞吐提升5倍，重复下单率降为0；数据同步管道同步延迟从分钟级降至秒级，断点恢复时间从30min降至10s。因此，我的核心技术栈中FastAPI、MySQL、Redis、Celery和Python使用最深。"
-   },
-   {
-    "resume_id": "B11",
-    "question": "短视频推荐重构里你遇到的最大挑战是什么？",
-    "qtype": "project_followup",
-    "answer_len": 282,
-    "elapsed_ms": 9559.4,
-    "error": "",
-    "star": {
-     "S": true,
-     "T": true,
-     "A": true,
-     "R": true,
-     "complete": true
-    },
-    "numbers": {
-     "n_numbers": 3,
-     "n_grounded": 3,
-     "rate": 1.0
-    },
-    "answer": "**情境（S）**：在短视频推荐重构项目中，简历描述为“召回+排序双层推荐重构：多路召回融合 + 精排蒸馏”。  \n**任务（T）**：我作为推荐算法工程师，需要基于 PyTorch、Faiss 推进该重构。简历未单列“最大挑战”，按项目描述与成果，最大挑战是在召回+排序双层重构中同时落地多路召回融合与精排蒸馏，并兼顾人均时长、召回多样性与推理成本。  \n**行动（A）**：围绕“多路召回融合 + 精排蒸馏”开展重构，使用 PyTorch、Faiss 作为技术栈。  \n**结果（R）**：项目实现人均时长 +18%、召回多样性 +35%、推理成本降 40%。"
-   },
-   {
-    "resume_id": "B04",
-    "question": "你在数据质量监控中承担什么角色？",
-    "qtype": "project_followup",
-    "answer_len": 203,
-    "elapsed_ms": 5828.8,
-    "error": "",
-    "star": {
-     "S": true,
-     "T": true,
-     "A": true,
-     "R": true,
-     "complete": true
-    },
-    "numbers": {
-     "n_numbers": 1,
-     "n_grounded": 1,
-     "rate": 1.0
-    },
-    "answer": "**情境（S）**：简历中的“数据质量监控”项目是全链路数据质量监控，包含波动检测、血缘追溯和自动告警。  \n**任务（T）**：我在该项目中担任**核心开发**。  \n**行动（A）**：围绕全链路数据质量监控，基于 **Python、Airflow、Spark** 参与核心开发工作。  \n**结果（R）**：数据事故发现时间由 **2h** 缩短至 **5min**，覆盖 **300+** 核心表。"
-   },
-   {
-    "resume_id": "B04",
-    "question": "介绍一下你的实时数仓平台项目",
-    "qtype": "project_followup",
-    "answer_len": 221,
-    "elapsed_ms": 4350.1,
-    "error": "",
-    "star": {
-     "S": true,
-     "T": true,
-     "A": true,
-     "R": true,
-     "complete": true
-    },
-    "numbers": {
-     "n_numbers": 2,
-     "n_grounded": 2,
-     "rate": 1.0
-    },
-    "answer": "**S（情境）**：实时数仓平台项目采用 Flink、Kafka、Doris 技术栈，目标是构建分钟级指标体系。  \n**T（任务）**：我担任数据平台负责人，负责该实时数仓平台建设。  \n**A（行动）**：基于 Flink CDC + Kafka + Doris 搭建实时数仓链路，支撑分钟级指标体系。  \n**R（结果）**：项目实现指标时效从 T+1 提升至 5 分钟，日增数据处理量达到 2TB，任务失败率从 3% 降至 0.2%。"
+    "review_total": 18.9,
+    "revision_count": 1,
+    "answer": "**情境（Situation）**：我担任数据平台负责人，负责实时数仓平台项目，技术栈为 Flink、Kafka、Doris，目标是构建分钟级指标体系。[来源: projects]\n\n**任务（Task）**：我需要解决原有 T+1 指标时效无法满足业务实时分析需求的问题，把指标体系从按天产出升级为分钟级产出。[来源: projects]\n\n**行动（Action）**：\n1. 我采用 Flink CDC 作为数据接入方案，从源库实时捕获变更数据，避免对业务库造成批量抽取压力。[来源: projects]\n2. 我用 Kafka 作为实时数据流的中间缓冲层，承接 CDC 变更流，实现数据管道解耦与削峰。[来源: projects]\n3. 我选择 Doris 作为实时数仓的存储与查询引擎，支撑分钟级指标的写入与查询。[来源: projects]\n4. 我负责整体数据平台的技术选型与链路设计，把 Flink CDC、Kafka、Doris 串成一条完整的分钟级指标链路。[来源: projects]\n\n**结果（Result）**：指标时效由 T+1 提升至 5 分钟。[来源: projects][来源: achievements]\n\n说明：根据我的简历，该项目的团队规模、数据量级、上线时间等信息暂时没有详细记录。"
    }
   ]
  }
